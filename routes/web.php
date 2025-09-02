@@ -16,6 +16,7 @@ use Inertia\Inertia;
 // Route::redirect('/', '/dashboard');
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home-2', [HomeController::class, 'index2'])->name('home-2');
+Route::get('/home-3', [HomeController::class, 'index3'])->name('home-3');
 Route::get('/realisations', [RealisationsController::class, 'index'])->name('realisations');
 Route::get('/a-propos-de-nous', [AboutController::class, 'index'])->name('a-propos-de-nous');
 Route::get('/a-propos-de-nous-pro', [AboutController::class, 'indexPro'])->name('a-propos-de-nous-pro');

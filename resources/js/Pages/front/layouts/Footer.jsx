@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import logo from '../../../../assets/logo.png';
+import logo from '../../../../assets/front/imgs/logo-white.png';
 
 export default function FrontFooter() {
   return (

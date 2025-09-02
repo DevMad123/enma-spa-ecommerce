@@ -12,6 +12,7 @@ export default function Dashboard({
   myCompletedTasks,
   activeTasks,
 }) {
+  console.log(activeTasks);
   return (
     <AuthenticatedLayout
       user={auth.user}
@@ -81,8 +82,8 @@ export default function Dashboard({
                     <tr key={task.id}>
                       <td className="px-3 py-2">{task.id}</td>
                       <td className="px-3 py-2 text-white hover:underline">
-                        <Link href={route("project.show", task.project.id)}>
-                          {task.project.name}
+                        <Link href={route("project.show", task.project_id)}>
+                          {/* {task.project.name} */}Je suis une tâche
                         </Link>
                       </td>
                       <td className="px-3 py-2 text-white hover:underline">
