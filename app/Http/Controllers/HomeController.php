@@ -10,4 +10,8 @@ class HomeController extends Controller
     {
         return inertia('front/Home');
     }
+    public function index2()
+    {
+        return inertia('front/Home-2');
+    }
 }

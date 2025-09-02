@@ -22,15 +22,20 @@ export default function FrontHeader() {
           <img src={logo} alt="Enma Labs" className="h-10 transition-all duration-300" />
         </Link>
         <nav className="flex space-x-8">
-          {['Accueil', 'À propos', 'Réalisations', 'Contact'].map((label) => (
+          {[
+            {'label': 'Accueil', 'link': 'home'},
+            {'label': 'À propos', 'link': 'a-propos-de-nous'},
+            {'label': 'Réalisations', 'link': 'realisations'},
+            {'label': 'Contact', 'link': 'contact'},
+          ].map((item) => (
             <Link
-              key={label}
-              href={`#${label.toLowerCase()}`}
+              key={item.label}
+              href={route(item.link)}
               className={`font-medium text-lg transition-colors duration-300 ${
                 scrolled ? 'text-gray-800 hover:text-blue-600' : 'text-white hover:text-blue-300'
               }`}
             >
-              {label}
+              {item.label}
             </Link>
           ))}
         </nav>

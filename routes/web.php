@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RealisationsController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
@@ -12,6 +15,11 @@ use Inertia\Inertia;
 
 // Route::redirect('/', '/dashboard');
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/home-2', [HomeController::class, 'index2'])->name('home-2');
+Route::get('/realisations', [RealisationsController::class, 'index'])->name('realisations');
+Route::get('/a-propos-de-nous', [AboutController::class, 'index'])->name('a-propos-de-nous');
+Route::get('/a-propos-de-nous-pro', [AboutController::class, 'indexPro'])->name('a-propos-de-nous-pro');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
