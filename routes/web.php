@@ -22,15 +22,18 @@ Route::get('/a-propos-de-nous', [AboutController::class, 'index'])->name('a-prop
 Route::get('/a-propos-de-nous-pro', [AboutController::class, 'indexPro'])->name('a-propos-de-nous-pro');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    Route::resource('project', ProjectController::class);
-    Route::get('/task/my-tasks', [TaskController::class, 'myTasks'])
-        ->name('task.myTasks');
-    Route::resource('task', TaskController::class);
-    Route::resource('user', UserController::class);
+    Route::resource('projects', ProjectController::class);
+    Route::get('/tasks/my-tasks', [TaskController::class, 'myTasks'])
+        ->name('tasks.myTasks');
+    Route::resource('tasks', TaskController::class);
+    Route::resource('users', UserController::class);
 });
 
 Route::middleware('auth')->group(function () {

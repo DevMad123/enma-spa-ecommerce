@@ -19,7 +19,7 @@ export default function TasksTable({
       delete queryParams[name];
     }
 
-    router.get(route("task.index"), queryParams);
+    router.get(route("admin.tasks.index"), queryParams);
   };
 
   const onKeyPress = (name, e) => {
@@ -39,14 +39,14 @@ export default function TasksTable({
       queryParams.sort_field = name;
       queryParams.sort_direction = "asc";
     }
-    router.get(route("task.index"), queryParams);
+    router.get(route("admin.tasks.index"), queryParams);
   };
 
   const deleteTask = (task) => {
     if (!window.confirm("Are you sure you want to delete the task?")) {
       return;
     }
-    router.delete(route("task.destroy", task.id));
+    router.delete(route("admin.tasks.destroy", task.id));
   };
 
   return (
@@ -157,7 +157,7 @@ export default function TasksTable({
                   <td className="px-3 py-2">{task.project.name}</td>
                 )}
                 <th className="px-3 py-2 text-gray-100 hover:underline">
-                  <Link href={route("task.show", task.id)}>{task.name}</Link>
+                  <Link href={route("admin.tasks.show", task.id)}>{task.name}</Link>
                 </th>
                 <td className="px-3 py-2">
                   <span
@@ -174,7 +174,7 @@ export default function TasksTable({
                 <td className="px-3 py-2">{task.createdBy.name}</td>
                 <td className="px-3 py-2 text-nowrap">
                   <Link
-                    href={route("task.edit", task.id)}
+                    href={route("admin.tasks.edit", task.id)}
                     className="font-medium text-blue-600 dark:text-blue-500 hover:underline mx-1"
                   >
                     Edit

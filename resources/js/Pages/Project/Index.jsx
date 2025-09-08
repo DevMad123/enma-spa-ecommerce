@@ -18,7 +18,7 @@ export default function Index({ auth, projects, queryParams = null, success }) {
       delete queryParams[name];
     }
 
-    router.get(route("project.index"), queryParams);
+    router.get(route("admin.projects.index"), queryParams);
   };
 
   const onKeyPress = (name, e) => {
@@ -38,14 +38,14 @@ export default function Index({ auth, projects, queryParams = null, success }) {
       queryParams.sort_field = name;
       queryParams.sort_direction = "asc";
     }
-    router.get(route("project.index"), queryParams);
+    router.get(route("admin.projects.index"), queryParams);
   };
 
   const deleteProject = (project) => {
     if (!window.confirm("Are you sure you want to delete the project?")) {
       return;
     }
-    router.delete(route("project.destroy", project.id));
+    router.delete(route("admin.projects.destroy", project.id));
   };
 
   return (
@@ -57,7 +57,7 @@ export default function Index({ auth, projects, queryParams = null, success }) {
             Projects
           </h2>
           <Link
-            href={route("project.create")}
+            href={route("admin.projects.create")}
             className="bg-emerald-500 py-1 px-3 text-white rounded shadow transition-all hover:bg-emerald-600"
           >
             Add new
@@ -174,7 +174,7 @@ export default function Index({ auth, projects, queryParams = null, success }) {
                           <img src={project.image_path} style={{ width: 60 }} />
                         </td>
                         <th className="px-3 py-2 text-gray-100 text-nowrap hover:underline">
-                          <Link href={route("project.show", project.id)}>
+                          <Link href={route("admin.projects.show", project.id)}>
                             {project.name}
                           </Link>
                         </th>
@@ -197,7 +197,7 @@ export default function Index({ auth, projects, queryParams = null, success }) {
                         <td className="px-3 py-2">{project.createdBy.name}</td>
                         <td className="px-3 py-2 text-nowrap">
                           <Link
-                            href={route("project.edit", project.id)}
+                            href={route("admin.projects.edit", project.id)}
                             className="font-medium text-blue-600 dark:text-blue-500 hover:underline mx-1"
                           >
                             Edit

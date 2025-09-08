@@ -64,7 +64,7 @@ class ProjectController extends Controller
         }
         Project::create($data);
 
-        return to_route('project.index')
+        return to_route('admin.projects.index')
             ->with('success', 'Project was created');
     }
 
@@ -122,7 +122,7 @@ class ProjectController extends Controller
         }
         $project->update($data);
 
-        return to_route('project.index')
+        return to_route('admin.projects.index')
             ->with('success', "Project \"$project->name\" was updated");
     }
 
@@ -136,7 +136,7 @@ class ProjectController extends Controller
         if ($project->image_path) {
             Storage::disk('public')->deleteDirectory(dirname($project->image_path));
         }
-        return to_route('project.index')
+        return to_route('admin.projects.index')
             ->with('success', "Project \"$name\" was deleted");
     }
 }

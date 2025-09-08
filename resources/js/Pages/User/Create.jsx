@@ -15,7 +15,7 @@ export default function Create({ auth }) {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    post(route("user.store"));
+    post(route("admin.users.store"));
   };
 
   return (
@@ -108,7 +108,7 @@ export default function Create({ auth }) {
 
               <div className="mt-4 text-right">
                 <Link
-                  href={route("user.index")}
+                  href={route("admin.users.index")}
                   className="bg-gray-100 py-1 px-3 text-gray-800 rounded shadow transition-all hover:bg-gray-200 mr-2"
                 >
                   Cancel

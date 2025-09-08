@@ -15,7 +15,7 @@ export default function Show({ auth, success, project, tasks, queryParams }) {
             {`Project "${project.name}"`}
           </h2>
           <Link
-            href={route("project.edit", project.id)}
+            href={route("admin.projects.edit", project.id)}
             className="bg-emerald-500 py-1 px-3 text-white rounded shadow transition-all hover:bg-emerald-600"
           >
             Edit

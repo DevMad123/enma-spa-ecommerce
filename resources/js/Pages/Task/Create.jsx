@@ -18,7 +18,7 @@ export default function Create({ auth, projects, users }) {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    post(route("task.store"));
+    post(route("admin.tasks.store"));
   };
 
   return (
@@ -180,7 +180,7 @@ export default function Create({ auth, projects, users }) {
 
               <div className="mt-4 text-right">
                 <Link
-                  href={route("task.index")}
+                  href={route("admin.tasks.index")}
                   className="bg-gray-100 py-1 px-3 text-gray-800 rounded shadow transition-all hover:bg-gray-200 mr-2"
                 >
                   Cancel

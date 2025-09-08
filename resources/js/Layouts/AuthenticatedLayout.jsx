@@ -23,32 +23,32 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
               <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                 <NavLink
-                  href={route("dashboard")}
-                  active={route().current("dashboard")}
+                  href={route("admin.dashboard")}
+                  active={route().current("admin.dashboard")}
                 >
                   Dashboard
                 </NavLink>
                 <NavLink
-                  href={route("project.index")}
-                  active={route().current("project.index")}
+                  href={route("admin.projects.index")}
+                  active={route().current("admin.projects.index")}
                 >
                   Projects
                 </NavLink>
                 <NavLink
-                  href={route("task.index")}
-                  active={route().current("task.index")}
+                  href={route("admin.tasks.index")}
+                  active={route().current("admin.tasks.index")}
                 >
                   All Tasks
                 </NavLink>
                 <NavLink
-                  href={route("user.index")}
-                  active={route().current("user.index")}
+                  href={route("admin.users.index")}
+                  active={route().current("admin.users.index")}
                 >
                   Users
                 </NavLink>
                 <NavLink
-                  href={route("task.myTasks")}
-                  active={route().current("task.myTasks")}
+                  href={route("admin.tasks.myTasks")}
+                  active={route().current("admin.tasks.myTasks")}
                 >
                   My Tasks
                 </NavLink>
@@ -144,8 +144,8 @@ export default function AuthenticatedLayout({ user, header, children }) {
         >
           <div className="pt-2 pb-3 space-y-1">
             <ResponsiveNavLink
-              href={route("dashboard")}
-              active={route().current("dashboard")}
+              href={route("admin.dashboard")}
+              active={route().current("admin.dashboard")}
             >
               Dashboard
             </ResponsiveNavLink>

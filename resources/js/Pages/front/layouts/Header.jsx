@@ -24,6 +24,7 @@ export default function FrontHeader() {
         </Link>
         <nav className="flex space-x-8">
           {[
+            {'label': 'Dashboard', 'link': 'admin.dashboard'},
             {'label': 'Accueil', 'link': 'home'},
             {'label': 'À propos', 'link': 'a-propos-de-nous'},
             {'label': 'Réalisations', 'link': 'realisations'},
