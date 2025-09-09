@@ -4,6 +4,14 @@ import { motion } from 'framer-motion';
 import FrontHeader from '@/Pages/front/layouts/Header';
 import FrontFooter from '@/Pages/front/layouts/Footer';
 import { Link } from '@inertiajs/react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import { Navigation } from 'swiper/modules';
+import productImage from '../../../assets/front/imgs/product-default.jpg';
+import catImage from '../../../assets/front/imgs/cat-default.jpg';
+import defaultUserImg from '../../../assets/front/imgs/default-user.png';
+import heraSneakerImg from '../../../assets/front/imgs/hero-sneaker.png';
 
 // Palette
 const COLORS = {
@@ -19,7 +27,7 @@ const PRODUCTS = [
   {
     id: 1,
     name: 'Sneakers Gold Edition',
-    image: '/assets/front/imgs/prod-gold.webp',
+    image: productImage,
     price: 129.99,
     description: 'Un style premium, une finition dorée et un confort inégalé.',
     bestSeller: true,
@@ -29,7 +37,7 @@ const PRODUCTS = [
   {
     id: 2,
     name: 'Urban Brown High',
-    image: '/assets/front/imgs/prod-brown.webp',
+    image: productImage,
     price: 109.99,
     description: 'La basket urbaine chic, parfaite pour toutes vos sorties.',
     bestSeller: true,
@@ -39,7 +47,7 @@ const PRODUCTS = [
   {
     id: 3,
     name: 'Classic Black Low',
-    image: '/assets/front/imgs/prod-black.webp',
+    image: productImage,
     price: 99.99,
     description: 'Intemporelle, élégante et ultra résistante.',
     bestSeller: false,
@@ -49,20 +57,30 @@ const PRODUCTS = [
   {
     id: 4,
     name: 'Street Art Limited',
-    image: '/assets/front/imgs/prod-art.webp',
+    image: productImage,
     price: 149.99,
     description: 'Édition limitée, design exclusif pour les passionnés.',
     bestSeller: false,
     newArrival: false,
     category: 'Promotions',
   },
+  {
+    id: 5,
+    name: 'Urban Brown High',
+    image: productImage,
+    price: 109.99,
+    description: 'La basket urbaine chic, parfaite pour toutes vos sorties.',
+    bestSeller: true,
+    newArrival: true,
+    category: 'Nouveautés',
+  },
 ];
 
 const CATEGORIES = [
-  { id: 'cat1', name: 'Nouveautés', image: '/assets/front/imgs/cat-new.webp' },
-  { id: 'cat2', name: 'Best Sellers', image: '/assets/front/imgs/cat-best.webp' },
-  { id: 'cat3', name: 'Promotions', image: '/assets/front/imgs/cat-promo.webp' },
-  { id: 'cat4', name: 'Classiques', image: '/assets/front/imgs/cat-classic.webp' },
+  { id: 'cat1', name: 'Nouveautés', image: catImage },
+  { id: 'cat2', name: 'Best Sellers', image: catImage },
+  { id: 'cat3', name: 'Promotions', image: catImage },
+  { id: 'cat4', name: 'Classiques', image: catImage },
 ];
 
 const TESTIMONIALS = [
@@ -70,19 +88,19 @@ const TESTIMONIALS = [
     id: 't1',
     name: 'Aïssata Traoré',
     quote: "Livraison rapide, produit conforme et super confortable !",
-    avatar: '/assets/front/imgs/user1.webp',
+    avatar: defaultUserImg,
   },
   {
     id: 't2',
     name: 'Koffi Mensah',
     quote: "Le service client est au top, je recommande à 100%.",
-    avatar: '/assets/front/imgs/user2.webp',
+    avatar: defaultUserImg,
   },
   {
     id: 't3',
     name: 'Marie Koné',
     quote: "Des baskets stylées et une expérience d’achat parfaite.",
-    avatar: '/assets/front/imgs/user3.webp',
+    avatar: defaultUserImg,
   },
 ];
 
@@ -105,7 +123,7 @@ function HeroBanner() {
       className="relative pt-24 pb-16 min-h-[70vh] flex items-center justify-center"
       style={{
         background: COLORS.bg,
-        backgroundImage: "url('/assets/front/imgs/bg-elegant.svg')",
+        backgroundImage: `url(${heraSneakerImg})`,
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
       }}
@@ -148,7 +166,7 @@ function HeroBanner() {
           </div>
           <motion.div variants={fadeIn} className="flex justify-center md:justify-end">
             <img
-              src="/assets/front/imgs/hero-sneaker.webp"
+              src={heraSneakerImg}
               alt="Sneaker Hero"
               className="max-w-md w-full drop-shadow-xl rounded-xl"
               loading="lazy"
@@ -249,6 +267,28 @@ function ProductCard({ product, i }) {
   );
 }
 
+// function FeaturedProducts() {
+//   return (
+//     <section id="featured" className="py-16 bg-[#f7f3ee]">
+//       <div className="max-w-6xl mx-auto px-6">
+//         <header className="text-center mb-8">
+//           <motion.h2
+//             variants={fadeIn}
+//             initial="hidden"
+//             whileInView="visible"
+//             viewport={{ once: true }}
+//             className="text-2xl font-bold text-[#a68e55]"
+//           >
+//             Nos produits phares
+//           </motion.h2>
+//         </header>
+//         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+//           {PRODUCTS.map((p, i) => <ProductCard key={p.id} product={p} i={i} />)}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// }
 function FeaturedProducts() {
   return (
     <section id="featured" className="py-16 bg-[#f7f3ee]">
@@ -264,9 +304,24 @@ function FeaturedProducts() {
             Nos produits phares
           </motion.h2>
         </header>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          {PRODUCTS.map((p, i) => <ProductCard key={p.id} product={p} i={i} />)}
-        </div>
+
+        <Swiper
+          modules={[Navigation]}
+          navigation
+          spaceBetween={20}
+          slidesPerView={1}
+          breakpoints={{
+            640: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+          }}
+          className="pb-10"
+        >
+          {PRODUCTS.map((p, i) => (
+            <SwiperSlide key={p.id}>
+              <ProductCard product={p} i={i} />
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </section>
   );
@@ -432,22 +487,36 @@ function ProductCarousel() {
             Sélection exclusive
           </motion.h2>
         </header>
-        <div className="overflow-x-auto no-scrollbar flex gap-8 py-3 -mx-2 px-2 snap-x snap-mandatory">
+        {/* <div className="overflow-x-auto no-scrollbar flex gap-8 py-3 -mx-2 px-2 snap-x snap-mandatory"> */}
+        <Swiper
+          modules={[Navigation]}
+          navigation
+          spaceBetween={20}
+          slidesPerView={1}
+          breakpoints={{
+            640: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+          }}
+          className="pb-10"
+        >
           {featured.map((p, i) => (
-            <motion.div
-              key={p.id}
-              variants={fadeIn}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              custom={i}
-              tabIndex="0"
-              className="min-w-[260px] max-w-xs shrink-0 snap-start"
-            >
+            // <motion.div
+            //   key={p.id}
+            //   variants={fadeIn}
+            //   initial="hidden"
+            //   whileInView="visible"
+            //   viewport={{ once: true }}
+            //   custom={i}
+            //   tabIndex="0"
+            //   className="min-w-[260px] max-w-xs shrink-0 snap-start"
+            // >
+            <SwiperSlide key={p.id}>
               <ProductCard product={p} i={i} />
-            </motion.div>
+              </SwiperSlide>
+            // </motion.div>
           ))}
-        </div>
+          </Swiper>
+        {/* </div> */}
       </div>
     </section>
   );

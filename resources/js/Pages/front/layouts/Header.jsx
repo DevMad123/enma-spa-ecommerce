@@ -169,7 +169,7 @@ const FrontHeader = () => {
         </div>
       </header>
       {/* Spacer for sticky header */}
-      <div className="h-20 md:h-24"></div>
+      <div className="h-2 md:h-4"></div>
     </>
   );
 };
