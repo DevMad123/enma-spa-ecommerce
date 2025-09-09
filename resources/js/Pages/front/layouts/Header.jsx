@@ -20,6 +20,66 @@ import UserMenu from '../components/HeaderParts/UserMenu';
 import MobileMenu from '../components/HeaderParts/MobileMenu';
 import '../../../../css/header.css';
 
+import catImage from '../../../../assets/front/imgs/cat-default.jpg';
+// Si tu n'as pas d'images, mets des placeholders statiques par défaut.
+
+// ----------------------
+// Données d’exemple (fallback)
+// ----------------------
+const DEFAULT_CATEGORIES = [
+  {
+    id: 1,
+    name: "Baskets",
+    slug: "baskets",
+    image: catImage,
+    description: "Performance & style au quotidien",
+    subcategories: [
+      { id: 11, name: "Running", slug: "running" },
+      { id: 12, name: "Lifestyle", slug: "lifestyle" },
+      { id: 13, name: "Skate", slug: "skate" },
+      { id: 14, name: "Randonnée", slug: "randonnee" },
+    ],
+  },
+  {
+    id: 2,
+    name: "Homme",
+    slug: "homme",
+    image: catImage,
+    description: "Sélections pour lui",
+    subcategories: [
+      { id: 21, name: "T-shirts", slug: "t-shirts" },
+      { id: 22, name: "Sweats & Hoodies", slug: "sweats" },
+      { id: 23, name: "Pantalons", slug: "pantalons" },
+      { id: 24, name: "Accessoires", slug: "accessoires" },
+    ],
+  },
+  {
+    id: 3,
+    name: "Femme",
+    slug: "femme",
+    image: catImage,
+    description: "Tendances pour elle",
+    subcategories: [
+      { id: 31, name: "Robes", slug: "robes" },
+      { id: 32, name: "Tops", slug: "tops" },
+      { id: 33, name: "Baskets", slug: "baskets" },
+      { id: 34, name: "Sacs", slug: "sacs" },
+    ],
+  },
+  {
+    id: 4,
+    name: "Enfants",
+    slug: "enfants",
+    image: catImage,
+    description: "Confortables & durables",
+    subcategories: [
+      { id: 41, name: "Filles", slug: "filles" },
+      { id: 42, name: "Garçons", slug: "garcons" },
+      { id: 43, name: "Bébés", slug: "bebes" },
+    ],
+  },
+];
+
 const HEADER_BG = 'bg-gradient-to-r from-[#a68e55] via-[#8c6c3c] to-[#040404]';
 
 const FrontHeader = () => {
@@ -105,7 +165,7 @@ const FrontHeader = () => {
         {/* Desktop Header */}
         <div className="hidden md:flex max-w-7xl mx-auto items-center justify-between px-6">
           <Logo />
-          <PrimaryNav categories={categories} />
+          <PrimaryNav categories={DEFAULT_CATEGORIES} />
           <div className="flex items-center space-x-6">
             <SearchAutocomplete
               onSearch={handleSearch}
