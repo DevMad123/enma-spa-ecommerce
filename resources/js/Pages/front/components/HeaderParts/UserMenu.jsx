@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@inertiajs/react';
 
 const UserMenu = ({ isLogin, userInfo, onLogout }) => {
   const [open, setOpen] = useState(false);
@@ -29,13 +29,13 @@ const UserMenu = ({ isLogin, userInfo, onLogout }) => {
         >
           {isLogin ? (
             <>
-              <Link to="/user/deshboard/1" className="block px-4 py-2 hover:bg-blue-50">Profile</Link>
+              <Link href="/user/deshboard/1" className="block px-4 py-2 hover:bg-blue-50">Profile</Link>
               <button onClick={onLogout} className="block w-full text-left px-4 py-2 hover:bg-blue-50">Logout</button>
             </>
           ) : (
             <>
-              <Link to="/login" className="block px-4 py-2 hover:bg-blue-50">Login</Link>
-              <Link to="/Signup" className="block px-4 py-2 hover:bg-blue-50">Sign Up</Link>
+              <Link href="/login" className="block px-4 py-2 hover:bg-blue-50">Login</Link>
+              <Link href="/Signup" className="block px-4 py-2 hover:bg-blue-50">Sign Up</Link>
             </>
           )}
         </div>

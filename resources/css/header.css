@@ -1,0 +1,101 @@
+/* Palette principale */
+:root {
+  --header-gold: #a68e55;
+  --header-brown: #8c6c3c;
+  --header-black: #040404;
+  --header-bg-gradient: linear-gradient(90deg, #a68e55 0%, #8c6c3c 60%, #040404 100%);
+}
+
+/* Header sticky effect */
+header[aria-label="Site header"] {
+  font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
+  letter-spacing: 0.01em;
+  transition: background 0.3s, box-shadow 0.3s, padding 0.3s;
+}
+
+header .font-semibold,
+header .font-bold {
+  font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+header .shadow-xl {
+  box-shadow: 0 4px 24px 0 rgba(40,40,40,0.18);
+}
+
+header .rounded-full {
+  border-radius: 9999px;
+}
+
+header .transition {
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+header .hover\:bg-\[\#8c6c3c\]:hover {
+  background-color: #8c6c3c !important;
+}
+
+header .hover\:text-\[\#8c6c3c\]:hover {
+  color: #8c6c3c !important;
+}
+
+header .hover\:text-blue-600:hover {
+  color: #2563eb !important;
+}
+
+header .bg-gradient-to-r {
+  background: var(--header-bg-gradient);
+}
+
+header .backdrop-blur-md {
+  backdrop-filter: blur(8px);
+}
+
+header .group:hover .group-hover\:text-\[\#a68e55\] {
+  color: #a68e55 !important;
+}
+
+header .group:hover .group-hover\:text-\[\#8c6c3c\] {
+  color: #8c6c3c !important;
+}
+
+/* Burger animation */
+button[aria-label="Ouvrir le menu"] .block {
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+}
+
+/* CTA */
+header .bg-\[\#a68e55\] {
+  background-color: #a68e55 !important;
+}
+header .hover\:bg-\[\#8c6c3c\]:hover {
+  background-color: #8c6c3c !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  header .max-w-7xl {
+    max-width: 100vw;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  header .h-24 {
+    height: 5.5rem;
+  }
+}
+
+/* Example background for home page */
+.home-bg {
+  background: linear-gradient(120deg, #f7f3ee 0%, #e6d9c2 100%);
+  min-height: 100vh;
+  position: relative;
+  z-index: 0;
+}
+.home-bg::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url('/assets/front/imgs/bg-elegant.svg') center/cover no-repeat;
+  opacity: 0.18;
+  z-index: -1;
+}

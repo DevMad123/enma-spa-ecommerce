@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@inertiajs/react';
 
 const CartDropdown = ({ cartCount, cartItems, basepath, mobile }) => {
   const [open, setOpen] = useState(false);
@@ -56,7 +56,7 @@ const CartDropdown = ({ cartCount, cartItems, basepath, mobile }) => {
               ))
             )}
           </ul>
-          <Link to="/checkout" className="block mt-4 bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700 transition">
+          <Link href="/checkout" className="block mt-4 bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700 transition">
             Checkout
           </Link>
         </div>

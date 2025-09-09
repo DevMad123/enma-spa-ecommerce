@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@inertiajs/react';
+import logo from '../../../../../assets/front/imgs/logo.webp';
 
-const Logo = ({ basepath }) => (
-  <Link to="/" aria-label="Home" className="flex items-center">
+const Logo = () => (
+  <Link href="/" aria-label="Home" className="flex items-center">
     <img
-      src={basepath ? `${basepath}/resources/assets/front/imgs/logo.webp` : '/resources/assets/front/imgs/logo.webp'}
+      src={logo}
       alt="Logo"
       className="h-10 w-auto"
       loading="lazy"
