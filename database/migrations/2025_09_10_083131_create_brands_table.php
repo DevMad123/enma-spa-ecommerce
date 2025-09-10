@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_images', function (Blueprint $table) {
+        Schema::create('brands', function (Blueprint $table) {
             $table->id();
-            // relation avec products
-            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->string('image'); // chemin de l’image (ex: storage/product/xxx.jpg)
+            $table->string('name');
+            $table->string('image')->nullable(); // logo ou image de la marque
+            $table->boolean('status')->default(true)->comment('0=inactive,1=active');
 
-            $table->boolean('status')->default(true)->comment("active=1,inactive=0");
-
-            $table->timestamps();       // created_at, updated_at
-            $table->softDeletes();      // deleted_at
+            $table->timestamps();      // created_at, updated_at
+            $table->softDeletes();     // deleted_at
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
@@ -32,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_images');
+        Schema::dropIfExists('brands');
     }
 };
