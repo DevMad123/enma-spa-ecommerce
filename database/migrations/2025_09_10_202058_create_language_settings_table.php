@@ -13,7 +13,19 @@ return new class extends Migration
     {
         Schema::create('language_settings', function (Blueprint $table) {
             $table->id();
+            // Relation utilisateur
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            // Langue par défaut (ex: en, bn)
+            $table->string('default_language', 5);
+            // Statut
+            $table->tinyInteger('status')->default(1)->comment('0=inactive,1=active');
+            // Audit
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+
             $table->timestamps();
+            $table->softDeletes(); // remplace deleted + deleted_at
         });
     }
 

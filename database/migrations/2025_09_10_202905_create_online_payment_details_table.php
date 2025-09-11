@@ -13,6 +13,18 @@ return new class extends Migration
     {
         Schema::create('online_payment_details', function (Blueprint $table) {
             $table->id();
+            // Relations
+            $table->foreignId('sell_id')->constrained('sells')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+
+            // Paiement
+            $table->decimal('total_amount', 11, 2);
+            $table->enum('pay_with', ['card', 'paypal', 'stripe', 'mobile_money', 'bank_transfer'])->nullable();
+            $table->string('transaction_id')->nullable()->unique();
+
+            // Suivi du statut
+            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
+
             $table->timestamps();
         });
     }

@@ -13,7 +13,16 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->unique();
+            $table->tinyInteger('status')->default(1)->comment('0=inactive,1=active');
+
+            // Audit
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('deleted_by')->nullable();
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

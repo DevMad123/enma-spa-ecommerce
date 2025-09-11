@@ -15,14 +15,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/user/changePassword', [AuthController::class, 'changePassword']);
-
-    // CRUD panier, commandes, wishlist, etc.
-    // Exemple panier :
-    // Route::get('/cart', [CartController::class, 'index']);
-    // Route::post('/cart', [CartController::class, 'store']);
-    // Route::put('/cart/{id}', [CartController::class, 'update']);
-    // Route::delete('/cart/{id}', [CartController::class, 'destroy']);
-    // Idem pour commandes, wishlist...
 });
 
 // API produits (affichage, détails)

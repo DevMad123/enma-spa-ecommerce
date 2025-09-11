@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('currencies', function (Blueprint $table) {
             $table->id();
+            $table->string('country_name')->nullable();
+            $table->string('currency_symbol');
+            $table->decimal('par_dollar_rate',11,2)->nullable();
             $table->timestamps();
         });
     }

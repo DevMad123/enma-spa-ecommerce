@@ -11,9 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('offer_product_lists', function (Blueprint $table) {
+        Schema::create('offer_product', function (Blueprint $table) {
             $table->id();
+            // Relations
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->foreignId('offer_id')->constrained()->onDelete('cascade');
+            // Restrictions & suivi
+            $table->unsignedInteger('max_quantity')->default(0);
+            $table->unsignedInteger('total_sell_quantity')->nullable();
+            // Type et valeur de l’offre
+            $table->enum('offer_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('offer_amount', 11, 2);
+            // Statut
+            $table->boolean('status')->default(1)->comment('0=inactive,1=active');
+            // Audit
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->onDelete('set null');
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

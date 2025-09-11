@@ -13,7 +13,20 @@ return new class extends Migration
     {
         Schema::create('offers', function (Blueprint $table) {
             $table->id();
+            $table->string('offer_name');
+            $table->string('banner_image')->nullable();
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->text('note')->nullable();
+            $table->boolean('status')->default(1)->comment('0=inactive,1=active');
+
+            // audit
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('deleted_by')->nullable()->constrained('users')->onDelete('set null');
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
