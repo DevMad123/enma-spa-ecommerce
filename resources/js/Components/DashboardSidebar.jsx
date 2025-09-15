@@ -26,15 +26,14 @@ export default function DashboardSidebar() {
       className={`h-screen bg-white border-r border-gray-200 shadow-sm flex flex-col transition-all duration-300
         ${collapsed ? "w-16" : "w-56"}`}
     >
-      <div className="flex items-center justify-between px-4 py-4">
+      <div className={`flex items-center px-4 py-4 ${collapsed ? "justify-center" : "justify-between"}`}>
         <span
-          className="font-bold text-xl text-[#8c6c3c] transition-opacity duration-300"
-          style={{ opacity: collapsed ? 0 : 1 }}
+          className={`font-bold text-xl text-[#8c6c3c] transition-opacity duration-300 ${collapsed ? "w-0" : ""}`} style={{ opacity: collapsed ? 0 : 1 }}
         >
           EcomAdmin
         </span>
         <button
-          className="text-gray-400 hover:text-gray-700 transition"
+          className={`text-gray-400 hover:text-gray-700 transition ${collapsed ? "z-50" : ""}`}
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -51,7 +50,7 @@ export default function DashboardSidebar() {
             key={link.href}
             href={link.href}
             className={`group flex items-center px-4 py-2 rounded-lg transition
-              ${hovered === link.href || !collapsed ? "bg-gray-100 text-[#a68e55]" : "text-gray-500"}
+              ${hovered === link.href || !collapsed ? "text-[#a68e55] relative left-0 bg-white w-fit" : "text-gray-500"}
               ${collapsed ? "justify-center" : "gap-3"}
             `}
             onMouseEnter={() => setHovered(link.href)}
