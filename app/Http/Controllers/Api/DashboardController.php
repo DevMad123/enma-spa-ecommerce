@@ -1,17 +1,34 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
+use App\Models\Product;
+use App\Models\Sell;
+use App\Models\Sell_details;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\Product;
-use App\Models\User;
-use App\Models\Sell;
 
 class DashboardController extends Controller
 {
+    // public function index()
+    // {
+    //     return response()->json([
+    //         'message' => 'Bienvenue sur le Dashboard Admin !',
+    //     ]);
+    // }
+    // public function index(Request $request)
+    // {
+    //     $token = $request->bearerToken();  // récupère le token Bearer
+
+    //     return response()->json([
+    //         'bearer_token' => $token,
+    //         'headers' => $request->header('Authorization'),
+    //         'user' => $request->user(),  // peut être null si non authentifié
+    //     ]);
+    // }
     public function index()
     {
         $startdate = Carbon::now()->subWeek()->startOfWeek()->format('Y-m-d H:i:s');
@@ -34,12 +51,8 @@ class DashboardController extends Controller
 
         $sellProductList = DB::table("sell_details")
             ->join('products', 'sell_details.product_id', '=', 'products.id')
-            ->select(
-                'products.id',
-                'products.name',
-                'products.image_path',
-                DB::raw("SUM(sell_details.sale_quantity) as total_sell")
-            )
+            ->select('products.id', 'products.name', 'products.image_path',
+                DB::raw("SUM(sell_details.sale_quantity) as total_sell"))
             ->groupBy('products.id', 'products.name', 'products.image_path')
             ->orderBy('total_sell', 'DESC')
             ->take(7)
@@ -48,7 +61,7 @@ class DashboardController extends Controller
         $productItem = Product::count();
         $customer    = User::count();
 
-        return Inertia::render('Dashboard', [
+        return response()->json([
             'totalOrder'      => $totalOrder,
             'sell'            => $sell,
             'customer'        => $customer,

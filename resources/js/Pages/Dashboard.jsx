@@ -1,16 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Head, Link, usePage } from "@inertiajs/react";
-import { motion } from "framer-motion";
+import React from "react";
+import { Head, usePage } from "@inertiajs/react";
+import DashboardHeader from "../components/DashboardHeader";
+import DashboardSidebar from "../components/DashboardSidebar";
 import {
-  HiOutlineHome,
   HiOutlineClipboardList,
-  HiOutlineUserGroup,
-  HiOutlineCog,
-  HiOutlineBell,
-  HiOutlineLogout,
   HiOutlineChartBar,
+  HiOutlineHome,
+  HiOutlineUserGroup,
 } from "react-icons/hi";
-import { FiChevronDown } from "react-icons/fi";
 
 // Palette (inspirée de Home.jsx)
 const COLORS = {
@@ -21,43 +18,9 @@ const COLORS = {
   bg: "linear-gradient(180deg,#f7f3ee_0%,#e6d9c2_100%)",
 };
 
-// ---------------------------- Data Fetching Hook ----------------------------
-function useDashboardData() {
-  const [loading, setLoading] = useState(true);
-  const [dashboard, setDashboard] = useState({
-    totalOrder: 0,
-    sell: { total_sell_price: 0, total_cost: 0 },
-    productItem: 0,
-    customer: 0,
-    sellProductList: [],
-    lastOrder: [],
-  });
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/dashboard", {
-      headers: { Accept: "application/json" },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setDashboard(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  return { ...dashboard, loading };
-}
-
-// ---------------------------- Components ----------------------------
-
 function StatCard({ icon, label, value, color, sub }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+    <div
       className={`bg-white rounded-xl shadow p-6 flex items-center gap-4 border-l-4`}
       style={{ borderColor: color }}
     >
@@ -69,7 +32,7 @@ function StatCard({ icon, label, value, color, sub }) {
         <h4 className="my-1 text-xl font-bold" style={{ color }}>{value}</h4>
         {sub && <p className="mb-0 text-xs text-gray-400">{sub}</p>}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -92,6 +55,7 @@ function BestSellProducts({ products }) {
 }
 
 function RecentOrders({ orders }) {
+  if (!orders || orders.length === 0) return null;
   return (
     <div className="card bg-white rounded-xl shadow p-6 mb-6 overflow-x-auto">
       <h6 className="mb-4 font-bold text-[#8c6c3c]">Recent Orders</h6>
@@ -162,94 +126,72 @@ function RecentOrders({ orders }) {
   );
 }
 
-// ---------------------------- Main Dashboard ----------------------------
-
 export default function Dashboard() {
-  const { loading, totalOrder, sell, productItem, customer, sellProductList, lastOrder } =
-    useDashboardData();
+  const {
+    totalOrder = 0,
+    sell = { total_sell_price: 0, total_cost: 0 },
+    productItem = 0,
+    customer = 0,
+    sellProductList = [],
+    lastOrder = [],
+    auth = { user: { name: "Admin" } },
+  } = usePage().props;
 
   return (
     <>
       <Head title="Dashboard" />
-      <div className="min-h-screen bg-[#f7f3ee] flex flex-col">
-        {/* Header */}
-        <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#8c6c3c]">Dashboard</h1>
-          <div className="flex items-center gap-4">
-            <button className="relative text-gray-400 hover:text-blue-500 transition">
-              <HiOutlineBell size={24} />
-              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full px-1">
-                3
-              </span>
-            </button>
-            <div className="flex items-center gap-2">
-              <img
-                src="/assets/front/imgs/default-user.png"
-                alt="user"
-                className="w-8 h-8 rounded-full object-cover border border-gray-300"
+      <div className="min-h-screen bg-[#f7f3ee] flex">
+        <DashboardSidebar />
+        <div className="flex-1 flex flex-col">
+          <DashboardHeader user={auth.user} />
+          <main className="flex-1 px-6 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatCard
+                icon={<HiOutlineClipboardList size={28} />}
+                label="Total Orders"
+                value={totalOrder}
+                color={COLORS.accent}
+                sub="from last week"
               />
-              <span className="font-medium text-gray-700 hidden sm:inline">Admin</span>
-              <FiChevronDown className="text-gray-400" />
+              <StatCard
+                icon={<HiOutlineChartBar size={28} />}
+                label="Total Revenue"
+                value={sell.total_sell_price - sell.total_cost}
+                color="#ef4444"
+                sub="from last week"
+              />
+              <StatCard
+                icon={<HiOutlineHome size={28} />}
+                label="Product Item"
+                value={productItem}
+                color="#22c55e"
+                sub="Active Product"
+              />
+              <StatCard
+                icon={<HiOutlineUserGroup size={28} />}
+                label="Total Customers"
+                value={customer}
+                color="#f59e42"
+                sub="Active Customer"
+              />
             </div>
-          </div>
-        </header>
-
-        {/* Main content */}
-        <main className="flex-1 px-6 py-8">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <span className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#a68e55]"></span>
-            </div>
-          ) : (
-            <>
-              {/* Stat Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard
-                  icon={<HiOutlineClipboardList size={28} />}
-                  label="Total Orders"
-                  value={totalOrder}
-                  color={COLORS.accent}
-                  sub="from last week"
-                />
-                <StatCard
-                  icon={<HiOutlineChartBar size={28} />}
-                  label="Total Revenue"
-                  value={sell.total_sell_price - sell.total_cost}
-                  color="#ef4444"
-                  sub="from last week"
-                />
-                <StatCard
-                  icon={<HiOutlineHome size={28} />}
-                  label="Product Item"
-                  value={productItem}
-                  color="#22c55e"
-                  sub="Active Product"
-                />
-                <StatCard
-                  icon={<HiOutlineUserGroup size={28} />}
-                  label="Total Customers"
-                  value={customer}
-                  color="#f59e42"
-                  sub="Active Customer"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Recent Orders Table */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {lastOrder && lastOrder.length > 0 && (
                 <div className="lg:col-span-2">
                   <RecentOrders orders={lastOrder} />
                 </div>
-                {/* Best Sell Products */}
-                <div>
-                  <BestSellProducts products={sellProductList} />
-                </div>
+              )}
+              <div>
+                <BestSellProducts products={sellProductList} />
               </div>
-            </>
-          )}
-        </main>
+            </div>
+          </main>
+        </div>
       </div>
-      {/* Animations */}
       <style>{`
+        .sidebar-label {
+          transition: opacity .25s cubic-bezier(.4,0,.2,1), max-width .25s cubic-bezier(.4,0,.2,1);
+        }
         .animate-fade-in { animation: fade-in .25s ease; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: none;} }
       `}</style>
