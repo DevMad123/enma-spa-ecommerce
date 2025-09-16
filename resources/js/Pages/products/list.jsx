@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePage, Link, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
 import { FaBarcode } from "react-icons/fa";
 import { FiEye } from "react-icons/fi";
+import CreateModal from "./CreateModal";
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-function ProductsHeader({ filters, onFilterChange }) {
+function ProductsHeader({ filters, onFilterChange, onAddProduct }) {
   return (
     <header className="bg-white shadow-sm px-6 py-4 flex flex-wrap gap-4 items-center justify-between mb-6">
       <h1 className="text-2xl font-bold text-[#8c6c3c] tracking-tight">Products</h1>
@@ -37,12 +38,12 @@ function ProductsHeader({ filters, onFilterChange }) {
             <option key={opt} value={opt}>{opt} / page</option>
           ))}
         </select>
-        <Link
-          href={route("admin.products.create")}
+        <button
+          onClick={onAddProduct}
           className="px-4 py-2 rounded-full bg-[#a68e55] text-white font-semibold shadow hover:bg-[#8c6c3c] transition"
         >
           + Add Product
-        </Link>
+        </button>
       </div>
     </header>
   );
@@ -124,13 +125,13 @@ function ProductsListTable({ products, sort, direction, onSort }) {
                     >
                       <FiEye size={18} />
                     </Link>
-                    <button
+                    <Link
                       className="p-2 rounded hover:bg-gray-100 text-[#a68e55]"
                       title="Barcode"
                       onClick={() => window.alert("Barcode print modal (à implémenter)")}
                     >
                       <FaBarcode size={18} />
-                    </button>
+                    </Link>
                     <Link
                       href={route("admin.products.edit", product.id)}
                       className="p-2 rounded hover:bg-gray-100 text-blue-600"
@@ -174,9 +175,9 @@ function ProductsListTable({ products, sort, direction, onSort }) {
 }
 
 export default function ProductsList() {
-  const { productList, filters } = usePage().props;
+  const { productList, filters, productCategory, supplierList, brand, color, size } = usePage().props;
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
-  // Gère les changements de filtre, tri, pagination
   const handleFilterChange = (newFilters) => {
     router.get(route("admin.products.list"), { ...filters, ...newFilters }, { preserveState: true, replace: true });
   };
@@ -189,7 +190,11 @@ export default function ProductsList() {
 
   return (
     <>
-      <ProductsHeader filters={filters} onFilterChange={handleFilterChange} />
+      <ProductsHeader
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onAddProduct={() => setCreateModalOpen(true)}
+      />
       <main className="pb-4">
         <ProductsListTable
           products={productList}
@@ -198,6 +203,15 @@ export default function ProductsList() {
           onSort={handleSort}
         />
       </main>
+      <CreateModal
+        open={isCreateModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        categories={productCategory}
+        suppliers={supplierList}
+        brands={brand}
+        colors={color}
+        sizes={size}
+      />
     </>
   );
 }
