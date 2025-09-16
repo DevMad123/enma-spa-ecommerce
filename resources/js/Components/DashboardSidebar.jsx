@@ -10,11 +10,11 @@ import {
 } from "react-icons/hi";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard", icon: <HiOutlineHome /> },
-  { href: "/orders", label: "Orders", icon: <HiOutlineClipboardList /> },
-  { href: "/products", label: "Products", icon: <HiOutlineChartBar /> },
-  { href: "/customers", label: "Customers", icon: <HiOutlineUserGroup /> },
-  { href: "/settings", label: "Settings", icon: <HiOutlineCog /> },
+  { route: "admin.dashboard", label: "Dashboard", icon: <HiOutlineHome /> },
+  // { route: "admin.orders", label: "Orders", icon: <HiOutlineClipboardList /> },
+  { route: "admin.products.list", label: "Products", icon: <HiOutlineChartBar /> },
+  // { route: "admin.customers", label: "Customers", icon: <HiOutlineUserGroup /> },
+  // { route: "admin.settings", label: "Settings", icon: <HiOutlineCog /> },
 ];
 
 export default function DashboardSidebar() {
@@ -48,7 +48,8 @@ export default function DashboardSidebar() {
         {links.map((link) => (
           <Link
             key={link.href}
-            href={link.href}
+            href={route(link.route)}
+            // onClick={(e) => e.stopPropagation()}
             className={`group flex items-center px-4 py-2 rounded-lg transition
               ${hovered === link.href || !collapsed ? "text-[#a68e55] relative left-0 bg-white w-fit" : "text-gray-500"}
               ${collapsed ? "justify-center" : "gap-3"}

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Admin",
+    "status": 1
+  },
+  {
+    "name": "Manager",
+    "status": 1
+  },
+  {
+    "name": "Staff",
+    "status": 1
+  },
+  {
+    "name": "Customer",
+    "status": 1
+  }
+]

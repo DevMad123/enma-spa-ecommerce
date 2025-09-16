@@ -1,0 +1,42 @@
+[
+  {
+    "product": "PlayStation 5",
+    "image": "products/playstation5/front.jpg",
+    "status": 1
+  },
+  {
+    "product": "PlayStation 5",
+    "image": "products/playstation5/back.jpg",
+    "status": 1
+  },
+  {
+    "product": "iPhone 14",
+    "image": "products/iphone14/front.jpg",
+    "status": 1
+  },
+  {
+    "product": "iPhone 14",
+    "image": "products/iphone14/back.jpg",
+    "status": 1
+  },
+  {
+    "product": "iPhone 14",
+    "image": "products/iphone14/side.jpg",
+    "status": 1
+  },
+  {
+    "product": "Nike Air Max",
+    "image": "products/nike_airmax/top.jpg",
+    "status": 1
+  },
+  {
+    "product": "Nike Air Max",
+    "image": "products/nike_airmax/side.jpg",
+    "status": 1
+  },
+  {
+    "product": "Nike Air Max",
+    "image": "products/nike_airmax/box.jpg",
+    "status": 0
+  }
+]

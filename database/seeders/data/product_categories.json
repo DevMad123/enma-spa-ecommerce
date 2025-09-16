@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Électronique",
+    "image": "categories/electronique.jpg",
+    "note": "Appareils et gadgets",
+    "status": 1,
+    "is_popular": 1
+  },
+  {
+    "name": "Mode",
+    "image": "categories/mode.jpg",
+    "note": "Vêtements et accessoires",
+    "status": 1,
+    "is_popular": 1
+  },
+  {
+    "name": "Maison & Cuisine",
+    "image": "categories/maison_cuisine.jpg",
+    "note": "Articles pour la maison",
+    "status": 1,
+    "is_popular": 0
+  },
+  {
+    "name": "Sports & Loisirs",
+    "image": "categories/sports.jpg",
+    "note": "Équipements sportifs",
+    "status": 1,
+    "is_popular": 0
+  },
+  {
+    "name": "Beauté & Santé",
+    "image": "categories/beaute.jpg",
+    "note": "Produits de beauté et de soin",
+    "status": 1,
+    "is_popular": 0
+  },
+  {
+    "name": "Jouets & Enfants",
+    "image": "categories/jouets.jpg",
+    "note": "Produits pour enfants",
+    "status": 1,
+    "is_popular": 1
+  },
+  {
+    "name": "Automobile",
+    "image": "categories/automobile.jpg",
+    "note": "Accessoires et pièces auto",
+    "status": 1,
+    "is_popular": 0
+  },
+  {
+    "name": "Livres & Papeterie",
+    "image": "categories/livres.jpg",
+    "note": "Livres, cahiers et fournitures",
+    "status": 1,
+    "is_popular": 0
+  }
+]

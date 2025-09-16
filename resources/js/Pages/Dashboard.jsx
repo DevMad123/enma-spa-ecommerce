@@ -1,7 +1,6 @@
 import React from "react";
-import { Head, usePage } from "@inertiajs/react";
-import DashboardHeader from "../components/DashboardHeader";
-import DashboardSidebar from "../components/DashboardSidebar";
+import { usePage } from "@inertiajs/react";
+import AdminLayout from '@/Layouts/AdminLayout'; // Importez le nouveau layout
 import {
   HiOutlineClipboardList,
   HiOutlineChartBar,
@@ -18,6 +17,7 @@ const COLORS = {
   bg: "linear-gradient(180deg,#f7f3ee_0%,#e6d9c2_100%)",
 };
 
+// Les composants restent les mêmes
 function StatCard({ icon, label, value, color, sub }) {
   return (
     <div
@@ -126,7 +126,7 @@ function RecentOrders({ orders }) {
   );
 }
 
-export default function Dashboard() {
+function Dashboard() {
   const {
     totalOrder = 0,
     sell = { total_sell_price: 0, total_cost: 0 },
@@ -134,67 +134,60 @@ export default function Dashboard() {
     customer = 0,
     sellProductList = [],
     lastOrder = [],
-    auth = { user: { name: "Admin" } },
   } = usePage().props;
 
   return (
     <>
-      <Head title="Dashboard" />
-      <div className="min-h-screen bg-[#f7f3ee] flex">
-        <DashboardSidebar />
-        <div className="flex-1 flex flex-col">
-          <DashboardHeader user={auth.user} />
-          <main className="flex-1 px-6 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                icon={<HiOutlineClipboardList size={28} />}
-                label="Total Orders"
-                value={totalOrder}
-                color={COLORS.accent}
-                sub="from last week"
-              />
-              <StatCard
-                icon={<HiOutlineChartBar size={28} />}
-                label="Total Revenue"
-                value={sell.total_sell_price - sell.total_cost}
-                color="#ef4444"
-                sub="from last week"
-              />
-              <StatCard
-                icon={<HiOutlineHome size={28} />}
-                label="Product Item"
-                value={productItem}
-                color="#22c55e"
-                sub="Active Product"
-              />
-              <StatCard
-                icon={<HiOutlineUserGroup size={28} />}
-                label="Total Customers"
-                value={customer}
-                color="#f59e42"
-                sub="Active Customer"
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {lastOrder && lastOrder.length > 0 && (
-                <div className="lg:col-span-2">
-                  <RecentOrders orders={lastOrder} />
-                </div>
-              )}
-              <div>
-                <BestSellProducts products={sellProductList} />
-              </div>
-            </div>
-          </main>
+    {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
+      {/* Première colonne pour les StatCards */}
+      <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            icon={<HiOutlineClipboardList size={28} />}
+            label="Total Orders"
+            value={totalOrder}
+            color={COLORS.accent}
+            sub="from last week"
+          />
+          <StatCard
+            icon={<HiOutlineChartBar size={28} />}
+            label="Total Revenue"
+            value={sell.total_sell_price - sell.total_cost}
+            color="#ef4444"
+            sub="from last week"
+          />
+          <StatCard
+            icon={<HiOutlineHome size={28} />}
+            label="Product Item"
+            value={productItem}
+            color="#22c55e"
+            sub="Active Product"
+          />
+          <StatCard
+            icon={<HiOutlineUserGroup size={28} />}
+            label="Total Customers"
+            value={customer}
+            color="#f59e42"
+            sub="Active Customer"
+          />
         </div>
       </div>
-      <style>{`
-        .sidebar-label {
-          transition: opacity .25s cubic-bezier(.4,0,.2,1), max-width .25s cubic-bezier(.4,0,.2,1);
-        }
-        .animate-fade-in { animation: fade-in .25s ease; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: none;} }
-      `}</style>
+      {/* Seconde colonne pour les BestSellProducts */}
+      <div>
+        <BestSellProducts products={sellProductList} />
+      </div>
+      {/* Troisième colonne pour les RecentOrders */}
+      {lastOrder && lastOrder.length > 0 && (
+        <div className="lg:col-span-3"> {/* J'ai mis span 3 pour que la table prenne toute la largeur */}
+          <RecentOrders orders={lastOrder} />
+        </div>
+      )}
+    {/* </div> */}
     </>
   );
 }
+
+// Définir le layout pour la page Dashboard
+Dashboard.layout = page => <AdminLayout children={page} title="Dashboard" />;
+
+export default Dashboard;

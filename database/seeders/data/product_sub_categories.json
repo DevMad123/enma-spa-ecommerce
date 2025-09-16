@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Smartphones",
+    "category": "Électronique",
+    "image": "subcategories/smartphones.jpg",
+    "note": "Téléphones portables et accessoires",
+    "status": 1
+  },
+  {
+    "name": "Consoles",
+    "category": "Électronique",
+    "image": "subcategories/consoles.jpg",
+    "note": "Consoles de jeux vidéo",
+    "status": 1
+  },
+  {
+    "name": "Hommes",
+    "category": "Mode",
+    "image": "subcategories/hommes.jpg",
+    "note": "Vêtements et accessoires pour hommes",
+    "status": 1
+  },
+  {
+    "name": "Femmes",
+    "category": "Mode",
+    "image": "subcategories/femmes.jpg",
+    "note": "Vêtements et accessoires pour femmes",
+    "status": 1
+  },
+  {
+    "name": "Cuisine",
+    "category": "Maison & Cuisine",
+    "image": "subcategories/cuisine.jpg",
+    "note": "Ustensiles et électroménagers",
+    "status": 1
+  },
+  {
+    "name": "Décoration",
+    "category": "Maison & Cuisine",
+    "image": "subcategories/decoration.jpg",
+    "note": "Articles de décoration",
+    "status": 1
+  },
+  {
+    "name": "Fitness",
+    "category": "Sports & Loisirs",
+    "image": "subcategories/fitness.jpg",
+    "note": "Matériel de sport et fitness",
+    "status": 1
+  },
+  {
+    "name": "Maquillage",
+    "category": "Beauté & Santé",
+    "image": "subcategories/maquillage.jpg",
+    "note": "Produits de maquillage",
+    "status": 1
+  },
+  {
+    "name": "Jeux éducatifs",
+    "category": "Jouets & Enfants",
+    "image": "subcategories/jeux_educatifs.jpg",
+    "note": "Jeux et jouets éducatifs",
+    "status": 1
+  },
+  {
+    "name": "Accessoires Auto",
+    "category": "Automobile",
+    "image": "subcategories/accessoires_auto.jpg",
+    "note": "Accessoires automobiles",
+    "status": 1
+  }
+]

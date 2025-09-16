@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Product;
@@ -20,29 +21,89 @@ use PDF;
 
 class ProductController extends Controller
 {
-    public function productList()
-    {
-        $common_data = new Array_();
-        $common_data->title = 'Product List';
+    // public function productList()
+    // {
+    //     $common_data = new Array_();
+    //     $common_data->title = 'Product List';
 
-        $productList = Product::where('deleted', 0)->get();
-        $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
-        $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-        return view('adminPanel.product.product_list')->with(compact('common_data', 'productList', 'productCategory', 'supplierList'));
+    //     $productList = Product::where('deleted', 0)->get();
+    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
+    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
+    //     return view('adminPanel.product.product_list')->with(compact('common_data', 'productList', 'productCategory', 'supplierList'));
+    // }
+    public function productList(Request $request)
+    {
+        $query = Product::query()->whereNull('deleted_at');
+        // Recherche globale
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                ->orWhere('code', 'like', "%$search%");
+            });
+        }
+
+        // Filtre status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Tri
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'desc');
+        $query->orderBy($sort, $direction);
+
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $productList = $query->paginate($perPage)->appends($request->all());
+
+        $productCategory = ProductCategory::whereNull('deleted_at')->where('status', 1)->get();
+        $supplierList = Supplier::whereNull('deleted_at')->where('status', 1)->get();
+
+        return Inertia::render('products/list', [
+            'title' => 'Product List',
+            'productList' => $productList,
+            'productCategory' => $productCategory,
+            'supplierList' => $supplierList,
+            'filters' => [
+                'search' => $request->search ?? '',
+                'status' => $request->status ?? '',
+                'perPage' => $perPage,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
+        ]);
     }
 
+    // public function createProduct(Request $request)
+    // {
+
+    //     $common_data = new Array_();
+    //     $common_data->title = 'Add Product';
+    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
+    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
+    //     $brand=Brand::get();
+    //     $color=ProductColor::get();
+    //     $size=ProductSize::get();
+    //     return view('adminPanel.product.create_product')->with(compact('productCategory', 'supplierList', 'common_data','brand','color','size'));
+
+    // }
     public function createProduct(Request $request)
     {
-
-        $common_data = new Array_();
-        $common_data->title = 'Add Product';
         $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
         $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-        $brand=Brand::get();
-        $color=ProductColor::get();
-        $size=ProductSize::get();
-        return view('adminPanel.product.create_product')->with(compact('productCategory', 'supplierList', 'common_data','brand','color','size'));
+        $brand = Brand::get();
+        $color = ProductColor::get();
+        $size = ProductSize::get();
 
+        return Inertia::render('Admin/Product/CreateProduct', [
+            'title' => 'Add Product',
+            'productCategory' => $productCategory,
+            'supplierList' => $supplierList,
+            'brand' => $brand,
+            'color' => $color,
+            'size' => $size,
+        ]);
     }
 
     public function productSizeUpdate(Request $request){
@@ -145,16 +206,40 @@ class ProductController extends Controller
         return redirect()->back()->with('success', 'Product Successfully Created');
     }
 
+    // public function productEditDetails(Request $request)
+    // {
+    //     $productInfo = Product::find($request->product_id);
+    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
+    //     $productSubcategory = ProductSubCategory::where('category_id', $productInfo->category_id)->where('status', 1)->where('deleted', 0)->get();
+    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
+    //     $brand=Brand::get();
+    //     $color=ProductColor::get();
+    //     $size=ProductSize::get();
+    //     return view('adminPanel.product._edit_product')->with(compact('productInfo', 'supplierList', 'productCategory', 'productSubcategory', 'supplierList','brand','color','size'))->render();
+    // }
     public function productEditDetails(Request $request)
     {
         $productInfo = Product::find($request->product_id);
-        $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
+        if (!$productInfo) {
+            return redirect()->back()->with('error', 'Product not found.');
+        }
+
         $productSubcategory = ProductSubCategory::where('category_id', $productInfo->category_id)->where('status', 1)->where('deleted', 0)->get();
+        $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
         $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-        $brand=Brand::get();
-        $color=ProductColor::get();
-        $size=ProductSize::get();
-        return view('adminPanel.product._edit_product')->with(compact('productInfo', 'supplierList', 'productCategory', 'productSubcategory', 'supplierList','brand','color','size'))->render();
+        $brand = Brand::get();
+        $color = ProductColor::get();
+        $size = ProductSize::get();
+
+        return Inertia::render('Admin/Product/ProductEditDetails', [
+            'productInfo' => $productInfo,
+            'productCategory' => $productCategory,
+            'productSubcategory' => $productSubcategory,
+            'supplierList' => $supplierList,
+            'brand' => $brand,
+            'color' => $color,
+            'size' => $size,
+        ]);
     }
 
     public function imageDelete(Request $request)

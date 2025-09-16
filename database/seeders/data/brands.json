@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Nike",
+    "image": "brands/nike.png",
+    "status": true
+  },
+  {
+    "name": "Adidas",
+    "image": "brands/adidas.png",
+    "status": true
+  },
+  {
+    "name": "Puma",
+    "image": "brands/puma.png",
+    "status": true
+  },
+  {
+    "name": "Apple",
+    "image": "brands/apple.png",
+    "status": true
+  },
+  {
+    "name": "Samsung",
+    "image": "brands/samsung.png",
+    "status": true
+  },
+  {
+    "name": "Sony",
+    "image": "brands/sony.png",
+    "status": true
+  },
+  {
+    "name": "Infinix",
+    "image": "brands/infinix.png",
+    "status": false
+  }
+]
