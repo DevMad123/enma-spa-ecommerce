@@ -12,25 +12,18 @@ use App\Models\ProductImage;
 use App\Models\ProductSize;
 use App\Models\ProductSubCategory;
 use App\Models\Sell;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Image;
 use PhpParser\Node\Expr\Array_;
 use PDF;
 
 class ProductController extends Controller
 {
-    // public function productList()
-    // {
-    //     $common_data = new Array_();
-    //     $common_data->title = 'Product List';
-
-    //     $productList = Product::where('deleted', 0)->get();
-    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
-    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-    //     return view('adminPanel.product.product_list')->with(compact('common_data', 'productList', 'productCategory', 'supplierList'));
-    // }
     public function productList(Request $request)
     {
         $query = Product::query()->whereNull('deleted_at');
@@ -59,12 +52,18 @@ class ProductController extends Controller
 
         $productCategory = ProductCategory::whereNull('deleted_at')->where('status', 1)->get();
         $supplierList = Supplier::whereNull('deleted_at')->where('status', 1)->get();
+        $brand = Brand::get();
+        $color = ProductColor::get();
+        $size = ProductSize::get();
 
         return Inertia::render('products/list', [
             'title' => 'Product List',
             'productList' => $productList,
             'productCategory' => $productCategory,
             'supplierList' => $supplierList,
+            'brand' => $brand,
+            'color' => $color,
+            'size' => $size,
             'filters' => [
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? '',
@@ -74,20 +73,6 @@ class ProductController extends Controller
             ],
         ]);
     }
-
-    // public function createProduct(Request $request)
-    // {
-
-    //     $common_data = new Array_();
-    //     $common_data->title = 'Add Product';
-    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
-    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-    //     $brand=Brand::get();
-    //     $color=ProductColor::get();
-    //     $size=ProductSize::get();
-    //     return view('adminPanel.product.create_product')->with(compact('productCategory', 'supplierList', 'common_data','brand','color','size'));
-
-    // }
     public function createProduct(Request $request)
     {
         $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
@@ -153,57 +138,86 @@ class ProductController extends Controller
         }
          return redirect()->back()->with('success', 'Product Size Successfully Created');
      }
+    /**
+     * Enregistrer un nouveau produit
+     */
     public function storeProduct(Request $request)
     {
+        try {
+            $validated = $request->validate([
+                'type' => 'required|in:simple,variable',
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:product_categories,id',
+                'subcategory_id' => 'nullable|exists:product_sub_categories,id',
+                'brand_id' => 'nullable|exists:brands,id',
+                'supplier_id' => 'nullable|exists:suppliers,id',
+                'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+                // Champs pour simple
+                'purchase_cost' => 'required_if:type,simple|numeric',
+                'sale_price' => 'required_if:type,simple|numeric',
+                'wholesale_price' => 'nullable|numeric',
+                'available_quantity' => 'required_if:type,simple|integer',
+                // Champs pour variable
+                'variants' => 'required_if:type,variable|array',
+                'variants.*.color_id' => 'nullable|exists:product_colors,id',
+                'variants.*.size_id' => 'nullable|exists:product_sizes,id',
+                'variants.*.sku' => 'nullable|string|max:100',
+                'variants.*.purchase_cost' => 'required|numeric',
+                'variants.*.sale_price' => 'required|numeric',
+                'variants.*.wholesale_price' => 'nullable|numeric',
+                'variants.*.available_quantity' => 'required|integer',
+                // Images additionnelles
+                'product_images' => 'nullable|array',
+                'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            ]);
 
-        $image = $request->product_img[0];
-        $product = new Product();
-        $product->name = $request->name;
-        $product->category_id = $request->category_id;
-        $product->subcategory_id = $request->subcategory_id;
-        $product->image_path = $request->image_path;
-        $product->color = implode(",", $request->color);
-        $product->size = implode(",", $request->size);
-        $product->brand_id = $request->brand_id;
-        $product->supplier_id = $request->supplier_id;
-        $product->current_purchase_cost = $request->current_purchase_cost;
-        $product->current_sale_price = $request->current_sale_price;
-        $product->current_wholesale_price = $request->current_wholesale_price;
-        $product->wholesale_minimum_qty = $request->wholesale_minimum_qty;
-        $product->discount_type = $request->discount_type;
-        $product->discount = $request->discount;
-        $product->unit_type = $request->unit_type;
-        $product->description = $request->description;
-        if ($request->is_popular) {
-            $product->is_popular = 1;
-        }
-        if ($request->is_trending) {
-            $product->is_trending = 1;
-        }
+            // Création du produit principal
+            $product = new Product();
+            $product->fill($request->only([
+                'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id', 'description', 'unit_type'
+            ]));
+            $product->type = $request->type;
+            $product->image_path = $this->productImageSave($request->file('main_image'));
+            $product->save();
 
-        if (isset($image) && ($image != '') && ($image != null)) {
-            $product->image_path = $this->productImageSave($image);
-        }
-
-        $product->created_at = Carbon::now();
-        $product->save();
-        $lastProductId = Product::orderBy('id', 'desc')->first()->id;
-        $product->code = 1000 + $lastProductId;
-        $product->save();
-
-
-        foreach ($request->product_img as $key => $imagedata) {
-            if ($key != 0) {
-                $productImage = new ProductImage();
-                $productImage->product_id = $product->id;
-                $image = $imagedata;
-                if (isset($image) && ($image != '') && ($image != null)) {
-                    $productImage->image = $this->productImageSave($image);
-                    $productImage->save();
+            // Simple product : stocke les prix/quantités au niveau du produit
+            if ($product->type === 'simple') {
+                $product->purchase_cost = $request->purchase_cost;
+                $product->sale_price = $request->sale_price;
+                $product->wholesale_price = $request->wholesale_price;
+                $product->available_quantity = $request->available_quantity;
+                $product->save();
+            }
+            // Variable product : crée les variantes
+            else if ($product->type === 'variable') {
+                foreach ($request->variants as $variant) {
+                    $product->variants()->create([
+                        'color_id' => $variant['color_id'] ?? null,
+                        'size_id' => $variant['size_id'] ?? null,
+                        'sku' => $variant['sku'] ?? null,
+                        'purchase_cost' => $variant['purchase_cost'],
+                        'sale_price' => $variant['sale_price'],
+                        'wholesale_price' => $variant['wholesale_price'] ?? null,
+                        'available_quantity' => $variant['available_quantity'],
+                    ]);
                 }
             }
+
+            // Images additionnelles
+            if ($request->hasFile('product_images')) {
+                foreach ($request->file('product_images') as $img) {
+                    $product->images()->create([
+                        'image' => $this->productImageSave($img),
+                    ]);
+                }
+            }
+
+            return redirect()->back()->with('success', 'Produit créé avec succès !');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Erreur lors de la création du produit.'])->withInput();
         }
-        return redirect()->back()->with('success', 'Product Successfully Created');
     }
 
     // public function productEditDetails(Request $request)
@@ -320,32 +334,58 @@ class ProductController extends Controller
         return redirect()->back()->with('success', 'Product updated successfully');
     }
 
-    public function productImageSave($image)
+    /**
+     * Sauvegarder une image produit
+     */
+    protected function productImageSave($image)
     {
-        if (isset($image) && ($image != '') && ($image != null)) {
-            $ext = explode('/', mime_content_type($image))[1];
+        if ($image) {
+            // $ext = $image->getClientOriginalExtension();
+            $fileName = "product-" . time() . rand(1000, 9999) . '.webp';
+            $filePath = 'product_images/' . $fileName;
 
-            $logo_url = "product_images-" . time() . rand(1000, 9999) . '.' . $ext;
-            $logo_directory = getUploadPath() . '/product_images/';
-            $filePath = $logo_directory;
-            $logo_path = $filePath . $logo_url;
-            $db_media_img_path = 'storage/product_images/' . $logo_url;
+            // ✅ Créez l'instance du gestionnaire d'image
+            $imageManager = new ImageManager(new GdDriver());
+            // ✅ Chargez l'image téléchargée pour la manipulation
+            $img = $imageManager->read($image);
+            // ✅ Redimensionnez et encodez l'image
+            $img->resize(400, 400);
 
-            if (!file_exists($filePath)) {
-                mkdir($filePath, 666, true);
-            }
-            $logo_image = Image::make(file_get_contents($image))->resize(400, 400);
-            $logo_image->brightness(8);
-            $logo_image->contrast(11);
-            $logo_image->sharpen(5);
-            $logo_image->encode('webp', 70);
-            $logo_image->save($logo_path);
+            $encodedImageContent = $img->toWebp(70);
 
-            return $db_media_img_path;
+            Storage::disk('public')->put($filePath, $encodedImageContent);
 
+            return 'storage/' . $filePath;
         }
 
+        return null;
     }
+    // public function productImageSave($image)
+    // {
+    //     if (isset($image) && ($image != '') && ($image != null)) {
+    //         $ext = explode('/', $image->getClientMimeType())[1];
+
+    //         $logo_url = "product_images-" . time() . rand(1000, 9999) . '.' . $ext;
+    //         $logo_directory = getUploadPath() . '/product_images/';
+    //         $filePath = $logo_directory;
+    //         $logo_path = $filePath . $logo_url;
+    //         $db_media_img_path = 'storage/product_images/' . $logo_url;
+
+    //         if (!file_exists($filePath)) {
+    //             mkdir($filePath, 666, true);
+    //         }
+    //         $logo_image = Image::make(file_get_contents($image))->resize(400, 400);
+    //         $logo_image->brightness(8);
+    //         $logo_image->contrast(11);
+    //         $logo_image->sharpen(5);
+    //         $logo_image->encode('webp', 70);
+    //         $logo_image->save($logo_path);
+
+    //         return $db_media_img_path;
+
+    //     }
+
+    // }
 
     public function productBarcodeGenerate(Request $request)
     {

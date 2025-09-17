@@ -52,7 +52,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('categories', ProductCategoryController::class);
 
     // CRUD Sous-catégories
-    Route::resource('subcategories', ProductSubcategoryController::class);
+    // Route::resource('subcategories', ProductSubcategoryController::class);
+
+    // Route pour obtenir les sous-catégories par ID de catégorie (AJAX)
+    Route::get('subcategories/{category_id}', function ($category_id) {
+        return \App\Models\ProductSubCategory::where('category_id', $category_id)
+            ->where('status', 1)
+            ->whereNull('deleted_at')
+            ->get();
+    })->name('subcategories.byCategory');
 
     // CRUD Marques
     Route::resource('brands', BrandController::class);

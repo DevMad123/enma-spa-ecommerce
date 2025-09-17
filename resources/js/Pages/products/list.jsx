@@ -67,6 +67,10 @@ function ProductsListTable({ products, sort, direction, onSort }) {
     return direction === "asc" ? <span className="text-[#a68e55]">▲</span> : <span className="text-[#a68e55]">▼</span>;
   };
 
+  products.data.map((product, i) => (
+    console.log(product.image_path)
+  ));
+
   return (
     <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -101,7 +105,7 @@ function ProductsListTable({ products, sort, direction, onSort }) {
                 <td className="py-2 px-3">{product.code}</td>
                 <td className="py-2 px-3">
                   <img
-                    src={`http://127.0.0.1:8000/storage/${product.image_path}`}
+                    src={`http://127.0.0.1:8000/${product.image_path}`}
                     alt={product.name}
                     className="w-14 h-14 object-cover rounded shadow border"
                   />
@@ -188,8 +192,11 @@ export default function ProductsList() {
     handleFilterChange({ sort: key, direction });
   };
 
+  const { success } = usePage().props;
+
   return (
     <>
+      {success && <div className="alert alert-success">{success}</div>}
       <ProductsHeader
         filters={filters}
         onFilterChange={handleFilterChange}

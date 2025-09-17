@@ -47,7 +47,7 @@ export default function DashboardSidebar() {
       <nav className="flex-1 mt-6 space-y-2">
         {links.map((link) => (
           <Link
-            key={link.href}
+            key={link.route}
             href={route(link.route)}
             // onClick={(e) => e.stopPropagation()}
             className={`group flex items-center px-4 py-2 rounded-lg transition

@@ -3,8 +3,22 @@ import { Modal, Box, IconButton } from "@mui/material";
 import { useForm, usePage } from "@inertiajs/react";
 import { HiOutlineX } from "react-icons/hi";
 import clsx from "clsx";
-import ImageGrid from "@/Components/Products/ImageGrid";
-import SizeCheckboxes from "@/Components/Products/SizeCheckboxes";
+
+// Palette
+const COLORS = {
+  gold: "#a68e55",
+  brown: "#8c6c3c",
+  black: "#040404",
+  accent: "#23ad94",
+  bg: "linear-gradient(180deg,#f7f3ee_0%,#e6d9c2_100%)",
+};
+
+// Ajoute cette fonction utilitaire pour retirer une image sélectionnée
+function removeImageAtIndex(images, index) {
+  const arr = [...images];
+  arr.splice(index, 1);
+  return arr;
+}
 
 export default function CreateModal({
   open,
@@ -28,22 +42,27 @@ export default function CreateModal({
     description: "",
     current_purchase_cost: "",
     current_sale_price: "",
+    previous_purchase_cost: "",
+    previous_sale_price: "",
     current_wholesale_price: "",
     wholesale_minimum_qty: 1,
+    previous_wholesale_price: "",
     available_quantity: 0,
     discount_type: "0",
     discount: 0,
     is_trending: false,
     is_popular: false,
-    // Images
-    main_image: null, // une seule image principale
-    product_images: [], // toutes les images (backend + locales)
+    product_img: [],
+    main_image: null,
+    product_images: [],
   });
 
   const { errors } = usePage().props;
+  const [success, setSuccess] = useState(null);
+
   const [subcategories, setSubcategories] = useState([]);
 
-  // Charger sous-catégories quand category change
+  // Quand la catégorie change, on charge les sous-catégories
   useEffect(() => {
     if (data.category_id) {
       fetch(route("admin.subcategories.byCategory", data.category_id))
@@ -55,44 +74,55 @@ export default function CreateModal({
     }
   }, [data.category_id]);
 
-  // Soumission
   const handleSubmit = (e) => {
     e.preventDefault();
     post(route("admin.products.store"), {
-      onSuccess: () => {
-        reset();
-        onClose();
+      onSuccess: (page) => {
+        if (page.props.success) {
+          setSuccess(page.props.success);
+          reset();
+          onClose();
+          // Optionnel : tu peux déclencher une notification sur la page list.jsx ici
+        }
+      },
+      onError: () => {
+        // Le modal reste ouvert, les erreurs sont affichées automatiquement
       },
     });
   };
 
+  const handleFileChange = (e) => {
+    setData("product_img", Array.from(e.target.files));
+  };
+
+  // Nouvelle fonction pour retirer une image sélectionnée
+  const handleRemoveImage = (idx) => {
+    setData("product_img", removeImageAtIndex(data.product_img, idx));
+  };
+
   return (
-    <Modal open={open} onClose={onClose} aria-labelledby="create-product-title">
+    <Modal open={open} onClose={onClose}>
       <Box
-        className="bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]"
+        className="bg-white rounded-2xl shadow-xl p-6 overflow-y-auto max-h-[90vh]"
         sx={{
           position: "absolute",
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
           width: "95%",
-          maxWidth: "900px",
+          maxWidth: "850px",
         }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2
-            id="create-product-title"
-            className="text-2xl font-bold text-gray-800"
-          >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">
             Ajouter un produit
           </h2>
-          <IconButton onClick={onClose} aria-label="Fermer le formulaire">
+          <IconButton onClick={onClose}>
             <HiOutlineX className="w-6 h-6 text-gray-600" />
           </IconButton>
         </div>
 
-        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nom + Code */}
           <div className="grid grid-cols-2 gap-4">
@@ -104,7 +134,8 @@ export default function CreateModal({
                 type="text"
                 value={data.name}
                 onChange={(e) => setData("name", e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-brown-500"
+                className="w-full border rounded px-3 py-2"
+                placeholder="Nom du produit"
                 required
               />
               {errors.name && (
@@ -119,7 +150,8 @@ export default function CreateModal({
                 type="text"
                 value={data.code}
                 onChange={(e) => setData("code", e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-brown-500"
+                className="w-full border rounded px-3 py-2"
+                placeholder="AUTO ou manuel"
               />
             </div>
           </div>
@@ -136,7 +168,7 @@ export default function CreateModal({
                 className="w-full border rounded px-3 py-2"
                 required
               >
-                <option value="">Sélectionnez</option>
+                <option value="">Sélectionnez une catégorie</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -202,36 +234,55 @@ export default function CreateModal({
             </div>
           </div>
 
-          {/* Couleurs */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Couleurs
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {colors.map((c) => (
-                <label key={c.id} className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    value={c.id}
-                    checked={data.color.includes(String(c.id))}
-                    onChange={(e) => {
-                      const val = String(c.id);
-                      setData(
-                        "color",
-                        e.target.checked
+          {/* Variantes */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Couleurs
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((c) => (
+                  <label key={c.id} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      value={c.id}
+                      checked={data.color.includes(String(c.id))}
+                      onChange={e => {
+                        const val = String(c.id);
+                        setData("color", e.target.checked
                           ? [...data.color, val]
-                          : data.color.filter((v) => v !== val)
-                      );
-                    }}
-                  />
-                  <span>{c.name}</span>
-                </label>
-              ))}
+                          : data.color.filter(v => v !== val)
+                        );
+                      }}
+                    />
+                    <span>{c.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Tailles
+              </label>
+              <select
+                multiple
+                value={data.size}
+                onChange={(e) =>
+                  setData(
+                    "size",
+                    [...e.target.selectedOptions].map((o) => o.value)
+                  )
+                }
+                className="w-full border rounded px-3 py-2"
+              >
+                {sizes.map((s) => (
+                  <option key={s.id} value={s.size}>
+                    {s.size}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-
-          {/* Tailles */}
-          <SizeCheckboxes sizes={sizes} data={data} setData={setData} />
 
           {/* Prix */}
           <div className="grid grid-cols-3 gap-4">
@@ -247,6 +298,7 @@ export default function CreateModal({
                   setData("current_purchase_cost", e.target.value)
                 }
                 className="w-full border rounded px-3 py-2"
+                placeholder="0.00"
                 required
               />
             </div>
@@ -258,8 +310,11 @@ export default function CreateModal({
                 type="number"
                 step="0.01"
                 value={data.current_sale_price}
-                onChange={(e) => setData("current_sale_price", e.target.value)}
+                onChange={(e) =>
+                  setData("current_sale_price", e.target.value)
+                }
                 className="w-full border rounded px-3 py-2"
+                placeholder="0.00"
               />
             </div>
             <div>
@@ -274,6 +329,7 @@ export default function CreateModal({
                   setData("current_wholesale_price", e.target.value)
                 }
                 className="w-full border rounded px-3 py-2"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -282,18 +338,21 @@ export default function CreateModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Quantité
+                Quantité disponible
               </label>
               <input
                 type="number"
+                step="0.01"
                 value={data.available_quantity}
-                onChange={(e) => setData("available_quantity", e.target.value)}
+                onChange={(e) =>
+                  setData("available_quantity", e.target.value)
+                }
                 className="w-full border rounded px-3 py-2"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Unité
+                Unité (kg, pcs, etc.)
               </label>
               <input
                 type="text"
@@ -321,7 +380,7 @@ export default function CreateModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Valeur
+                Valeur de réduction
               </label>
               <input
                 type="number"
@@ -346,10 +405,59 @@ export default function CreateModal({
             ></textarea>
           </div>
 
-          {/* Gestion des images */}
-          <ImageGrid data={data} setData={setData} errors={errors} />
+          {/* Image principale */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Image principale
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => setData("main_image", e.target.files[0])}
+              className="w-full border rounded px-3 py-2"
+            />
+            {errors.main_image && (
+              <p className="text-red-500 text-xs">{errors.main_image}</p>
+            )}
+          </div>
 
-          {/* Checkboxes populaires */}
+          {/* Images additionnelles */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Images additionnelles
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={e => {
+                if (e.target.files[0]) {
+                  setData("product_images", [...(data.product_images || []), e.target.files[0]]);
+                }
+              }}
+              className="w-full border rounded px-3 py-2"
+            />
+            <div className="flex flex-wrap gap-4 mt-4">
+              {(data.product_images || []).map((file, idx) => {
+                const url = file instanceof File ? URL.createObjectURL(file) : file;
+                return (
+                  <div key={idx} className="relative group w-24 h-24 rounded overflow-hidden border shadow">
+                    <img src={url} alt={`Produit ${idx + 1}`} className="object-cover w-full h-full" />
+                    <button
+                      type="button"
+                      onClick={() => setData("product_images", data.product_images.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 bg-white bg-opacity-80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Retirer cette image"
+                    >
+                      <HiOutlineX className="w-5 h-5 text-red-600" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Checkboxes */}
           <div className="flex gap-6">
             <label className="flex items-center gap-2">
               <input
@@ -382,7 +490,7 @@ export default function CreateModal({
               type="submit"
               disabled={processing}
               className={clsx(
-                "px-6 py-2 text-white rounded shadow transition",
+                "px-6 py-2 text-white rounded shadow",
                 processing
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-[#8c6c3c] to-[#a68e55] hover:opacity-90"
