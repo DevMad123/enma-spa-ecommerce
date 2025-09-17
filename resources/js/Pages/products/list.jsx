@@ -67,10 +67,6 @@ function ProductsListTable({ products, sort, direction, onSort }) {
     return direction === "asc" ? <span className="text-[#a68e55]">▲</span> : <span className="text-[#a68e55]">▼</span>;
   };
 
-  products.data.map((product, i) => (
-    console.log(product.image_path)
-  ));
-
   return (
     <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
       <table className="min-w-full text-sm">

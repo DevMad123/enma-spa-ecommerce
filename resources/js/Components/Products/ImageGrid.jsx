@@ -1,27 +1,32 @@
-import React from "react";
+import React, { useRef } from "react";
 import { HiOutlineX } from "react-icons/hi";
 import ImageThumbnail from "./ImageThumbnail";
 
 export default function ImageGrid({ data, setData, errors }) {
-  // Ajout d'images
+  const mainImageInputRef = useRef(null); // Référence pour l'image principale
+  const additionalImagesInputRef = useRef(null); // Référence pour les images additionnelles
+
+  // Ajouter des images additionnelles
   const handleAddImages = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setData("product_images", [...(data.product_images || []), ...files]);
+    if (additionalImagesInputRef.current) {
+      additionalImagesInputRef.current.value = ""; // Réinitialise le champ après ajout
+    }
   };
 
-  // Définir une image comme principale
-  const handleSetMain = (idx) => {
-    const newMain = data.product_images[idx];
-    setData("main_image", newMain);
-  };
-
-  // Supprimer
+  // Supprimer une image additionnelle
   const handleRemove = (idx) => {
     const newImgs = data.product_images.filter((_, i) => i !== idx);
     setData("product_images", newImgs);
-    if (data.main_image && data.main_image === data.product_images[idx]) {
-      setData("main_image", null);
+  };
+
+  // Supprimer l'image principale
+  const handleRemoveMainImage = () => {
+    setData("main_image", null);
+    if (mainImageInputRef.current) {
+      mainImageInputRef.current.value = ""; // Réinitialise le champ input
     }
   };
 
@@ -33,9 +38,10 @@ export default function ImageGrid({ data, setData, errors }) {
           Image principale
         </label>
         <input
+          ref={mainImageInputRef} // Référence pour réinitialiser
           type="file"
           accept="image/*"
-          onChange={e => {
+          onChange={(e) => {
             const file = e.target.files[0];
             if (file) setData("main_image", file);
           }}
@@ -57,7 +63,7 @@ export default function ImageGrid({ data, setData, errors }) {
             />
             <button
               type="button"
-              onClick={() => setData("main_image", null)}
+              onClick={handleRemoveMainImage}
               className="absolute top-2 right-2 bg-white bg-opacity-80 rounded-full p-1 hover:bg-opacity-100"
               title="Supprimer"
             >
@@ -77,6 +83,7 @@ export default function ImageGrid({ data, setData, errors }) {
           Images additionnelles
         </label>
         <input
+          ref={additionalImagesInputRef} // Référence pour réinitialiser
           type="file"
           multiple
           accept="image/*"
@@ -91,9 +98,7 @@ export default function ImageGrid({ data, setData, errors }) {
             <ImageThumbnail
               key={idx}
               file={file}
-              isMain={file === data.main_image}
-              onSetMain={() => handleSetMain(idx)}
-              onRemove={() => handleRemove(idx)}
+              onRemove={() => handleRemove(idx)} // Supprime une image additionnelle
             />
           ))}
         </div>

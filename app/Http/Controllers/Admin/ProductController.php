@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
@@ -144,6 +145,7 @@ class ProductController extends Controller
     public function storeProduct(Request $request)
     {
         try {
+            // Validation des données
             $validated = $request->validate([
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
@@ -152,26 +154,26 @@ class ProductController extends Controller
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
                 'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-                // Champs pour simple
+                // Champs pour produit simple
                 'purchase_cost' => 'required_if:type,simple|numeric',
-                'sale_price' => 'required_if:type,simple|numeric',
-                'wholesale_price' => 'nullable|numeric',
+                'sale_price'     => 'required_if:type,simple|numeric',
+                'wholesale_price'=> 'nullable|numeric',
                 'available_quantity' => 'required_if:type,simple|integer',
-                // Champs pour variable
-                'variants' => 'required_if:type,variable|array',
+                // Champs pour produit variable
+                'variants' => 'required_if:type,variable|array|min:1',
                 'variants.*.color_id' => 'nullable|exists:product_colors,id',
-                'variants.*.size_id' => 'nullable|exists:product_sizes,id',
-                'variants.*.sku' => 'nullable|string|max:100',
-                'variants.*.purchase_cost' => 'required|numeric',
-                'variants.*.sale_price' => 'required|numeric',
-                'variants.*.wholesale_price' => 'nullable|numeric',
-                'variants.*.available_quantity' => 'required|integer',
+                'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
+                'variants.*.sku'      => 'nullable|string|max:100',
+                'variants.*.purchase_cost' => 'required_if:type,variable|numeric',
+                'variants.*.sale_price'     => 'required_if:type,variable|numeric',
+                'variants.*.wholesale_price'=> 'nullable|numeric',
+                'variants.*.available_quantity' => 'required_if:type,variable|integer',
                 // Images additionnelles
                 'product_images' => 'nullable|array',
                 'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
-            // Création du produit principal
+            // Création du produit
             $product = new Product();
             $product->fill($request->only([
                 'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id', 'description', 'unit_type'
@@ -180,30 +182,33 @@ class ProductController extends Controller
             $product->image_path = $this->productImageSave($request->file('main_image'));
             $product->save();
 
-            // Simple product : stocke les prix/quantités au niveau du produit
+            // Si produit simple : on enregistre les prix et quantités directement
             if ($product->type === 'simple') {
-                $product->purchase_cost = $request->purchase_cost;
-                $product->sale_price = $request->sale_price;
-                $product->wholesale_price = $request->wholesale_price;
+                $product->current_purchase_cost = $request->purchase_cost;
+                $product->current_sale_price     = $request->sale_price;
+                $product->current_wholesale_price= $request->wholesale_price;
                 $product->available_quantity = $request->available_quantity;
+                // $product->current_purchase_cost = $request->current_purchase_cost ?? 0;
+                // $product->current_sale_price = $request->current_sale_price ?? 0;
+                // $product->current_wholesale_price = $request->current_wholesale_price ?? 0;
                 $product->save();
             }
-            // Variable product : crée les variantes
-            else if ($product->type === 'variable') {
+            // Si produit variable : on crée les variantes
+            elseif ($product->type === 'variable') {
                 foreach ($request->variants as $variant) {
                     $product->variants()->create([
-                        'color_id' => $variant['color_id'] ?? null,
-                        'size_id' => $variant['size_id'] ?? null,
-                        'sku' => $variant['sku'] ?? null,
-                        'purchase_cost' => $variant['purchase_cost'],
-                        'sale_price' => $variant['sale_price'],
+                        'color_id'        => $variant['color_id'] ?? null,
+                        'size_id'         => $variant['size_id'] ?? null,
+                        'sku'             => $variant['sku'] ?? null,
+                        'purchase_cost'   => $variant['purchase_cost'],
+                        'sale_price'      => $variant['sale_price'],
                         'wholesale_price' => $variant['wholesale_price'] ?? null,
                         'available_quantity' => $variant['available_quantity'],
                     ]);
                 }
             }
 
-            // Images additionnelles
+            // Enregistrement des images additionnelles
             if ($request->hasFile('product_images')) {
                 foreach ($request->file('product_images') as $img) {
                     $product->images()->create([
@@ -213,9 +218,17 @@ class ProductController extends Controller
             }
 
             return redirect()->back()->with('success', 'Produit créé avec succès !');
+
         } catch (ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
+            \Log::error('Erreur lors de la création du produit : ' . $e->getMessage());
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Erreur lors de la création du produit.',
+                    'error' => $e->getMessage()
+                ], 422);
+            }
             return back()->withErrors(['error' => 'Erreur lors de la création du produit.'])->withInput();
         }
     }

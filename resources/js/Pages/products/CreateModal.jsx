@@ -16,6 +16,7 @@ export default function CreateModal({
   sizes,
 }) {
   const { data, setData, post, processing, reset } = useForm({
+    type: "simple",
     name: "",
     category_id: "",
     subcategory_id: "",
@@ -26,9 +27,10 @@ export default function CreateModal({
     code: "",
     unit_type: "",
     description: "",
-    current_purchase_cost: "",
-    current_sale_price: "",
-    current_wholesale_price: "",
+    // -- Renommage des champs Prix --
+    purchase_cost: "",      // anciennement current_purchase_cost
+    sale_price: "",         // anciennement current_sale_price
+    wholesale_price: "",    // anciennement current_wholesale_price
     wholesale_minimum_qty: 1,
     available_quantity: 0,
     discount_type: "0",
@@ -36,8 +38,10 @@ export default function CreateModal({
     is_trending: false,
     is_popular: false,
     // Images
-    main_image: null, // une seule image principale
-    product_images: [], // toutes les images (backend + locales)
+    main_image: null,
+    product_images: [],
+    // Variantes
+    variants: [],
   });
 
   const { errors } = usePage().props;
@@ -55,6 +59,28 @@ export default function CreateModal({
     }
   }, [data.category_id]);
 
+  // Ajouter une variante
+  const addVariant = () => {
+    setData("variants", [
+      ...data.variants,
+      {
+        color_id: "",
+        size_id: "",
+        sku: "",
+        purchase_cost: "",
+        sale_price: "",
+        wholesale_price: "",
+        available_quantity: "",
+      },
+    ]);
+  };
+
+  // Supprimer une variante
+  const removeVariant = (index) => {
+    const updatedVariants = data.variants.filter((_, i) => i !== index);
+    setData("variants", updatedVariants);
+  };
+
   // Soumission
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -62,6 +88,9 @@ export default function CreateModal({
       onSuccess: () => {
         reset();
         onClose();
+      },
+      onError: (errors) => {
+        console.error("Erreurs lors de la soumission :", errors);
       },
     });
   };
@@ -94,6 +123,156 @@ export default function CreateModal({
 
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Type de produit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Type de produit
+            </label>
+            <select
+              value={data.type}
+              onChange={(e) => setData("type", e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="simple">Simple</option>
+              <option value="variable">Variable</option>
+            </select>
+          </div>
+
+          {/* Variantes (si type = variable) */}
+          {data.type === "variable" && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
+                Variantes
+              </h3>
+              {data.variants.map((variant, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-7 gap- items-center mb-4"
+                >
+                  <select
+                    value={variant.color_id}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index
+                            ? { ...v, color_id: e.target.value }
+                            : v
+                        )
+                      )
+                    }
+                    className="col-span-1 border rounded px-3 py-2"
+                  >
+                    <option value="">Couleur</option>
+                    {colors.map((color) => (
+                      <option key={color.id} value={color.id}>
+                        {color.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={variant.size_id}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index
+                            ? { ...v, size_id: e.target.value }
+                            : v
+                        )
+                      )
+                    }
+                    className="col-span-1 border rounded px-3 py-2"
+                  >
+                    <option value="">Taille</option>
+                    {sizes.map((size) => (
+                      <option key={size.id} value={size.id}>
+                        {size.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={variant.sku}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index ? { ...v, sku: e.target.value } : v
+                        )
+                      )
+                    }
+                    placeholder="SKU"
+                    className="col-span-1 border rounded px-3 py-2"
+                  />
+                  <input
+                    type="number"
+                    value={variant.purchase_cost}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index
+                            ? { ...v, purchase_cost: e.target.value }
+                            : v
+                        )
+                      )
+                    }
+                    placeholder="Prix achat"
+                    className="col-span-1 border rounded px-3 py-2"
+                  />
+                  <input
+                    type="number"
+                    value={variant.sale_price}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index
+                            ? { ...v, sale_price: e.target.value }
+                            : v
+                        )
+                      )
+                    }
+                    placeholder="Prix vente"
+                    className="col-span-1 border rounded px-3 py-2"
+                  />
+                  <input
+                    type="number"
+                    value={variant.available_quantity}
+                    onChange={(e) =>
+                      setData(
+                        "variants",
+                        data.variants.map((v, i) =>
+                          i === index
+                            ? { ...v, available_quantity: e.target.value }
+                            : v
+                        )
+                      )
+                    }
+                    placeholder="Quantité disponible"
+                    className="col-span-1 border rounded px-3 py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    className="col-span-1 text-red-500 hover:text-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addVariant}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Ajouter une variante
+              </button>
+            </div>
+          )}
+
           {/* Nom + Code */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -242,9 +421,9 @@ export default function CreateModal({
               <input
                 type="number"
                 step="0.01"
-                value={data.current_purchase_cost}
+                value={data.purchase_cost}
                 onChange={(e) =>
-                  setData("current_purchase_cost", e.target.value)
+                  setData("purchase_cost", e.target.value)
                 }
                 className="w-full border rounded px-3 py-2"
                 required
@@ -257,8 +436,8 @@ export default function CreateModal({
               <input
                 type="number"
                 step="0.01"
-                value={data.current_sale_price}
-                onChange={(e) => setData("current_sale_price", e.target.value)}
+                value={data.sale_price}
+                onChange={(e) => setData("sale_price", e.target.value)}
                 className="w-full border rounded px-3 py-2"
               />
             </div>
@@ -269,9 +448,9 @@ export default function CreateModal({
               <input
                 type="number"
                 step="0.01"
-                value={data.current_wholesale_price}
+                value={data.wholesale_price}
                 onChange={(e) =>
-                  setData("current_wholesale_price", e.target.value)
+                  setData("wholesale_price", e.target.value)
                 }
                 className="w-full border rounded px-3 py-2"
               />
