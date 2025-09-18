@@ -2,8 +2,7 @@ import React from "react";
 import { HiOutlineX } from "react-icons/hi";
 
 export default function ImageThumbnail({ file, isMain, onSetMain, onRemove }) {
-  const url = file instanceof File ? URL.createObjectURL(file) : file;
-
+  const url = file instanceof File ? URL.createObjectURL(file) : file ? `${window.location.origin}/${file.replace(/^\/+/, '')}` : '/images/placeholder.png';
   return (
     <div className="relative group w-24 h-24 rounded overflow-hidden border shadow">
       <img src={url} alt="Preview" className="object-cover w-full h-full" />

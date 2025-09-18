@@ -38,6 +38,7 @@ class ProductController extends Controller
                 'supplier',
                 'category',
                 'subcategory',
+                'images',
             ])
             ->whereNull('deleted_at');
         // Recherche globale
@@ -151,96 +152,6 @@ class ProductController extends Controller
         }
          return redirect()->back()->with('success', 'Product Size Successfully Created');
      }
-    /**
-     * Enregistrer un nouveau produit
-     */
-    // public function storeProduct(Request $request)
-    // {
-    //     try {
-    //         // Validation des données
-    //         $validated = $request->validate([
-    //             'type' => 'required|in:simple,variable',
-    //             'name' => 'required|string|max:255',
-    //             'category_id' => 'required|exists:product_categories,id',
-    //             'subcategory_id' => 'nullable|exists:product_sub_categories,id',
-    //             'brand_id' => 'nullable|exists:brands,id',
-    //             'supplier_id' => 'nullable|exists:suppliers,id',
-    //             'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-    //             // Champs pour produit simple
-    //             'purchase_cost' => 'required_if:type,simple|numeric',
-    //             'sale_price'     => 'required_if:type,simple|numeric',
-    //             'wholesale_price'=> 'nullable|numeric',
-    //             'available_quantity' => 'required_if:type,simple|integer',
-    //             // Champs pour produit variable
-    //             'variants' => 'required_if:type,variable|array|min:1',
-    //             'variants.*.color_id' => 'nullable|exists:product_colors,id',
-    //             'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
-    //             'variants.*.sku'      => 'nullable|string|max:100',
-    //             'variants.*.purchase_cost' => 'required_if:type,variable|numeric',
-    //             'variants.*.sale_price'     => 'required_if:type,variable|numeric',
-    //             'variants.*.wholesale_price'=> 'nullable|numeric',
-    //             'variants.*.available_quantity' => 'required_if:type,variable|integer',
-    //             // Images additionnelles
-    //             'product_images' => 'nullable|array',
-    //             'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-    //         ]);
-
-    //         // Création du produit
-    //         $product = new Product();
-    //         $product->fill($request->only([
-    //             'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id', 'description', 'unit_type'
-    //         ]));
-    //         $product->type = $request->type;
-    //         $product->image_path = $this->productImageSave($request->file('main_image'));
-    //         $product->save();
-
-    //         // Si produit simple : on enregistre les prix et quantités directement
-    //         if ($product->type === 'simple') {
-    //             $product->current_purchase_cost = $request->purchase_cost;
-    //             $product->current_sale_price     = $request->sale_price;
-    //             $product->current_wholesale_price= $request->wholesale_price;
-    //             $product->available_quantity = $request->available_quantity;
-    //             $product->save();
-    //         }
-    //         // Si produit variable : on crée les variantes
-    //         elseif ($product->type === 'variable') {
-    //             foreach ($request->variants as $variant) {
-    //                 $product->variants()->create([
-    //                     'color_id'        => $variant['color_id'] ?? null,
-    //                     'size_id'         => $variant['size_id'] ?? null,
-    //                     'sku'             => $variant['sku'] ?? null,
-    //                     'purchase_cost'   => $variant['purchase_cost'],
-    //                     'sale_price'      => $variant['sale_price'],
-    //                     'wholesale_price' => $variant['wholesale_price'] ?? null,
-    //                     'available_quantity' => $variant['available_quantity'],
-    //                 ]);
-    //             }
-    //         }
-
-    //         // Enregistrement des images additionnelles
-    //         if ($request->hasFile('product_images')) {
-    //             foreach ($request->file('product_images') as $img) {
-    //                 $product->images()->create([
-    //                     'image' => $this->productImageSave($img),
-    //                 ]);
-    //             }
-    //         }
-
-    //         return redirect()->back()->with('success', 'Produit créé avec succès !');
-
-    //     } catch (ValidationException $e) {
-    //         return back()->withErrors($e->validator)->withInput();
-    //     } catch (\Exception $e) {
-    //         \Log::error('Erreur lors de la création du produit : ' . $e->getMessage());
-    //         if ($request->expectsJson()) {
-    //             return response()->json([
-    //                 'message' => 'Erreur lors de la création du produit.',
-    //                 'error' => $e->getMessage()
-    //             ], 422);
-    //         }
-    //         return back()->withErrors(['error' => 'Erreur lors de la création du produit.'])->withInput();
-    //     }
-    // }
 
     /**
      * Store a new product.
@@ -281,7 +192,7 @@ class ProductController extends Controller
                 // On remplace les tableaux originaux par le tableau d'attributs structuré
                 $request->merge(['attributes' => $attributes]);
             }
-            
+
             // Validation (cette partie est inchangée)
             $validated = $request->validate([
                 'type' => 'required|in:simple,variable',
@@ -305,7 +216,7 @@ class ProductController extends Controller
                 'variants.*.sale_price' => 'required_if:type,variable|numeric',
                 'variants.*.wholesale_price' => 'nullable|numeric',
                 'variants.*.available_quantity' => 'required_if:type,variable|integer',
-                
+
                 // Note: La validation pour 'attributes' est maintenant correcte
                 'attributes' => 'nullable|array',
                 'attributes.*.color_id' => 'nullable|exists:product_colors,id',
@@ -333,7 +244,7 @@ class ProductController extends Controller
                 'is_popular', 'is_trending', 'discount', 'discount_type',
                 'purchase_cost', 'sale_price', 'wholesale_price', 'available_quantity'
             ]);
-            
+
             // On s'assure que les champs financiers sont toujours présents
             if ($request->type === 'variable') {
                 $productData['current_purchase_cost'] = 0;
@@ -374,7 +285,7 @@ class ProductController extends Controller
                     ]);
                 }
             }
-            
+
             // Gestion des attributs (maintenant que la requête a été corrigée)
             if ($request->has('attributes')) {
                 foreach ($request->input('attributes') as $attr) {
@@ -418,17 +329,6 @@ class ProductController extends Controller
         }
     }
 
-    // public function productEditDetails(Request $request)
-    // {
-    //     $productInfo = Product::find($request->product_id);
-    //     $productCategory = ProductCategory::where('status', 1)->where('deleted', 0)->get();
-    //     $productSubcategory = ProductSubCategory::where('category_id', $productInfo->category_id)->where('status', 1)->where('deleted', 0)->get();
-    //     $supplierList = Supplier::where('status', 1)->where('deleted', 0)->get();
-    //     $brand=Brand::get();
-    //     $color=ProductColor::get();
-    //     $size=ProductSize::get();
-    //     return view('adminPanel.product._edit_product')->with(compact('productInfo', 'supplierList', 'productCategory', 'productSubcategory', 'supplierList','brand','color','size'))->render();
-    // }
     public function productEditDetails(Request $request)
     {
         $productInfo = Product::find($request->product_id);
@@ -459,6 +359,7 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+            Log::debug('Request: ', $request->all());
             $product = Product::with(['images', 'variants', 'attributes'])->find($id);
             if (!$product) {
                 return response()->json(['message' => 'Produit introuvable.'], 404);
@@ -472,12 +373,11 @@ class ProductController extends Controller
                 'subcategory_id' => 'nullable|exists:product_sub_categories,id',
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
-                'main_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
 
                 'purchase_cost' => 'nullable|numeric',
                 'sale_price' => 'nullable|numeric',
                 'wholesale_price'=> 'nullable|numeric',
-                'available_quantity' => 'nullable|integer',
+                'available_quantity' => 'nullable|numeric',
 
                 'variants' => 'nullable|array',
                 'variants.*.color_id' => 'nullable|exists:product_colors,id',
@@ -486,17 +386,31 @@ class ProductController extends Controller
                 'variants.*.purchase_cost' => 'nullable|numeric',
                 'variants.*.sale_price'     => 'nullable|numeric',
                 'variants.*.wholesale_price'=> 'nullable|numeric',
-                'variants.*.available_quantity' => 'nullable|integer',
+                'variants.*.available_quantity' => 'nullable|numeric',
 
                 'attributes' => 'nullable|array',
                 'attributes.*.color_id' => 'nullable|exists:product_colors,id',
                 'attributes.*.size_id' => 'nullable|exists:product_sizes,id',
-                'attributes.*.stock' => 'nullable|integer',
+                'attributes.*.stock' => 'nullable|numeric',
                 'attributes.*.price' => 'nullable|numeric',
-
-                'product_images' => 'nullable|array',
-                'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
+
+            if ($request->hasFile('main_image')) {
+                $request->validate([
+                    'main_image' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+                ]);
+            }
+            if ($request->has('product_images')) {
+                // Récupérer les nouvelles images uploadées
+                $uploadedImages = $request->file('product_images', []);
+                foreach ($uploadedImages as $image) {
+                    if ($image) {
+                        $request->validate([
+                            'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+                        ]);
+                    }
+                }
+            }
 
             // Mise à jour des infos principales
             $product->fill($request->only([
@@ -514,6 +428,8 @@ class ProductController extends Controller
             // Nouvelle image principale ?
             if ($request->hasFile('main_image')) {
                 $product->image_path = $this->productImageSave($request->file('main_image'));
+            } elseif ($request->main_image === null) {
+                $product->image_path = null; // Supprime l'image principale si main_image est null
             }
 
             $product->save();

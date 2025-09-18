@@ -58,7 +58,6 @@ export default function ProductModal({
   // Synchroniser les données quand mode ou product changent
   useEffect(() => {
     if (mode === "edit" && product) {
-
       const attrColors = product.attributes
         ? product.attributes.map(a => String(a.color_id)).filter(Boolean)
         : [];
@@ -90,7 +89,7 @@ export default function ProductModal({
         main_image: product.image_path || null,
         product_images: product.images ? product.images.map(img => img.image) : [],
         variants: product.variants || [],
-        
+
       });
 
       // Optionnel : tu peux aussi garder les attributes entiers si tu veux reconstruire un tableau
@@ -265,6 +264,10 @@ export default function ProductModal({
                   <option value="simple">Simple</option>
                   <option value="variable">Variable</option>
                 </select>
+
+                {mode === "edit" && (
+                  <input type="hidden" name="type" value={data.type} />
+                )}
               </div>
               {/* Nom + Code */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -560,7 +563,7 @@ export default function ProductModal({
                   <label className="block text-sm font-medium text-gray-700">Quantité</label>
                   <input
                     type="number"
-                    value={data.available_quantity}
+                    value={parseInt(data.available_quantity)}
                     onChange={(e) => setData("available_quantity", e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-2 focus:ring-[#a68e55] focus:border-transparent transition"
                   />
