@@ -4,7 +4,7 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
 import { FaBarcode } from "react-icons/fa";
 import { FiEye } from "react-icons/fi";
-import CreateModal from "./CreateModal";
+import ProductModal from "./ProductModal";
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
@@ -49,7 +49,7 @@ function ProductsHeader({ filters, onFilterChange, onAddProduct }) {
   );
 }
 
-function ProductsListTable({ products, sort, direction, onSort }) {
+function ProductsListTable({ products, sort, direction, onSort, onEdit }) {
   const headers = [
     { label: "SI", key: "id", sortable: false },
     { label: "Name", key: "name", sortable: true },
@@ -118,27 +118,27 @@ function ProductsListTable({ products, sort, direction, onSort }) {
                 </td>
                 <td className="py-2 px-3">
                   <div className="flex gap-2 justify-center">
-                    <Link
-                      href={route("admin.products.edit", product.id)}
+                    <button
                       className="p-2 rounded hover:bg-gray-100 text-[#8c6c3c]"
                       title="View"
+                      onClick={() => onEdit(product)}
                     >
                       <FiEye size={18} />
-                    </Link>
-                    <Link
+                    </button>
+                    <button
                       className="p-2 rounded hover:bg-gray-100 text-[#a68e55]"
                       title="Barcode"
                       onClick={() => window.alert("Barcode print modal (à implémenter)")}
                     >
                       <FaBarcode size={18} />
-                    </Link>
-                    <Link
-                      href={route("admin.products.edit", product.id)}
+                    </button>
+                    <button
                       className="p-2 rounded hover:bg-gray-100 text-blue-600"
                       title="Edit"
+                      onClick={() => onEdit(product)}
                     >
                       <HiOutlinePencil size={18} />
-                    </Link>
+                    </button>
                     <button
                       className="p-2 rounded hover:bg-gray-100 text-red-500"
                       title="Delete"
@@ -176,7 +176,9 @@ function ProductsListTable({ products, sort, direction, onSort }) {
 
 export default function ProductsList() {
   const { productList, filters, productCategory, supplierList, brand, color, size } = usePage().props;
-  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // "create" ou "edit"
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const handleFilterChange = (newFilters) => {
     router.get(route("admin.products.list"), { ...filters, ...newFilters }, { preserveState: true, replace: true });
@@ -188,6 +190,18 @@ export default function ProductsList() {
     handleFilterChange({ sort: key, direction });
   };
 
+  const handleAddProduct = () => {
+    setSelectedProduct(null);
+    setModalMode("create");
+    setModalOpen(true);
+  };
+
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
   const { success } = usePage().props;
 
   return (
@@ -196,7 +210,7 @@ export default function ProductsList() {
       <ProductsHeader
         filters={filters}
         onFilterChange={handleFilterChange}
-        onAddProduct={() => setCreateModalOpen(true)}
+        onAddProduct={handleAddProduct}
       />
       <main className="pb-4">
         <ProductsListTable
@@ -204,11 +218,14 @@ export default function ProductsList() {
           sort={filters.sort}
           direction={filters.direction}
           onSort={handleSort}
+          onEdit={handleEditProduct}
         />
       </main>
-      <CreateModal
-        open={isCreateModalOpen}
-        onClose={() => setCreateModalOpen(false)}
+      <ProductModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        mode={modalMode}
+        product={selectedProduct}
         categories={productCategory}
         suppliers={supplierList}
         brands={brand}

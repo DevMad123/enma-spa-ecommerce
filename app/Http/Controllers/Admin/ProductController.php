@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
@@ -27,7 +28,18 @@ class ProductController extends Controller
 {
     public function productList(Request $request)
     {
-        $query = Product::query()->whereNull('deleted_at');
+        $query = Product::query()
+            ->with([
+                'attributes.color',
+                'attributes.size',
+                'variants.color',
+                'variants.size',
+                'brand',
+                'supplier',
+                'category',
+                'subcategory',
+            ])
+            ->whereNull('deleted_at');
         // Recherche globale
         if ($request->filled('search')) {
             $search = $request->search;
@@ -142,10 +154,135 @@ class ProductController extends Controller
     /**
      * Enregistrer un nouveau produit
      */
+    // public function storeProduct(Request $request)
+    // {
+    //     try {
+    //         // Validation des données
+    //         $validated = $request->validate([
+    //             'type' => 'required|in:simple,variable',
+    //             'name' => 'required|string|max:255',
+    //             'category_id' => 'required|exists:product_categories,id',
+    //             'subcategory_id' => 'nullable|exists:product_sub_categories,id',
+    //             'brand_id' => 'nullable|exists:brands,id',
+    //             'supplier_id' => 'nullable|exists:suppliers,id',
+    //             'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+    //             // Champs pour produit simple
+    //             'purchase_cost' => 'required_if:type,simple|numeric',
+    //             'sale_price'     => 'required_if:type,simple|numeric',
+    //             'wholesale_price'=> 'nullable|numeric',
+    //             'available_quantity' => 'required_if:type,simple|integer',
+    //             // Champs pour produit variable
+    //             'variants' => 'required_if:type,variable|array|min:1',
+    //             'variants.*.color_id' => 'nullable|exists:product_colors,id',
+    //             'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
+    //             'variants.*.sku'      => 'nullable|string|max:100',
+    //             'variants.*.purchase_cost' => 'required_if:type,variable|numeric',
+    //             'variants.*.sale_price'     => 'required_if:type,variable|numeric',
+    //             'variants.*.wholesale_price'=> 'nullable|numeric',
+    //             'variants.*.available_quantity' => 'required_if:type,variable|integer',
+    //             // Images additionnelles
+    //             'product_images' => 'nullable|array',
+    //             'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+    //         ]);
+
+    //         // Création du produit
+    //         $product = new Product();
+    //         $product->fill($request->only([
+    //             'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id', 'description', 'unit_type'
+    //         ]));
+    //         $product->type = $request->type;
+    //         $product->image_path = $this->productImageSave($request->file('main_image'));
+    //         $product->save();
+
+    //         // Si produit simple : on enregistre les prix et quantités directement
+    //         if ($product->type === 'simple') {
+    //             $product->current_purchase_cost = $request->purchase_cost;
+    //             $product->current_sale_price     = $request->sale_price;
+    //             $product->current_wholesale_price= $request->wholesale_price;
+    //             $product->available_quantity = $request->available_quantity;
+    //             $product->save();
+    //         }
+    //         // Si produit variable : on crée les variantes
+    //         elseif ($product->type === 'variable') {
+    //             foreach ($request->variants as $variant) {
+    //                 $product->variants()->create([
+    //                     'color_id'        => $variant['color_id'] ?? null,
+    //                     'size_id'         => $variant['size_id'] ?? null,
+    //                     'sku'             => $variant['sku'] ?? null,
+    //                     'purchase_cost'   => $variant['purchase_cost'],
+    //                     'sale_price'      => $variant['sale_price'],
+    //                     'wholesale_price' => $variant['wholesale_price'] ?? null,
+    //                     'available_quantity' => $variant['available_quantity'],
+    //                 ]);
+    //             }
+    //         }
+
+    //         // Enregistrement des images additionnelles
+    //         if ($request->hasFile('product_images')) {
+    //             foreach ($request->file('product_images') as $img) {
+    //                 $product->images()->create([
+    //                     'image' => $this->productImageSave($img),
+    //                 ]);
+    //             }
+    //         }
+
+    //         return redirect()->back()->with('success', 'Produit créé avec succès !');
+
+    //     } catch (ValidationException $e) {
+    //         return back()->withErrors($e->validator)->withInput();
+    //     } catch (\Exception $e) {
+    //         \Log::error('Erreur lors de la création du produit : ' . $e->getMessage());
+    //         if ($request->expectsJson()) {
+    //             return response()->json([
+    //                 'message' => 'Erreur lors de la création du produit.',
+    //                 'error' => $e->getMessage()
+    //             ], 422);
+    //         }
+    //         return back()->withErrors(['error' => 'Erreur lors de la création du produit.'])->withInput();
+    //     }
+    // }
+
+    /**
+     * Store a new product.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function storeProduct(Request $request)
     {
+        DB::beginTransaction();
+
         try {
-            // Validation des données
+            // Loggez l'intégralité de la requête pour le débogage
+            \Log::info('Product store request data: ', $request->all());
+
+            // Correction pour les attributs : on les combine en une structure "attributes" si les tableaux color et size existent
+            if ($request->has('color') || $request->has('size')) {
+                $attributes = [];
+
+                // On force toujours en tableau (même si un seul élément est envoyé)
+                $colors = (array) $request->input('color', []);
+                $sizes  = (array) $request->input('size', []);
+                $stocks = (array) $request->input('available_quantity', []);
+                $prices = (array) $request->input('sale_price', []);
+
+                // On itère sur le plus grand des tableaux pour s'assurer de tout traiter
+                $count = max(count($colors), count($sizes), count($stocks), count($prices));
+
+                for ($i = 0; $i < $count; $i++) {
+                    $attributes[] = [
+                        'color_id' => $colors[$i] ?? null,
+                        'size_id'  => $sizes[$i] ?? null,
+                        'stock'    => $stocks[$i] ?? 0,
+                        'price'    => $prices[$i] ?? null,
+                    ];
+                }
+
+                // On remplace les tableaux originaux par le tableau d'attributs structuré
+                $request->merge(['attributes' => $attributes]);
+            }
+            
+            // Validation (cette partie est inchangée)
             $validated = $request->validate([
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
@@ -154,61 +291,103 @@ class ProductController extends Controller
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
                 'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-                // Champs pour produit simple
-                'purchase_cost' => 'required_if:type,simple|numeric',
-                'sale_price'     => 'required_if:type,simple|numeric',
-                'wholesale_price'=> 'nullable|numeric',
-                'available_quantity' => 'required_if:type,simple|integer',
-                // Champs pour produit variable
+
+                'purchase_cost' => 'required_if:type,simple|nullable|numeric',
+                'sale_price' => 'required_if:type,simple|nullable|numeric',
+                'wholesale_price' => 'nullable|numeric',
+                'available_quantity' => 'required_if:type,simple|nullable|integer',
+
                 'variants' => 'required_if:type,variable|array|min:1',
                 'variants.*.color_id' => 'nullable|exists:product_colors,id',
-                'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
-                'variants.*.sku'      => 'nullable|string|max:100',
+                'variants.*.size_id' => 'nullable|exists:product_sizes,id',
+                'variants.*.sku' => 'nullable|string|max:100',
                 'variants.*.purchase_cost' => 'required_if:type,variable|numeric',
-                'variants.*.sale_price'     => 'required_if:type,variable|numeric',
-                'variants.*.wholesale_price'=> 'nullable|numeric',
+                'variants.*.sale_price' => 'required_if:type,variable|numeric',
+                'variants.*.wholesale_price' => 'nullable|numeric',
                 'variants.*.available_quantity' => 'required_if:type,variable|integer',
-                // Images additionnelles
+                
+                // Note: La validation pour 'attributes' est maintenant correcte
+                'attributes' => 'nullable|array',
+                'attributes.*.color_id' => 'nullable|exists:product_colors,id',
+                'attributes.*.size_id' => 'nullable|exists:product_sizes,id',
+                'attributes.*.stock' => 'nullable|integer',
+                'attributes.*.price' => 'nullable|numeric',
+
+                'unit_type' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'discount_type' => 'nullable|in:0,1',
+                'discount' => 'nullable|numeric|min:0',
+                'is_popular' => 'nullable|boolean',
+                'is_trending' => 'nullable|boolean',
+
                 'product_images' => 'nullable|array',
                 'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
+            // ... Le reste de votre code est correct ...
+
             // Création du produit
+            $productData = $request->only([
+                'name', 'category_id', 'subcategory_id', 'brand_id',
+                'supplier_id', 'description', 'unit_type',
+                'is_popular', 'is_trending', 'discount', 'discount_type',
+                'purchase_cost', 'sale_price', 'wholesale_price', 'available_quantity'
+            ]);
+            
+            // On s'assure que les champs financiers sont toujours présents
+            if ($request->type === 'variable') {
+                $productData['current_purchase_cost'] = 0;
+                $productData['current_sale_price'] = 0;
+                $productData['current_wholesale_price'] = 0;
+                $productData['available_quantity'] = 0;
+            } else {
+                $productData['current_purchase_cost'] = $request->purchase_cost ?? 0;
+                $productData['current_sale_price'] = $request->sale_price ?? 0;
+                $productData['current_wholesale_price'] = $request->wholesale_price ?? 0;
+                $productData['available_quantity'] = $request->available_quantity ?? 0;
+            }
+
             $product = new Product();
-            $product->fill($request->only([
-                'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id', 'description', 'unit_type'
-            ]));
+            $product->fill($productData);
             $product->type = $request->type;
             $product->image_path = $this->productImageSave($request->file('main_image'));
             $product->save();
 
-            // Si produit simple : on enregistre les prix et quantités directement
-            if ($product->type === 'simple') {
-                $product->current_purchase_cost = $request->purchase_cost;
-                $product->current_sale_price     = $request->sale_price;
-                $product->current_wholesale_price= $request->wholesale_price;
-                $product->available_quantity = $request->available_quantity;
-                // $product->current_purchase_cost = $request->current_purchase_cost ?? 0;
-                // $product->current_sale_price = $request->current_sale_price ?? 0;
-                // $product->current_wholesale_price = $request->current_wholesale_price ?? 0;
-                $product->save();
+            // Générer le code uniquement si aucun code n’a été envoyé
+            if (empty($request->code)) {
+                $product->update([
+                    'code' => 1000 + $product->id,
+                ]);
             }
-            // Si produit variable : on crée les variantes
-            elseif ($product->type === 'variable') {
+
+            // Gestion des variantes (uniquement si produit variable)
+            if ($request->type === 'variable') {
                 foreach ($request->variants as $variant) {
                     $product->variants()->create([
-                        'color_id'        => $variant['color_id'] ?? null,
-                        'size_id'         => $variant['size_id'] ?? null,
-                        'sku'             => $variant['sku'] ?? null,
-                        'purchase_cost'   => $variant['purchase_cost'],
-                        'sale_price'      => $variant['sale_price'],
+                        'color_id' => $variant['color_id'] ?? null,
+                        'size_id' => $variant['size_id'] ?? null,
+                        'sku' => $variant['sku'] ?? null,
+                        'purchase_cost' => $variant['purchase_cost'],
+                        'sale_price' => $variant['sale_price'],
                         'wholesale_price' => $variant['wholesale_price'] ?? null,
                         'available_quantity' => $variant['available_quantity'],
                     ]);
                 }
             }
+            
+            // Gestion des attributs (maintenant que la requête a été corrigée)
+            if ($request->has('attributes')) {
+                foreach ($request->input('attributes') as $attr) {
+                    $product->attributes()->create([
+                        'color_id' => $attr['color_id'] ?? null,
+                        'size_id' => $attr['size_id'] ?? null,
+                        'stock' => $attr['stock'] ?? 0,
+                        'price' => $attr['price'] ?? null,
+                    ]);
+                }
+            }
 
-            // Enregistrement des images additionnelles
+            // Gestion des images additionnelles
             if ($request->hasFile('product_images')) {
                 foreach ($request->file('product_images') as $img) {
                     $product->images()->create([
@@ -217,19 +396,25 @@ class ProductController extends Controller
                 }
             }
 
-            return redirect()->back()->with('success', 'Produit créé avec succès !');
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Produit créé avec succès !');
 
         } catch (ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Validation failed during product creation: ' . json_encode($e->errors()));
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de la création du produit : ' . $e->getMessage());
+            DB::rollBack();
+            \Log::error('Erreur lors de la création du produit : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Erreur lors de la création du produit.',
                     'error' => $e->getMessage()
                 ], 422);
             }
-            return back()->withErrors(['error' => 'Erreur lors de la création du produit.'])->withInput();
+            return back()->withErrors(['error' => 'Erreur lors de la création du produit. Veuillez réessayer.'])->withInput();
         }
     }
 
@@ -267,6 +452,128 @@ class ProductController extends Controller
             'color' => $color,
             'size' => $size,
         ]);
+    }
+
+    public function updateProduct(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $product = Product::with(['images', 'variants', 'attributes'])->find($id);
+            if (!$product) {
+                return response()->json(['message' => 'Produit introuvable.'], 404);
+            }
+
+            // Validation (mêmes règles que store, mais main_image facultative)
+            $validated = $request->validate([
+                'type' => 'required|in:simple,variable',
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:product_categories,id',
+                'subcategory_id' => 'nullable|exists:product_sub_categories,id',
+                'brand_id' => 'nullable|exists:brands,id',
+                'supplier_id' => 'nullable|exists:suppliers,id',
+                'main_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+
+                'purchase_cost' => 'nullable|numeric',
+                'sale_price' => 'nullable|numeric',
+                'wholesale_price'=> 'nullable|numeric',
+                'available_quantity' => 'nullable|integer',
+
+                'variants' => 'nullable|array',
+                'variants.*.color_id' => 'nullable|exists:product_colors,id',
+                'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
+                'variants.*.sku'      => 'nullable|string|max:100',
+                'variants.*.purchase_cost' => 'nullable|numeric',
+                'variants.*.sale_price'     => 'nullable|numeric',
+                'variants.*.wholesale_price'=> 'nullable|numeric',
+                'variants.*.available_quantity' => 'nullable|integer',
+
+                'attributes' => 'nullable|array',
+                'attributes.*.color_id' => 'nullable|exists:product_colors,id',
+                'attributes.*.size_id' => 'nullable|exists:product_sizes,id',
+                'attributes.*.stock' => 'nullable|integer',
+                'attributes.*.price' => 'nullable|numeric',
+
+                'product_images' => 'nullable|array',
+                'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            ]);
+
+            // Mise à jour des infos principales
+            $product->fill($request->only([
+                'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id',
+                'description', 'unit_type', 'is_popular', 'is_trending',
+                'discount', 'discount_type'
+            ]));
+            $product->type = $request->type;
+
+            // Générer code si vide
+            if (empty($request->code) && !$product->code) {
+                $product->code = 1000 + $product->id;
+            }
+
+            // Nouvelle image principale ?
+            if ($request->hasFile('main_image')) {
+                $product->image_path = $this->productImageSave($request->file('main_image'));
+            }
+
+            $product->save();
+
+            // Produit simple → maj prix/quantité
+            if ($product->type === 'simple') {
+                $product->update([
+                    'current_purchase_cost'   => $request->purchase_cost ?? $product->current_purchase_cost,
+                    'current_sale_price'      => $request->sale_price ?? $product->current_sale_price,
+                    'current_wholesale_price' => $request->wholesale_price ?? $product->current_wholesale_price,
+                    'available_quantity'      => $request->available_quantity ?? $product->available_quantity,
+                ]);
+            }
+
+            // Produit variable → recréer les variants
+            if ($product->type === 'variable' && $request->has('variants')) {
+                $product->variants()->delete();
+                foreach ($request->variants as $variant) {
+                    $product->variants()->create($variant);
+                }
+            }
+
+            // Attributs
+            if ($request->has('attributes')) {
+                $product->attributes()->delete();
+                foreach ($request->attributes as $attr) {
+                    $product->attributes()->create([
+                        'color_id' => $attr['color_id'] ?? null,
+                        'size_id'  => $attr['size_id'] ?? null,
+                        'stock'    => $attr['stock'] ?? 0,
+                        'price'    => $attr['price'] ?? null,
+                    ]);
+                }
+            }
+
+            // Images additionnelles
+            if ($request->hasFile('product_images')) {
+                $product->images()->delete();
+                foreach ($request->file('product_images') as $img) {
+                    $product->images()->create([
+                        'image' => $this->productImageSave($img),
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Produit mis à jour avec succès !',
+                'product' => $product->load(['images', 'variants', 'attributes'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur update product : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
+            return response()->json([
+                'message' => 'Erreur lors de la mise à jour du produit.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function imageDelete(Request $request)

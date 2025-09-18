@@ -10,52 +10,68 @@ class Product extends Model
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
 
+    // Champs pouvant être mass assignable
     protected $fillable = [
         'name',
         'category_id',
         'subcategory_id',
-        'image_path',
-        'supplier_id',
-        'code',
-        'color',
-        'size',
         'brand_id',
-        'current_sale_price',
+        'supplier_id',
+        'description',
+        'unit_type',
+        'type',
+        'image_path',
+        'code',
         'current_purchase_cost',
+        'current_sale_price',
         'current_wholesale_price',
-        'wholesale_minimum_qty',
-        'previous_wholesale_price',
-        'previous_sale_price',
-        'previous_purchase_cost',
         'available_quantity',
         'discount_type',
         'discount',
-        'unit_type',
-        'description',
         'is_popular',
         'is_trending',
-        'status',
-        'created_at',
-        'created_by',
-        'updated_at',
-        'updated_by',
-        'deleted',
-        'deleted_at',
-        'deleted_by',
+        'status'
     ];
-
-    function productCategory()
+    
+    // Les relations du modèle
+    public function category()
     {
-        return $this->belongsTo(ProductCategory::class, 'category_id', 'id');
+        return $this->belongsTo(ProductCategory::class, 'category_id');
     }
 
-    function productSubcategory()
+    public function subcategory()
     {
-        return $this->belongsTo(ProductSubCategory::class, 'subcategory_id', 'id');
+        return $this->belongsTo(ProductSubCategory::class, 'subcategory_id');
     }
 
-    function productImage()
+    public function brand()
     {
-        return $this->hasMany(ProductImage::class, 'product_id', 'id');
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    /**
+     * Un produit peut avoir plusieurs variantes.
+     */
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * Un produit peut avoir plusieurs images.
+     */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+    
+    public function attributes()
+    {
+        return $this->hasMany(ProductAttribute::class);
     }
 }

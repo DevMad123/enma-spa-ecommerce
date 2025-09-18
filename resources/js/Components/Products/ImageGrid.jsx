@@ -56,7 +56,7 @@ export default function ImageGrid({ data, setData, errors }) {
               src={
                 data.main_image instanceof File
                   ? URL.createObjectURL(data.main_image)
-                  : data.main_image
+                  : data.main_image ? `${window.location.origin}/${data.main_image.replace(/^\/+/, '')}` : '/images/placeholder.png'
               }
               alt="Image principale"
               className="object-contain w-full h-72 bg-gray-50"

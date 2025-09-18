@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::post('/store', [ProductController::class, 'storeProduct'])->name('store');
         Route::get('/list', [ProductController::class, 'productList'])->name('list');
         Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('edit');
+        Route::put('/update/{id}', [ProductController::class, 'updateProduct'])->name('update');
         Route::delete('/image/{id}', [ProductController::class, 'imageDelete'])->name('image.delete');
     });
 
