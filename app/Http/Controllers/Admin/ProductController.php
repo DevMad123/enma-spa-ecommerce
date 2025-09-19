@@ -10,16 +10,13 @@ use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductColor;
-use App\Models\ProductImage;
 use App\Models\ProductSize;
 use App\Models\ProductSubCategory;
-use App\Models\Sell;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use App\Models\Supplier;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use PhpParser\Node\Expr\Array_;
 use PDF;
@@ -514,12 +511,37 @@ class ProductController extends Controller
         }
     }
 
-    public function imageDelete(Request $request)
+    public function deleteProduct($id)
     {
+        // $product = Product::find($id);
+        // if (!$product) {
+        //     return response()->json(['message' => 'Produit introuvable.'], 404);
+        // }
 
-        ProductImage::where('id', $request->id)->delete();
-        return 'success';
+        // // Vérifier les ventes associées
+        // $salesCount = Sell::where('product_id', $id)->count();
+        // if ($salesCount > 0) {
+        //     return response()->json(['message' => 'Impossible de supprimer le produit car il est associé à des ventes.'], 400);
+        // }
+
+        // // Suppression des images associées
+        // $product->images()->delete();
+
+        // // Suppression des variantes et attributs associés
+        // $product->variants()->delete();
+        // $product->attributes()->delete();
+
+        // // Suppression du produit
+        // $product->delete();
+
+        // return response()->json(['message' => 'Produit supprimé avec succès.'], 200);
     }
+    // public function imageDelete(Request $request)
+    // {
+
+    //     ProductImage::where('id', $request->id)->delete();
+    //     return 'success';
+    // }
     /**
      * Sauvegarder une image produit
      */

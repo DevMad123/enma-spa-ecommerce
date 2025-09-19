@@ -12,6 +12,7 @@ import {
 const links = [
   { route: "admin.dashboard", label: "Dashboard", icon: <HiOutlineHome /> },
   // { route: "admin.orders", label: "Orders", icon: <HiOutlineClipboardList /> },
+  { route: "admin.categories.list", label: "Categories", icon: <HiOutlineClipboardList /> },
   { route: "admin.products.list", label: "Products", icon: <HiOutlineChartBar /> },
   // { route: "admin.customers", label: "Customers", icon: <HiOutlineUserGroup /> },
   // { route: "admin.settings", label: "Settings", icon: <HiOutlineCog /> },
