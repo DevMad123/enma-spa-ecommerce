@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Inertia } from "@inertiajs/inertia";
 import { Modal, Box, IconButton, Tooltip } from "@mui/material";
 import { useForm, usePage } from "@inertiajs/react";
 import {
@@ -44,6 +45,7 @@ export default function ProductModal({
     is_trending: false,
     is_popular: false,
     main_image: null,
+    existing_images: [],
     product_images: [],
     variants: [],
   };
@@ -87,7 +89,8 @@ export default function ProductModal({
         is_trending: !!product.is_trending,
         is_popular: !!product.is_popular,
         main_image: product.image_path || null,
-        product_images: product.images ? product.images.map(img => img.image) : [],
+        existing_images: product.images ? product.images.map(img => img.image) : [],
+        product_images: [],
         variants: product.variants || [],
 
       });
@@ -182,31 +185,68 @@ export default function ProductModal({
   // Soumission
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (mode === "edit") {
-      put(route("admin.products.update", product?.id), {
-        data: {
-          ...data,
-          attributes,
-        },
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
+
+    // Assure-toi que attributes est dans data
+    setData("attributes", attributes);
+
+    const hasMainFile = data.main_image instanceof File;
+    const hasNewAdditional = Array.isArray(data.product_images) && data.product_images.some(f => f instanceof File);
+    // Si on envoie au moins un fichier -> FormData + POST + _method=PUT
+    if (hasMainFile || hasNewAdditional) {
+      const fd = new FormData();
+      // 1) Champs scalaires
+      const simpleFields = [
+        "type","name","category_id","subcategory_id","supplier_id","brand_id",
+        "code","unit_type","description","purchase_cost","sale_price",
+        "wholesale_price","wholesale_minimum_qty","available_quantity",
+        "discount_type","discount"
+      ];
+      simpleFields.forEach((k) => {
+        const v = data[k];
+        if (v !== undefined && v !== null) {
+          // boolean -> string '1'/'0'
+          if (typeof v === "boolean") fd.append(k, v ? "1" : "0");
+          else fd.append(k, v);
+        }
       });
-    }else{
-      post(route("admin.products.store"), {
-        data: {
-          ...data,
-          attributes,
-        },
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
+
+      // 2) attributes & variants (en JSON -> on les décodera côté Laravel)
+      fd.append("attributes", JSON.stringify(attributes || []));
+      fd.append("variants", JSON.stringify(data.variants || []));
+
+      // 3) main_image
+      if (hasMainFile) {
+        fd.append("main_image", data.main_image);
+      } else if (data.main_image === null) {
+        // signaler suppression image principale (on utilisera un flag)
+        fd.append("main_image_deleted", "1");
+      }
+
+      // 4) images existantes vs nouvelles
+      // -> on conserve data.existing_images (chemins) et data.product_images (Files)
+      (data.existing_images || []).forEach(p => fd.append("existing_images[]", p));
+
+      (data.product_images || []).forEach(file => {
+        if (file instanceof File) fd.append("product_images[]", file);
+      });
+
+      // Method override
+      fd.append("_method", "PUT");
+
+      // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
+      Inertia.post(route("admin.products.update", product?.id), fd, {
+        onSuccess: () => { reset(); onClose(); },
+        onError: (err) => { console.log("errors", err); },
+      });
+
+    } else {
+      // pas de fichiers -> simple put
+      put(route("admin.products.update", product?.id), {
+        onSuccess: () => { reset(); onClose(); },
       });
     }
   };
-
+  
   if (!open) return null;
   return (
   <Modal open={open} onClose={onClose} aria-labelledby="product-modal-title">

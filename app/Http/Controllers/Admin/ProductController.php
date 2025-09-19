@@ -359,13 +359,33 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
-            Log::debug('Request: ', $request->all());
+            Log::debug('Request all', $request->all());
+            Log::debug('Request files', $request->files->all());
+
             $product = Product::with(['images', 'variants', 'attributes'])->find($id);
             if (!$product) {
                 return response()->json(['message' => 'Produit introuvable.'], 404);
             }
 
-            // Validation (mêmes règles que store, mais main_image facultative)
+            /** ----------------------------------------------------
+             *  Conversion JSON → Array (si string envoyée)
+             * ---------------------------------------------------- */
+            foreach (['attributes', 'variants'] as $field) {
+                $value = $request->input($field);
+
+                if (!empty($value) && is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $request->merge([$field => $decoded]);
+                    } else {
+                        $request->merge([$field => []]);
+                    }
+                }
+            }
+
+            /** ----------------------------------------------------
+             *  Validation
+             * ---------------------------------------------------- */
             $validated = $request->validate([
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
@@ -393,26 +413,42 @@ class ProductController extends Controller
                 'attributes.*.size_id' => 'nullable|exists:product_sizes,id',
                 'attributes.*.stock' => 'nullable|numeric',
                 'attributes.*.price' => 'nullable|numeric',
+
+                'main_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             ]);
 
-            if ($request->hasFile('main_image')) {
-                $request->validate([
-                    'main_image' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-                ]);
+            /** ----------------------------------------------------
+             *  Gestion images
+             * ---------------------------------------------------- */
+            $existingImages = $request->input('existing_images', []);
+
+            // Supprimer celles qui ne sont plus présentes
+            if (!empty($existingImages)) {
+                $product->images()->whereNotIn('image', $existingImages)->delete();
+            } else {
+                $product->images()->delete();
             }
-            if ($request->has('product_images')) {
-                // Récupérer les nouvelles images uploadées
-                $uploadedImages = $request->file('product_images', []);
-                foreach ($uploadedImages as $image) {
-                    if ($image) {
-                        $request->validate([
-                            'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-                        ]);
-                    }
+
+            // Ajout nouvelles images
+            if ($request->hasFile('product_images')) {
+                foreach ($request->file('product_images') as $img) {
+                    $product->images()->create([
+                        'image' => $this->productImageSave($img),
+                    ]);
                 }
             }
 
-            // Mise à jour des infos principales
+            // Image principale
+            if ($request->boolean('main_image_deleted')) {
+                $product->image_path = null;
+            } elseif ($request->hasFile('main_image')) {
+                $product->image_path = $this->productImageSave($request->file('main_image'));
+            }
+
+            /** ----------------------------------------------------
+             *  Mise à jour infos principales
+             * ---------------------------------------------------- */
             $product->fill($request->only([
                 'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id',
                 'description', 'unit_type', 'is_popular', 'is_trending',
@@ -425,16 +461,11 @@ class ProductController extends Controller
                 $product->code = 1000 + $product->id;
             }
 
-            // Nouvelle image principale ?
-            if ($request->hasFile('main_image')) {
-                $product->image_path = $this->productImageSave($request->file('main_image'));
-            } elseif ($request->main_image === null) {
-                $product->image_path = null; // Supprime l'image principale si main_image est null
-            }
-
             $product->save();
 
-            // Produit simple → maj prix/quantité
+            /** ----------------------------------------------------
+             *  Gestion simple / variable
+             * ---------------------------------------------------- */
             if ($product->type === 'simple') {
                 $product->update([
                     'current_purchase_cost'   => $request->purchase_cost ?? $product->current_purchase_cost,
@@ -444,7 +475,6 @@ class ProductController extends Controller
                 ]);
             }
 
-            // Produit variable → recréer les variants
             if ($product->type === 'variable' && $request->has('variants')) {
                 $product->variants()->delete();
                 foreach ($request->variants as $variant) {
@@ -452,7 +482,9 @@ class ProductController extends Controller
                 }
             }
 
-            // Attributs
+            /** ----------------------------------------------------
+             *  Attributs
+             * ---------------------------------------------------- */
             if ($request->has('attributes')) {
                 $product->attributes()->delete();
                 foreach ($request->attributes as $attr) {
@@ -461,16 +493,6 @@ class ProductController extends Controller
                         'size_id'  => $attr['size_id'] ?? null,
                         'stock'    => $attr['stock'] ?? 0,
                         'price'    => $attr['price'] ?? null,
-                    ]);
-                }
-            }
-
-            // Images additionnelles
-            if ($request->hasFile('product_images')) {
-                $product->images()->delete();
-                foreach ($request->file('product_images') as $img) {
-                    $product->images()->create([
-                        'image' => $this->productImageSave($img),
                     ]);
                 }
             }
@@ -498,78 +520,6 @@ class ProductController extends Controller
         ProductImage::where('id', $request->id)->delete();
         return 'success';
     }
-
-    public function productUpdate(Request $request)
-    {
-
-        $mainimg = $request->main_image;
-
-        $product = Product::find($request->product_id);
-        $product->name = $request->name;
-        $product->category_id = $request->category_id;
-        $product->subcategory_id = $request->subcategory_id;
-        $product->image_path = $request->image_path;
-        $product->brand_id = $request->brand_id;
-        $product->color = implode(",", $request->product_color);
-        $product->size = $request->size;
-        $product->supplier_id = $request->supplier_id;
-        $product->current_purchase_cost = $request->current_purchase_cost;
-        $product->current_sale_price = $request->current_sale_price;
-        $product->current_wholesale_price = $request->current_wholesale_price;
-        $product->wholesale_minimum_qty = $request->wholesale_minimum_qty;
-        $product->discount_type = $request->discount_type;
-        $product->discount = $request->discount;
-        $product->unit_type = $request->unit_type;
-        $product->description = $request->description;
-        if ($request->is_popular) {
-            $product->is_popular = 1;
-        } else {
-            $product->is_popular = 0;
-        }
-        if ($request->is_trending) {
-            $product->is_trending = 1;
-        } else {
-            $product->is_popular = 0;
-        }
-        if (str_contains($mainimg, 'storage/product_images')) {
-            $product->image_path = $mainimg;
-        } else {
-            if (isset($mainimg) && ($mainimg != '') && ($mainimg != null)) {
-                $product->image_path = $this->productImageSave($mainimg);
-            }
-        }
-        $product->updated_at = Carbon::now();
-        $product->save();
-
-        if (isset($request->editImage)) {
-            foreach ($request->editImage as $key => $image2) {
-
-                if ($request->editImage[$key][0]) {
-                    $image2 = $request->editImage[$key][0];
-                    if (isset($image2) && ($image2 != '') && ($image2 != null)) {
-                        $imageurl = $this->productImageSave($image2);
-                        $productImage = ProductImage::find($key);
-                        $productImage->image = $imageurl;
-                        $productImage->save();
-                    }
-                }
-            }
-        }
-
-        if (isset($request->new_product_img)) {
-            foreach ($request->new_product_img as $key => $image) {
-                if (isset($image) && ($image != '') && ($image != null)) {
-                    $newProductImage = new ProductImage();
-                    $newProductImage->product_id = $request->product_id;
-                    $newProductImage->image = $this->productImageSave($image);
-                    $newProductImage->save();
-                }
-            }
-        }
-
-        return redirect()->back()->with('success', 'Product updated successfully');
-    }
-
     /**
      * Sauvegarder une image produit
      */

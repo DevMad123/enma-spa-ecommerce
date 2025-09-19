@@ -16,11 +16,23 @@ export default function ImageGrid({ data, setData, errors }) {
     }
   };
 
-  // Supprimer une image additionnelle
-  const handleRemove = (idx) => {
+  // suppression d'une image existante
+  const removeExisting = (idx) => {
+    const newExisting = data.existing_images.filter((_, i) => i !== idx);
+    setData("existing_images", newExisting);
+  };
+
+  // suppression d'une nouvelle image (File)
+  const handleRemoveNew = (idx) => {
     const newImgs = data.product_images.filter((_, i) => i !== idx);
     setData("product_images", newImgs);
   };
+
+  // Supprimer une image additionnelle
+  // const handleRemove = (idx) => {
+  //   const newImgs = data.product_images.filter((_, i) => i !== idx);
+  //   setData("product_images", newImgs);
+  // };
 
   // Supprimer l'image principale
   const handleRemoveMainImage = () => {
@@ -90,17 +102,26 @@ export default function ImageGrid({ data, setData, errors }) {
           onChange={handleAddImages}
           className="w-full border rounded px-3 py-2 mt-2"
         />
-        {errors.product_images && (
-          <p className="text-red-500 text-xs">{errors.product_images}</p>
+        {errors.existing_images && (
+          <p className="text-red-500 text-xs">{errors.existing_images}</p>
         )}
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
-          {data.product_images.map((file, idx) => (
+          {data.existing_images.map((file, idx) => (
             <ImageThumbnail
               key={idx}
               file={file}
-              onRemove={() => handleRemove(idx)} // Supprime une image additionnelle
+              onRemove={() => removeExisting(idx)} // Supprime une image additionnelle
+              isExisting={true}
             />
           ))}
+          {(data.product_images || []).map((file, idx) => (
+              <ImageThumbnail
+                key={`new-${idx}`}
+                file={file}
+                onRemove={() => handleRemoveNew(idx)}
+                isExisting={false}
+              />
+            ))}
         </div>
       </div>
     </div>
