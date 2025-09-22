@@ -61,10 +61,17 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::prefix('subcategories')->name('subcategories.')->group(function () {
         Route::get('/create', [ProductSubcategoryController::class, 'createSubcategory'])->name('create');
         Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store');
-        Route::get('/list', [ProductSubcategoryController::class, 'listSubcategory'])->name('list');
+        Route::get('/', [ProductSubcategoryController::class, 'listSubcategory'])->name('list');
         Route::get('/edit', [ProductSubcategoryController::class, 'editSubcategory'])->name('edit');
         Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update');
         Route::delete('/delete/{id}', [ProductSubcategoryController::class, 'deleteSubcategory'])->name('delete');
+    });
+
+    Route::prefix('brands')->name('brands.')->group(function () {
+        Route::get('/list', [BrandController::class, 'listBrands'])->name('list');
+        Route::post('/store', [BrandController::class, 'storeBrands'])->name('store');
+        Route::post('/update/{id}', [BrandController::class, 'updateBrands'])->name('update');
+        Route::delete('/delete/{id}', [BrandController::class, 'deleteBrands'])->name('delete');
     });
 
     // CRUD Catégories

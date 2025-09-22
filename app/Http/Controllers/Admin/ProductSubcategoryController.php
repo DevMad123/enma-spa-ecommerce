@@ -55,12 +55,11 @@ class ProductSubcategoryController extends Controller
         // Sorting
         $sort = $request->get('sort', 'id');
         $direction = $request->get('direction', 'desc');
-        
+
         if ($sort === 'category') {
-            $query->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
-                  ->orderBy('product_categories.name', $direction)
-                  ->select('product_sub_categories.*')
-                  ->whereNull('product_sub_categories.deleted_at'); // Spécifier la table pour éviter l'ambiguïté
+        //     $query->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
+        //         ->select('product_sub_categories.*')
+        //         ->orderBy('product_categories.name', $direction);
         } else {
             $query->orderBy('product_sub_categories.' . $sort, $direction);
         }
@@ -111,7 +110,7 @@ class ProductSubcategoryController extends Controller
 
             // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
             $requestData = $request->all();
-            
+
             // Validation
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -253,13 +252,13 @@ class ProductSubcategoryController extends Controller
 
             // Créer l'instance du gestionnaire d'image
             $imageManager = new ImageManager(new GdDriver());
-            
+
             // Charger l'image téléchargée pour la manipulation
             $img = $imageManager->read($image);
-            
+
             // Redimensionner et optimiser l'image
             $img->resize(400, 400);
-            
+
             // Encoder en WebP avec qualité 70%
             $encodedImageContent = $img->toWebp(70);
 
@@ -284,7 +283,7 @@ class ProductSubcategoryController extends Controller
 
         try {
             $subcategory = ProductSubCategory::findOrFail($id);
-            
+
             $subcategory->deleted_at = now();
             $subcategory->deleted_by = auth()->id();
             $subcategory->save();

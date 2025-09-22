@@ -51,41 +51,41 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
         fd.append("category_id", data.category_id);
         fd.append("note", data.note || "");
         fd.append("status", data.status ? "1" : "0");
-        
+
         // Image principale - Envoyer seulement si c'est un nouveau fichier
         if (hasMainFile) {
           fd.append("image", data.main_image);
         }
-        
+
         // Method override pour PUT
         fd.append("_method", "PUT");
 
         // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
         router.post(route("admin.subcategories.update", subcategory.id), fd, {
-          onSuccess: () => { 
+          onSuccess: () => {
             console.log("Subcategory updated successfully");
-            handleClose(); 
+            handleClose();
           },
-          onError: (err) => { 
-            console.log("Update errors:", err); 
+          onError: (err) => {
+            console.log("Update errors:", err);
           },
         });
       } else {
         // Pas de fichiers, simple PUT
         const dataToSend = { ...data };
-        
+
         // Ne pas envoyer l'image principale si ce n'est pas un nouveau fichier
         if (!(data.main_image instanceof File)) {
           delete dataToSend.main_image;
         }
-        
+
         router.put(route("admin.subcategories.update", subcategory.id), dataToSend, {
-          onSuccess: () => { 
+          onSuccess: () => {
             console.log("Subcategory updated successfully");
-            handleClose(); 
+            handleClose();
           },
-          onError: (err) => { 
-            console.log("Update errors:", err); 
+          onError: (err) => {
+            console.log("Update errors:", err);
           },
         });
       }
@@ -96,7 +96,7 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
       fd.append("category_id", data.category_id);
       fd.append("note", data.note || "");
       fd.append("status", data.status ? "1" : "0");
-      
+
       // Image principale
       if (hasMainFile) {
         fd.append("image", data.main_image);
@@ -104,12 +104,12 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
 
       // Envoi via Inertia POST
       router.post(route("admin.subcategories.store"), fd, {
-        onSuccess: () => { 
+        onSuccess: () => {
           console.log("Subcategory created successfully");
-          handleClose(); 
+          handleClose();
         },
-        onError: (err) => { 
-          console.log("Creation errors:", err); 
+        onError: (err) => {
+          console.log("Creation errors:", err);
         },
       });
     }
@@ -253,7 +253,7 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
                 {errors.image && (
                   <p className="mt-1 text-sm text-red-600">{errors.image}</p>
                 )}
-                
+
                 {/* Aperçu de l'image */}
                 {data.main_image && (
                   <div className="mt-4">
@@ -273,7 +273,7 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
                     )}
                   </div>
                 )}
-                
+
                 {/* Aperçu de l'image actuelle en mode édition (fallback) */}
                 {mode === "edit" && subcategory?.image && !data.main_image && (
                   <div className="flex items-center gap-3">
