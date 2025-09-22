@@ -58,6 +58,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/delete/{id}', [ProductCategoryController::class, 'deleteCategory'])->name('delete');
     });
 
+    Route::prefix('subcategories')->name('subcategories.')->group(function () {
+        Route::get('/create', [ProductSubcategoryController::class, 'createSubcategory'])->name('create');
+        Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store');
+        Route::get('/list', [ProductSubcategoryController::class, 'listSubcategory'])->name('list');
+        Route::get('/edit', [ProductSubcategoryController::class, 'editSubcategory'])->name('edit');
+        Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update');
+        Route::delete('/delete/{id}', [ProductSubcategoryController::class, 'deleteSubcategory'])->name('delete');
+    });
+
     // CRUD Catégories
     // Route::resource('categories', ProductCategoryController::class);
 

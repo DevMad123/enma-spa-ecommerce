@@ -7,8 +7,9 @@
     },
     "devDependencies": {
         "@headlessui/react": "^1.4.2",
-        "@inertiajs/react": "^1.0.0",
+        "@inertiajs/react": "^2.1.7",
         "@tailwindcss/forms": "^0.5.3",
+        "@testing-library/react": "^16.3.0",
         "@vitejs/plugin-react": "^4.2.0",
         "autoprefixer": "^10.4.12",
         "axios": "^1.6.4",
@@ -23,7 +24,6 @@
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@heroicons/react": "^2.1.1",
-        "@inertiajs/inertia": "^0.11.1",
         "@mui/material": "^7.3.2",
         "@reduxjs/toolkit": "^2.9.0",
         "framer-motion": "^12.23.12",

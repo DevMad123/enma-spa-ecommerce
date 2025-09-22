@@ -10,4 +10,12 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        rollupOptions: {
+            external: [
+                '@testing-library/react',
+                '@testing-library/jest-dom'
+            ]
+        }
+    }
 });

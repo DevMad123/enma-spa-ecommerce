@@ -12,17 +12,11 @@ class ProductCategory extends Model
     public $timestamps=false;
     protected $fillable=[
         'name',
-        'image',
         'note',
+        'image',
         'is_popular',
         'status',
-        'created_at',
-        'created_by',
-        'updated_at',
-        'updated_by',
-        'deleted',
-        'deleted_at',
-        'deleted_by',
+        'created_by'
     ];
     protected $appends = ['category_icon'];
 

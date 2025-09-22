@@ -12,6 +12,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Image;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 class ProductCategoryController extends Controller
 {
@@ -61,134 +65,108 @@ class ProductCategoryController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
             ],
+            'flash' => [
+                'success' => session('flash.success'),
+                'error' => session('flash.error'),
+            ],
         ]);
-    }
-    public function createCategory()
-    {
-        // $common_data = new Array_();
-        // $common_data->title = 'Create Category';
-        // return view('adminPanel.product_category.create_category')->with(compact('common_data'));
     }
     /**
      * Store a newly created product category in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function storeCategory(Request $request)
     {
         DB::beginTransaction();
 
         try {
-            // Loggez l'intégralité de la requête pour le débogage
             \Log::info('Product category store request data: ', $request->all());
 
-            // 1. Validation des données de la requête
+            // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
+            $requestData = $request->all();
+            
+            // Validation
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
                 'note' => 'nullable|string',
-                'is_popular' => 'nullable|boolean',
-                'status' => 'required|boolean',
+                'is_popular' => 'required|in:0,1',
+                'status' => 'required|in:0,1'
             ]);
 
-            // 2. Traitement de l'image si elle est présente
             $imagePath = null;
             if ($request->hasFile('image')) {
-                // Vous devriez avoir une méthode 'imageSave' pour gérer l'upload
-                // et la sauvegarde de l'image, comme dans votre ProductController.
-                // Assurez-vous que cette méthode est disponible, par exemple en l'héritant d'un contrôleur de base ou en la créant ici.
-                // Par exemple : $imagePath = $this->imageSave($request->file('image'), 'category_images');
-                // Pour cet exemple, on utilise une méthode simulée.
                 $imagePath = $this->categoryImageSave($request->file('image'));
             }
 
-            // 3. Création de la catégorie
-            $categoryData = $request->only(['name', 'note', 'is_popular', 'status']);
-            
-            // Assigner l'image et l'utilisateur qui a créé la catégorie
-            $categoryData['image'] = $imagePath;
-            $categoryData['created_by'] = auth()->id(); // Assurez-vous d'avoir l'authentification en place
-
             $category = new ProductCategory();
-            $category->fill($categoryData);
+            $category->name = $validated['name'];
+            $category->note = $validated['note'] ?? '';
+            $category->is_popular = $validated['is_popular'];
+            $category->status = $validated['status'];
+            $category->image = $imagePath;
+            $category->created_by = auth()->id();
             $category->save();
+
+            \Log::info('Product category data before commit: ', $category->toArray());
 
             DB::commit();
 
-            // 4. Retour de la réponse
-            return redirect()->back()->with('success', 'Catégorie créée avec succès !');
+            \Log::info('Product category data after commit: ', $category->fresh()->toArray());
+
+            // Utiliser le même format de flash message que ProductController
+            return redirect()->route('admin.categories.list')->with([
+                'flash' => [
+                    'success' => 'Catégorie créée avec succès'
+                ]
+            ]);
 
         } catch (ValidationException $e) {
-            // Annuler la transaction en cas d'échec de la validation
             DB::rollBack();
-            \Log::error('Validation failed during category creation: ' . json_encode($e->errors()));
+            \Log::error('Validation errors during category creation: ', $e->errors());
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            // Annuler la transaction en cas d'erreur générale
             DB::rollBack();
-            \Log::error('Erreur lors de la création de la catégorie : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Erreur lors de la création de la catégorie.',
-                    'error' => $e->getMessage()
-                ], 422);
-            }
-            return back()->withErrors(['error' => 'Erreur lors de la création de la catégorie. Veuillez réessayer.'])->withInput();
+            \Log::error('Error creating category: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la création'])->withInput();
         }
     }
 
     /**
-     * Sauvegarde l'image de la catégorie.
-     * Cette méthode est un exemple et devrait être adaptée à votre logique d'upload.
+     * Sauvegarde l'image de la catégorie avec redimensionnement et optimisation.
      *
-     * @param  \Illuminate\Http\UploadedFile $imageFile
-     * @return string
+     * @param  \Illuminate\Http\UploadedFile $image
+     * @return string|null
      */
-    protected function categoryImageSave($imageFile)
+    protected function categoryImageSave($image)
     {
-        // Exemple de sauvegarde de l'image dans le dossier 'public/storage/category_images'
-        // et retourne le chemin d'accès public.
-        return $imageFile->store('public/category_images');
-    }
+        if ($image) {
+            $fileName = "category-" . time() . rand(1000, 9999) . '.webp';
+            $filePath = 'category_images/' . $fileName;
 
-    public function productCategoryStore(Request $request)
-    {
-        $category = new ProductCategory();
-        $category->name = $request->name;
-        $category->note = $request->note;
-        $category->image = $this->categoryIcon($request->banner_img);
-        $category->created_at = Carbon::now();
-        $category->save();
-        return redirect()->back()->with('success', 'Successfully Added Category');
-    }
+            // Créer l'instance du gestionnaire d'image
+            $imageManager = new ImageManager(new GdDriver());
+            
+            // Charger l'image téléchargée pour la manipulation
+            $img = $imageManager->read($image);
+            
+            // Redimensionner et optimiser l'image
+            $img->resize(400, 400);
+            
+            // Encoder en WebP avec qualité 70%
+            $encodedImageContent = $img->toWebp(70);
 
-    public function productCategoryUpdate(Request $request)
-    {
+            // Sauvegarder dans le stockage public
+            Storage::disk('public')->put($filePath, $encodedImageContent);
 
-        $subcategory = ProductCategory::find($request->category_id);
-        $subcategory->name = $request->name;
-        $subcategory->note = $request->note;
-        if($request->updateImage){
-            $subcategory->image = $this->categoryIcon($request->updateImage);
+            return 'storage/' . $filePath;
         }
-        if($request->is_popular){
-            $subcategory->is_popular = 1;
-        }else{
-            $subcategory->is_popular = 0;
-        }
-        $subcategory->save();
-        return redirect()->back()->with('success', 'Category Successfully Updated');
 
+        return null;
     }
-    public function productCategoryDelete(Request $request){
-        $subcategory = ProductSubCategory::find($request->id);
-        $subcategory->deleted=1;
-        $subcategory->save();
-        return redirect()->back()->with('success', 'Subcategory Successfully Deleted');
-    }
-
 
     public function categoryIcon($image)
     {
@@ -216,5 +194,85 @@ class ProductCategoryController extends Controller
 
         }
 
+    }
+
+    /**
+     * Update the specified product category in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateCategory(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            \Log::info('Product category update request data: ', $request->all());
+
+            // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
+            $requestData = $request->all();
+
+            // Trouver la catégorie
+            $category = ProductCategory::findOrFail($id);
+
+            // Validation
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:product_categories,name,' . $id,
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'note' => 'nullable|string',
+                'is_popular' => 'required|in:0,1',
+                'status' => 'required|in:0,1'
+            ]);
+
+            // Gestion de l'image
+            if ($request->hasFile('image')) {
+                // Supprimer l'ancienne image si elle existe
+                if ($category->image) {
+                    $oldPath = str_replace('storage/', '', $category->image);
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+                
+                // Sauvegarder la nouvelle image
+                $category->image = $this->categoryImageSave($request->file('image'));
+            }
+
+            // Mise à jour des autres champs
+            $category->name = $validated['name'];
+            $category->note = $validated['note'] ?? '';
+            $category->is_popular = $validated['is_popular'];
+            $category->status = $validated['status'];
+            $category->updated_by = auth()->id();
+            $category->save();
+
+            \Log::info('Product category data before commit: ', $category->toArray());
+
+            DB::commit();
+
+            \Log::info('Product category updated successfully: ', $category->fresh()->toArray());
+
+            // Utiliser le même format de flash message que ProductController
+            return redirect()->route('admin.categories.list')->with([
+                'flash' => [
+                    'success' => 'Catégorie mise à jour avec succès'
+                ]
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            \Log::error('Category not found during update: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Catégorie non trouvée'])->withInput();
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Validation errors during category update: ', $e->errors());
+            return back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error updating category: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la mise à jour'])->withInput();
+        }
     }
 }

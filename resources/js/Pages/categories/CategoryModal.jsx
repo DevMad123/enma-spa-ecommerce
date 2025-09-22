@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Inertia } from "@inertiajs/inertia";
+import { router } from "@inertiajs/react";
 import { Modal, Box, IconButton, Tooltip } from "@mui/material";
 import { useForm, usePage } from "@inertiajs/react";
 import { HiOutlineX, HiOutlinePlus, HiOutlinePencil } from "react-icons/hi";
@@ -10,6 +10,7 @@ export default function CategoryModal({ open, onClose, mode = "create", category
     name: "",
     note: "",
     is_popular: false,
+    status: true,
     main_image: null,
   };
 
@@ -23,62 +24,100 @@ export default function CategoryModal({ open, onClose, mode = "create", category
         name: category.name || "",
         note: category.note || "",
         is_popular: !!category.is_popular,
+        status: !!category.status,
         main_image: category.image || null,
       });
     } else if (mode === "create") {
       reset();
     }
-  }, [mode, category, setData, reset]);
+    // eslint-disable-next-line
+  }, [mode, category]);
 
   // Soumission
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    console.log("Mode:", mode, "Category ID:", category?.id);
+    console.log("Data main_image:", data.main_image);
+    console.log("Is main_image a File?", data.main_image instanceof File);
+
     const hasMainFile = data.main_image instanceof File;
 
-    if (hasMainFile) {
+    if (mode === "edit" && category?.id) {
+      // EDITION : route update AVEC id
+      if (hasMainFile) {
+        // Avec fichier : utiliser FormData
+        const fd = new FormData();
+        fd.append("name", data.name);
+        fd.append("note", data.note || "");
+        fd.append("is_popular", data.is_popular ? "1" : "0");
+        fd.append("status", data.status ? "1" : "0");
+        
+        // Image principale - Envoyer seulement si c'est un nouveau fichier
+        if (hasMainFile) {
+          fd.append("image", data.main_image);
+        }
+        
+        // Method override pour PUT
+        fd.append("_method", "PUT");
+
+        // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
+        router.post(route("admin.categories.update", category.id), fd, {
+          onSuccess: () => { reset(); onClose(); },
+          onError: (err) => { console.log("errors", err); },
+        });
+      } else {
+        // Pas de fichiers, simple PUT
+        const dataToSend = { ...data };
+        
+        // Ne pas envoyer l'image principale si ce n'est pas un nouveau fichier
+        if (!(data.main_image instanceof File)) {
+          delete dataToSend.main_image;
+        }
+        
+        router.put(route("admin.categories.update", category.id), dataToSend, {
+          onSuccess: () => { reset(); onClose(); },
+          onError: (err) => { console.log("errors", err); },
+        });
+      }
+    } else {
+      // CREATION : route store SANS id
       const fd = new FormData();
-      fd.append("name", data.name || "");
+      fd.append("name", data.name);
       fd.append("note", data.note || "");
       fd.append("is_popular", data.is_popular ? "1" : "0");
-      fd.append("main_image", data.main_image);
-
-      // Method override pour PUT si c'est une édition
-      if (mode === "edit") {
-        fd.append("_method", "put");
+      fd.append("status", data.status ? "1" : "0");
+      
+      // Image principale
+      if (hasMainFile) {
+        fd.append("image", data.main_image);
       }
 
-      // Envoi via Inertia
-      const routeName = mode === "edit" ? "admin.categories.update" : "admin.categories.store";
-      const routeParams = mode === "edit" ? category.id : undefined;
-
-      Inertia.post(route(routeName, routeParams), fd, {
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
-        onError: (err) => {
-          console.log("errors", err);
-        },
+      // Envoi via Inertia POST
+      router.post(route("admin.categories.store"), fd, {
+        onSuccess: () => { reset(); onClose(); },
+        onError: (err) => { console.log("errors", err); },
       });
-    } else {
-      // Pas de fichier, on peut utiliser put ou post standard
-      const submitMethod = mode === "edit" ? put : post;
-      const routeName = mode === "edit" ? "admin.categories.update" : "admin.categories.store";
-      const routeParams = mode === "edit" ? category.id : undefined;
+    }
+  };
 
-      submitMethod(route(routeName, routeParams), {
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
-      });
+  // Handler pour fermer le modal
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  // Handler pour l'upload d'image
+  const handleMainImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setData("main_image", file);
     }
   };
 
   if (!open) return null;
   return (
-    <Modal open={open} onClose={onClose} aria-labelledby="category-modal-title">
+    <Modal open={open} onClose={handleClose} aria-labelledby="category-modal-title">
       <Box
         className="bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh] transition-all duration-300 transform"
         sx={{
@@ -105,13 +144,26 @@ export default function CategoryModal({ open, onClose, mode = "create", category
               </>
             )}
           </h2>
-          <IconButton onClick={onClose} aria-label="Fermer le formulaire">
+          <IconButton onClick={handleClose} aria-label="Fermer le formulaire">
             <HiOutlineX className="w-7 h-7 text-gray-500 hover:text-gray-700 transition" />
           </IconButton>
         </div>
 
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Affichage des erreurs globales */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="text-sm text-red-600">
+                {Object.entries(errors).map(([key, error]) => (
+                  <div key={key} className="mb-1">
+                    <strong>{key}:</strong> {error}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Section: Informations Générales */}
           <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Informations de la catégorie</h3>
@@ -161,10 +213,10 @@ export default function CategoryModal({ open, onClose, mode = "create", category
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setData("main_image", e.target.files[0])}
+              onChange={handleMainImageChange}
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#f3eadc] file:text-[#8c6c3c] hover:file:bg-[#e7d8c6] transition"
             />
-            {errors.main_image && <p className="text-red-500 text-xs mt-1">{errors.main_image}</p>}
+            {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
             
             {data.main_image && (
               <div className="mt-4">
@@ -186,11 +238,28 @@ export default function CategoryModal({ open, onClose, mode = "create", category
             )}
           </div>
 
+          {/* Add Status Toggle before the buttons section */}
+          <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">État de la catégorie</h3>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={data.status}
+                onChange={(e) => setData("status", e.target.checked)}
+                className="form-checkbox h-4 w-4 text-[#8c6c3c] rounded focus:ring-[#a68e55]"
+              />
+              <label className="ml-2 block text-sm font-medium text-gray-700">
+                Catégorie active
+              </label>
+            </div>
+            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
+          </div>
+
           {/* Boutons */}
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition shadow-sm"
             >
               Annuler

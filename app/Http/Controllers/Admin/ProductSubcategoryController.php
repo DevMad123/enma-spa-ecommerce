@@ -8,54 +8,302 @@ use App\Models\ProductSubCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Expr\Array_;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Inertia\Inertia;
+use Image;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 class ProductSubcategoryController extends Controller
 {
-    public function productSubcategory()
+    /**
+     * Display a list of product subcategories.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     */
+    public function listSubcategory(Request $request)
     {
-        $common_data = new Array_();
-        $common_data->title = 'Product Subcategory';
+        // Start a new query for the ProductSubCategory model
+        $query = ProductSubCategory::query()
+            ->with('category') // Eager load parent categories
+            ->whereNull('deleted_at');
 
-        $productSubcategory = ProductSubCategory::where('deleted', 0)->where('status', 1)->get();
-        $productCategory = ProductCategory::where('deleted', 0)->where('status', 1)->get();
+        // Global search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('note', 'like', "%{$search}%")
+                  ->orWhereHas('category', function($categoryQuery) use ($search) {
+                      $categoryQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
 
-        return view('adminPanel.product_subcategory.product_subcategory')->with(compact('productSubcategory', 'productCategory','common_data'));
+        // Status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Category filter
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Sorting
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'desc');
+        
+        if ($sort === 'category') {
+            $query->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
+                  ->orderBy('product_categories.name', $direction)
+                  ->select('product_sub_categories.*')
+                  ->whereNull('product_sub_categories.deleted_at'); // Spécifier la table pour éviter l'ambiguïté
+        } else {
+            $query->orderBy('product_sub_categories.' . $sort, $direction);
+        }
+
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $subcategoryList = $query->paginate($perPage)->appends($request->all());
+
+        // Get categories for filter dropdown
+        $categories = ProductCategory::where('status', 1)
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        // Return the Inertia view with the necessary data
+        return Inertia::render('subcategories/list', [
+            'title' => 'Subcategory List',
+            'subcategoryList' => $subcategoryList,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+                'category_id' => $request->category_id,
+                'perPage' => $perPage,
+                'sort' => $sort,
+                'direction' => $direction,
+                'categories' => $categories,
+            ],
+            'categories' => $categories, // Pour le modal
+            'flash' => [
+                'success' => session('flash.success'),
+                'error' => session('flash.error'),
+            ],
+        ]);
     }
 
-    public function productSubCategoryStore(Request $request)
+    /**
+     * Store a newly created product subcategory in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeSubcategory(Request $request)
     {
-        $subcategory = new ProductSubCategory();
-        $subcategory->category_id = $request->category_id;
-        $subcategory->name = $request->name;
-        $subcategory->note = $request->note;
-        $subcategory->created_at = Carbon::now();
-        $subcategory->save();
+        DB::beginTransaction();
 
-        return redirect()->back()->with('success', 'Subcategory Successfully created');
+        try {
+            \Log::info('Product subcategory store request data: ', $request->all());
 
+            // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
+            $requestData = $request->all();
+            
+            // Validation
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:product_categories,id',
+                'note' => 'nullable|string',
+                'status' => 'required|in:0,1',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            ]);
+
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $this->subcategoryImageSave($request->file('image'));
+            }
+
+            $subcategory = new ProductSubCategory();
+            $subcategory->name = $validated['name'];
+            $subcategory->category_id = $validated['category_id'];
+            $subcategory->note = $validated['note'] ?? '';
+            $subcategory->status = $validated['status'];
+            $subcategory->image = $imagePath;
+            $subcategory->created_by = auth()->id();
+            $subcategory->save();
+
+            \Log::info('Product subcategory data before commit: ', $subcategory->toArray());
+
+            DB::commit();
+
+            \Log::info('Product subcategory data after commit: ', $subcategory->fresh()->toArray());
+
+            // Utiliser le même format de flash message que ProductController
+            return redirect()->route('admin.subcategories.list')->with([
+                'flash' => [
+                    'success' => 'Subcategory created successfully!'
+                ]
+            ]);
+
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Validation errors during subcategory creation: ', $e->errors());
+            return back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error creating subcategory: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la création'])->withInput();
+        }
     }
 
-    public function productSubCategoryUpdate(Request $request)
+    /**
+     * Update the specified product subcategory in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateSubcategory(Request $request, $id)
     {
-        $subcategory = ProductSubCategory::find($request->subcategory_id);
-        $subcategory->category_id = $request->category_id;
-        $subcategory->name = $request->name;
-        $subcategory->note = $request->note;
-        $subcategory->save();
-        return redirect()->back()->with('success', 'Subcategory Successfully Updated');
+        DB::beginTransaction();
 
+        try {
+            \Log::info('Product subcategory update request data: ', $request->all());
+
+            // Décoder les JSON strings si nécessaire
+            $requestData = $request->all();
+
+            // Validation
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:product_categories,id',
+                'note' => 'nullable|string',
+                'status' => 'required|in:0,1',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            ]);
+
+            $subcategory = ProductSubCategory::findOrFail($id);
+
+            // Gérer l'image
+            $imagePath = $subcategory->image; // Conserver l'image existante par défaut
+            if ($request->hasFile('image')) {
+                // Supprimer l'ancienne image si elle existe
+                if ($subcategory->image) {
+                    $oldImagePath = str_replace('storage/', '', $subcategory->image);
+                    if (Storage::disk('public')->exists($oldImagePath)) {
+                        Storage::disk('public')->delete($oldImagePath);
+                    }
+                }
+                // Sauvegarder la nouvelle image
+                $imagePath = $this->subcategoryImageSave($request->file('image'));
+            }
+
+            $subcategory->name = $validated['name'];
+            $subcategory->category_id = $validated['category_id'];
+            $subcategory->note = $validated['note'] ?? '';
+            $subcategory->status = $validated['status'];
+            $subcategory->image = $imagePath;
+            $subcategory->updated_by = auth()->id();
+            $subcategory->save();
+
+            \Log::info('Product subcategory data before commit: ', $subcategory->toArray());
+
+            DB::commit();
+
+            \Log::info('Product subcategory data after commit: ', $subcategory->fresh()->toArray());
+
+            // Utiliser le même format de flash message que ProductController
+            return redirect()->route('admin.subcategories.list')->with([
+                'flash' => [
+                    'success' => 'Subcategory updated successfully!'
+                ]
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            \Log::error('Subcategory not found during update: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Sous-catégorie non trouvée'])->withInput();
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Validation errors during subcategory update: ', $e->errors());
+            return back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error updating subcategory: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la mise à jour'])->withInput();
+        }
     }
-    public function productSubCategoryDelete(Request $request){
-        $subcategory = ProductSubCategory::find($request->id);
-        $subcategory->deleted=1;
-        $subcategory->save();
-        return redirect()->back()->with('success', 'Subcategory Successfully Deleted');
+
+    /**
+     * Sauvegarde l'image de la sous-catégorie avec redimensionnement et optimisation.
+     *
+     * @param  \Illuminate\Http\UploadedFile $image
+     * @return string|null
+     */
+    protected function subcategoryImageSave($image)
+    {
+        if ($image) {
+            $fileName = "subcategory-" . time() . rand(1000, 9999) . '.webp';
+            $filePath = 'subcategory_images/' . $fileName;
+
+            // Créer l'instance du gestionnaire d'image
+            $imageManager = new ImageManager(new GdDriver());
+            
+            // Charger l'image téléchargée pour la manipulation
+            $img = $imageManager->read($image);
+            
+            // Redimensionner et optimiser l'image
+            $img->resize(400, 400);
+            
+            // Encoder en WebP avec qualité 70%
+            $encodedImageContent = $img->toWebp(70);
+
+            // Sauvegarder dans le stockage public
+            Storage::disk('public')->put($filePath, $encodedImageContent);
+
+            return 'storage/' . $filePath;
+        }
+
+        return null;
     }
 
-    public function subcategoryListGet(Request $request){
+    /**
+     * Remove the specified subcategory from storage (soft delete).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function deleteSubcategory($id)
+    {
+        DB::beginTransaction();
 
-        $subcategoryList=ProductSubCategory::where('category_id',$request->category_id)->where('status',1)->where('deleted',0)->get();
-        return view('adminPanel.product_subcategory._subcategory_list')->with(compact('subcategoryList'))->render();
+        try {
+            $subcategory = ProductSubCategory::findOrFail($id);
+            
+            $subcategory->deleted_at = now();
+            $subcategory->deleted_by = auth()->id();
+            $subcategory->save();
+
+            DB::commit();
+
+            return redirect()->route('admin.subcategories.list')->with([
+                'flash' => [
+                    'success' => 'Subcategory deleted successfully!'
+                ]
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Sous-catégorie non trouvée']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error deleting subcategory: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression']);
+        }
     }
 }

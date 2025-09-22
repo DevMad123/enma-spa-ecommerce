@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePage, Link, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
@@ -175,10 +175,16 @@ function ProductsListTable({ products, sort, direction, onSort, onEdit }) {
 }
 
 export default function ProductsList() {
-  const { productList, filters, productCategory, supplierList, brand, color, size } = usePage().props;
+  const { productList, filters, productCategory, supplierList, brand, color, size, flash } = usePage().props;
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // "create" ou "edit"
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  useEffect(() => {
+    if (flash?.success) {
+      setModalOpen(false); // Ferme le modal si un message de succès est reçu
+    }
+  }, [flash]); 
 
   const handleFilterChange = (newFilters) => {
     router.get(route("admin.products.list"), { ...filters, ...newFilters }, { preserveState: true, replace: true });
@@ -202,11 +208,15 @@ export default function ProductsList() {
     setModalOpen(true);
   };
 
-  const { success } = usePage().props;
-
   return (
     <>
-      {success && <div className="alert alert-success">{success}</div>}
+      {/* Messages de succès */}
+      {flash?.success && (
+        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          {flash.success}
+        </div>
+      )}
+      
       <ProductsHeader
         filters={filters}
         onFilterChange={handleFilterChange}

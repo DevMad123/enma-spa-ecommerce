@@ -3,18 +3,18 @@ import { usePage, Link, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
 import { FiEye } from "react-icons/fi";
-import CategoryModal from "./CategoryModal";
+import SubcategoryModal from "./SubcategoryModal";
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-function CategoriesHeader({ filters, onFilterChange, onAddCategory }) {
+function SubcategoriesHeader({ filters, onFilterChange, onAddSubcategory }) {
   return (
     <header className="bg-white shadow-sm px-6 py-4 flex flex-wrap gap-4 items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-[#8c6c3c] tracking-tight">Categories</h1>
+      <h1 className="text-2xl font-bold text-[#8c6c3c] tracking-tight">Subcategories</h1>
       <div className="flex flex-wrap gap-2 items-center">
         <input
           type="text"
-          placeholder="Search categories..."
+          placeholder="Search subcategories..."
           value={filters.search}
           onChange={(e) => onFilterChange({ search: e.target.value })}
           className="border rounded px-3 py-2 text-sm"
@@ -29,6 +29,18 @@ function CategoriesHeader({ filters, onFilterChange, onAddCategory }) {
           <option value="0">Inactive</option>
         </select>
         <select
+          value={filters.category_id}
+          onChange={(e) => onFilterChange({ category_id: e.target.value })}
+          className="border rounded px-3 py-2 text-sm"
+        >
+          <option value="">All Categories</option>
+          {filters.categories?.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <select
           value={filters.perPage}
           onChange={(e) => onFilterChange({ perPage: e.target.value })}
           className="border rounded px-3 py-2 text-sm"
@@ -40,34 +52,30 @@ function CategoriesHeader({ filters, onFilterChange, onAddCategory }) {
           ))}
         </select>
         <button
-          onClick={onAddCategory}
+          onClick={onAddSubcategory}
           className="px-4 py-2 rounded-full bg-[#a68e55] text-white font-semibold shadow hover:bg-[#8c6c3c] transition"
         >
-          + Add Category
+          + Add Subcategory
         </button>
       </div>
     </header>
   );
 }
 
-function CategoriesListTable({ categories, sort, direction, onSort, onEdit }) {
+function SubcategoriesListTable({ subcategories, sort, direction, onSort, onEdit, onDelete }) {
   const headers = [
     { label: "SI", key: "id", sortable: false },
     { label: "Name", key: "name", sortable: true },
+    { label: "Category", key: "category", sortable: true },
     { label: "Photo", key: "image", sortable: false },
     { label: "Note", key: "note", sortable: false },
-    { label: "Popular", key: "is_popular", sortable: true },
     { label: "Status", key: "status", sortable: true },
     { label: "Action", key: "action", sortable: false },
   ];
 
   const getSortIcon = (key) => {
-    if (sort !== key) return <span className="text-gray-300">⇅</span>;
-    return direction === "asc" ? (
-      <span className="text-[#a68e55]">▲</span>
-    ) : (
-      <span className="text-[#a68e55]">▼</span>
-    );
+    if (sort !== key) return "↕️";
+    return direction === "asc" ? "↑" : "↓";
   };
 
   return (
@@ -90,34 +98,38 @@ function CategoriesListTable({ categories, sort, direction, onSort, onEdit }) {
           </tr>
         </thead>
         <tbody>
-          {categories.data.length === 0 ? (
+          {subcategories.data.length === 0 ? (
             <tr>
               <td colSpan={headers.length} className="py-6 text-center text-gray-400">
-                No categories found.
+                No subcategories found.
               </td>
             </tr>
           ) : (
-            categories.data.map((category, i) => (
-              <tr key={category.id} className="border-b last:border-0 hover:bg-gray-50 transition">
-                <td className="py-2 px-3">{categories.from + i}</td>
-                <td className="py-2 px-3 font-medium text-gray-800">{category.name}</td>
+            subcategories.data.map((subcategory, i) => (
+              <tr key={subcategory.id} className="border-b last:border-0 hover:bg-gray-50 transition">
+                <td className="py-2 px-3">{subcategories.from + i}</td>
+                <td className="py-2 px-3 font-medium text-gray-800">{subcategory.name}</td>
                 <td className="py-2 px-3">
-                  <img
-                    src={`http://127.0.0.1:8000/${category.image}`}
-                    alt={category.name}
-                    className="w-14 h-14 object-cover rounded shadow border"
-                  />
+                  <span className="inline-block px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 font-semibold">
+                    {subcategory.category ? subcategory.category.name : 'N/A'}
+                  </span>
                 </td>
-                <td className="py-2 px-3">{category.note}</td>
                 <td className="py-2 px-3">
-                  {category.is_popular === 1 ? (
-                    <span className="inline-block px-3 py-1 text-xs rounded bg-yellow-100 text-yellow-700 font-semibold">Yes</span>
+                  {subcategory.image ? (
+                    <img
+                      src={`http://127.0.0.1:8000/${subcategory.image}`}
+                      alt={subcategory.name}
+                      className="w-14 h-14 object-cover rounded shadow border"
+                    />
                   ) : (
-                    <span className="inline-block px-3 py-1 text-xs rounded bg-gray-100 text-gray-700 font-semibold">No</span>
+                    <div className="w-14 h-14 bg-gray-200 rounded shadow border flex items-center justify-center text-gray-400 text-xs">
+                      No Image
+                    </div>
                   )}
                 </td>
+                <td className="py-2 px-3">{subcategory.note || '-'}</td>
                 <td className="py-2 px-3">
-                  {category.status === 1 ? (
+                  {subcategory.status === 1 ? (
                     <span className="inline-block px-3 py-1 text-xs rounded bg-green-100 text-green-700 font-semibold">Active</span>
                   ) : (
                     <span className="inline-block px-3 py-1 text-xs rounded bg-red-100 text-red-700 font-semibold">Inactive</span>
@@ -128,21 +140,21 @@ function CategoriesListTable({ categories, sort, direction, onSort, onEdit }) {
                     <button
                       className="p-2 rounded hover:bg-gray-100 text-[#8c6c3c]"
                       title="View"
-                      onClick={() => onEdit(category)}
+                      onClick={() => onEdit(subcategory)}
                     >
                       <FiEye size={18} />
                     </button>
                     <button
                       className="p-2 rounded hover:bg-gray-100 text-blue-600"
                       title="Edit"
-                      onClick={() => onEdit(category)}
+                      onClick={() => onEdit(subcategory)}
                     >
                       <HiOutlinePencil size={18} />
                     </button>
                     <button
                       className="p-2 rounded hover:bg-gray-100 text-red-500"
                       title="Delete"
-                      onClick={() => window.confirm("Are you sure you want to delete this category?")}
+                      onClick={() => onDelete(subcategory)}
                     >
                       <HiOutlineTrash size={18} />
                     </button>
@@ -153,13 +165,13 @@ function CategoriesListTable({ categories, sort, direction, onSort, onEdit }) {
           )}
         </tbody>
       </table>
-      {/* Pagination */}
+      
       <div className="flex justify-between items-center mt-4">
         <span className="text-xs text-gray-500">
-          Showing {categories.from} to {categories.to} of {categories.total} categories
+          Showing {subcategories.from} to {subcategories.to} of {subcategories.total} subcategories
         </span>
         <div className="flex gap-1">
-          {categories.links.map((link, idx) => (
+          {subcategories.links.map((link, idx) => (
             <button
               key={idx}
               disabled={!link.url}
@@ -174,80 +186,127 @@ function CategoriesListTable({ categories, sort, direction, onSort, onEdit }) {
   );
 }
 
-export default function CategoriesList() {
-  const { categoryList, filters, flash = {} } = usePage().props;
+export default function SubcategoriesList() {
+  const { subcategoryList, filters, flash = {} } = usePage().props;
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
-  // Fermer le modal automatiquement après un succès (comme dans ProductsList)
+  // Affichage des messages flash
   useEffect(() => {
-    if (flash?.success) {
-      setModalOpen(false);
+    if (flash.success) {
+      console.log("Flash success:", flash.success);
+      // Fermer automatiquement le modal après succès
+      if (modalOpen) {
+        setModalOpen(false);
+        setSelectedSubcategory(null);
+        setModalMode("create");
+      }
+    }
+    if (flash.error) {
+      console.log("Flash error:", flash.error);
     }
   }, [flash]);
 
+  // Gestionnaire pour les filtres
   const handleFilterChange = (newFilters) => {
-    router.get(route("admin.categories.list"), { ...filters, ...newFilters },
-      { preserveState: true, replace: true });
+    const updatedFilters = { ...filters, ...newFilters };
+    const params = new URLSearchParams();
+    
+    Object.entries(updatedFilters).forEach(([key, value]) => {
+      if (value && value !== "") {
+        params.append(key, value);
+      }
+    });
+
+    router.get(route("admin.subcategories.list"), Object.fromEntries(params), {
+      preserveState: true,
+      replace: true,
+    });
   };
 
+  // Gestionnaire pour le tri
   const handleSort = (key) => {
-    let direction = "asc";
-    if (filters.sort === key && filters.direction === "asc") direction = "desc";
-    handleFilterChange({ sort: key, direction });
+    const newDirection = filters.sort === key && filters.direction === "asc" ? "desc" : "asc";
+    handleFilterChange({ sort: key, direction: newDirection });
   };
 
-  const handleAddCategory = () => {
-    setSelectedCategory(null);
+  // Gestionnaire pour ouvrir le modal d'ajout
+  const handleAddSubcategory = () => {
     setModalMode("create");
+    setSelectedSubcategory(null);
     setModalOpen(true);
   };
 
-  const handleEditCategory = (category) => {
-    setSelectedCategory(category);
+  // Gestionnaire pour éditer
+  const handleEdit = (subcategory) => {
     setModalMode("edit");
+    setSelectedSubcategory(subcategory);
     setModalOpen(true);
+  };
+
+  // Gestionnaire pour fermer le modal
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedSubcategory(null);
+    setModalMode("create");
+  };
+
+  // Gestionnaire pour supprimer une sous-catégorie
+  const handleDelete = (subcategory) => {
+    if (window.confirm(`Are you sure you want to delete the subcategory "${subcategory.name}"? This action cannot be undone.`)) {
+      router.delete(route("admin.subcategories.delete", subcategory.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+          console.log("Subcategory deleted successfully");
+        },
+        onError: (errors) => {
+          console.log("Delete errors:", errors);
+        },
+      });
+    }
   };
 
   return (
     <>
-      {/* Messages de succès - avec le même style que ProductsList */}
-      {flash?.success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+      <SubcategoriesHeader
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onAddSubcategory={handleAddSubcategory}
+      />
+
+      {/* Affichage des messages flash */}
+      {flash.success && (
+        <div className="mx-6 mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           {flash.success}
         </div>
       )}
-
-      {/* Messages d'erreur */}
-      {flash?.error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+      
+      {flash.error && (
+        <div className="mx-6 mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
           {flash.error}
         </div>
       )}
 
-      <CategoriesHeader
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onAddCategory={handleAddCategory}
-      />
-      <main className="pb-4">
-        <CategoriesListTable
-          categories={categoryList}
+      <div className="px-6">
+        <SubcategoriesListTable
+          subcategories={subcategoryList}
           sort={filters.sort}
           direction={filters.direction}
           onSort={handleSort}
-          onEdit={handleEditCategory}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
-      </main>
-      <CategoryModal
+      </div>
+
+      <SubcategoryModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleCloseModal}
         mode={modalMode}
-        category={selectedCategory}
+        subcategory={selectedSubcategory}
       />
     </>
   );
 }
 
-CategoriesList.layout = (page) => <AdminLayout children={page} title="Category List" />;
+SubcategoriesList.layout = (page) => <AdminLayout children={page} title="Subcategory List" />;

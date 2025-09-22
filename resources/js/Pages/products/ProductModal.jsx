@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Inertia } from "@inertiajs/inertia";
+import { router } from "@inertiajs/react";
 import { Modal, Box, IconButton, Tooltip } from "@mui/material";
 import { useForm, usePage } from "@inertiajs/react";
 import {
@@ -35,12 +35,12 @@ export default function ProductModal({
     code: "",
     unit_type: "",
     description: "",
-    purchase_cost: "",
-    sale_price: "",
-    wholesale_price: "",
+    purchase_cost: 0,
+    sale_price: 0,
+    wholesale_price: 0,
     wholesale_minimum_qty: 1,
     available_quantity: 0,
-    discount_type: "0",
+    discount_type: 0,
     discount: 0,
     is_trending: false,
     is_popular: false,
@@ -79,12 +79,12 @@ export default function ProductModal({
         code: product.code || "",
         unit_type: product.unit_type || "",
         description: product.description || "",
-        purchase_cost: product.current_purchase_cost || "",
-        sale_price: product.current_sale_price || "",
-        wholesale_price: product.current_wholesale_price || "",
+        purchase_cost: product.current_purchase_cost || 0,
+        sale_price: product.current_sale_price || 0,
+        wholesale_price: product.current_wholesale_price || 0,
         wholesale_minimum_qty: product.wholesale_minimum_qty || 1,
         available_quantity: product.available_quantity || 0,
-        discount_type: product.discount_type || "0",
+        discount_type: product.discount_type || 0,
         discount: product.discount || 0,
         is_trending: !!product.is_trending,
         is_popular: !!product.is_popular,
@@ -98,7 +98,7 @@ export default function ProductModal({
       // Optionnel : tu peux aussi garder les attributes entiers si tu veux reconstruire un tableau
       setAttributes(product.attributes || []);
     } else if (mode === "create") {
-      reset();
+      setData(defaultData);
       setAttributes([]);
     }
     // eslint-disable-next-line
@@ -125,10 +125,10 @@ export default function ProductModal({
         color_id: "",
         size_id: "",
         sku: "",
-        purchase_cost: "",
-        sale_price: "",
-        wholesale_price: "",
-        available_quantity: "",
+        purchase_cost: 0,
+        sale_price: 0,
+        wholesale_price: 0,
+        available_quantity: 0,
       },
     ]);
   };
@@ -191,8 +191,96 @@ export default function ProductModal({
 
     const hasMainFile = data.main_image instanceof File;
     const hasNewAdditional = Array.isArray(data.product_images) && data.product_images.some(f => f instanceof File);
-    // Si on envoie au moins un fichier -> FormData + POST + _method=PUT
-    if (hasMainFile || hasNewAdditional) {
+
+    if (mode === "edit" && product?.id) {
+      // EDITION : route update AVEC id
+      if (hasMainFile || hasNewAdditional) {
+        const fd = new FormData();
+        // 1) Champs scalaires
+        const simpleFields = [
+          "type","name","category_id","subcategory_id","supplier_id","brand_id",
+          "code","unit_type","description","purchase_cost","sale_price",
+          "wholesale_price","wholesale_minimum_qty","available_quantity",
+          "discount_type","discount"
+        ];
+        simpleFields.forEach((k) => {
+          const v = data[k];
+          if (v !== undefined && v !== null) {
+            // boolean -> string '1'/'0'
+            if (typeof v === "boolean") fd.append(k, v ? "1" : "0");
+            else fd.append(k, v);
+          }
+        });
+
+        // 2) attributes & variants (en JSON -> on les décodera côté Laravel)
+        // Ne pas envoyer attributes/variants vides pour les produits simples
+        if (data.type === "variable" && data.variants && data.variants.length > 0) {
+          fd.append("variants", JSON.stringify(data.variants));
+        }
+        
+        if (attributes && attributes.length > 0) {
+          fd.append("attributes", JSON.stringify(attributes));
+        }
+
+        // 3) main_image - Envoyer seulement si c'est un nouveau fichier
+        if (hasMainFile) {
+          fd.append("main_image", data.main_image);
+        }
+        
+        // Signaler suppression image principale si nécessaire
+        if (data.main_image === null && mode === "edit") {
+          fd.append("main_image_deleted", "1");
+        }
+
+        // 4) images existantes vs nouvelles
+        // -> on conserve data.existing_images (chemins) et data.product_images (Files)
+        (data.existing_images || []).forEach(p => fd.append("existing_images[]", p));
+
+        (data.product_images || []).forEach(file => {
+          if (file instanceof File) fd.append("product_images[]", file);
+        });
+
+        // Method override
+        fd.append("_method", "PUT");
+
+        // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
+        router.post(route("admin.products.update", product.id), fd, {
+          onSuccess: () => { reset(); onClose(); },
+          onError: (err) => { console.log("errors", err); },
+        });
+      } else {
+        // Pas de fichiers, simple PUT
+        const dataToSend = { ...data };
+        
+        // Ne pas envoyer l'image principale si ce n'est pas un nouveau fichier
+        if (!(data.main_image instanceof File)) {
+          delete dataToSend.main_image;
+        }
+        
+        // Supprimer les images existantes du payload (elles sont gérées différemment)
+        delete dataToSend.existing_images;
+        delete dataToSend.product_images;
+        
+        // Ne pas envoyer attributes/variants vides pour les produits simples
+        if (data.type === "variable" && data.variants && data.variants.length > 0) {
+          dataToSend.variants = data.variants;
+        } else {
+          delete dataToSend.variants;
+        }
+        
+        if (attributes && attributes.length > 0) {
+          dataToSend.attributes = attributes;
+        } else {
+          delete dataToSend.attributes;
+        }
+        
+        put(route("admin.products.update", product.id), dataToSend, {
+          onSuccess: () => { reset(); onClose(); },
+          onError: (err) => { console.log("errors", err); },
+        });
+      }
+    } else {
+      // CREATION : route store SANS id
       const fd = new FormData();
       // 1) Champs scalaires
       const simpleFields = [
@@ -211,8 +299,14 @@ export default function ProductModal({
       });
 
       // 2) attributes & variants (en JSON -> on les décodera côté Laravel)
-      fd.append("attributes", JSON.stringify(attributes || []));
-      fd.append("variants", JSON.stringify(data.variants || []));
+      // Ne pas envoyer attributes/variants vides pour les produits simples
+      if (data.type === "variable" && data.variants && data.variants.length > 0) {
+        fd.append("variants", JSON.stringify(data.variants));
+      }
+      
+      if (attributes && attributes.length > 0) {
+        fd.append("attributes", JSON.stringify(attributes));
+      }
 
       // 3) main_image
       if (hasMainFile) {
@@ -230,19 +324,10 @@ export default function ProductModal({
         if (file instanceof File) fd.append("product_images[]", file);
       });
 
-      // Method override
-      fd.append("_method", "PUT");
-
       // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
-      Inertia.post(route("admin.products.update", product?.id), fd, {
+      router.post(route("admin.products.store"), fd, {
         onSuccess: () => { reset(); onClose(); },
         onError: (err) => { console.log("errors", err); },
-      });
-
-    } else {
-      // pas de fichiers -> simple put
-      put(route("admin.products.update", product?.id), {
-        onSuccess: () => { reset(); onClose(); },
       });
     }
   };
@@ -282,6 +367,21 @@ export default function ProductModal({
       <HiOutlineX className="w-7 h-7 text-gray-500 hover:text-gray-700 transition" />
       </IconButton>
     </div>
+
+    {/* Affichage des erreurs générales */}
+    {errors && Object.keys(errors).length > 0 && (
+      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <h4 className="text-red-800 font-medium mb-2">Erreurs de validation :</h4>
+        <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+          {Object.entries(errors).map(([field, messages]) => {
+            const fieldMessages = Array.isArray(messages) ? messages : [messages];
+            return fieldMessages.map((message, index) => (
+              <li key={`${field}-${index}`}>{message}</li>
+            ));
+          })}
+        </ul>
+      </div>
+    )}
 
     {/* Formulaire */}
     <form onSubmit={handleSubmit} className="space-y-8">
