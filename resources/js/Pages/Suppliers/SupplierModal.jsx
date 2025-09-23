@@ -46,7 +46,7 @@ export default function SupplierModal({ open, onClose, mode = "create", supplier
       }
       if (imageInputRef.current) imageInputRef.current.value = "";
     }
-  }, [open, mode, supplier, setData, reset]);
+  }, [open, mode, supplier]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -77,6 +77,7 @@ export default function SupplierModal({ open, onClose, mode = "create", supplier
         },
       });
     } else {
+      console.log("Creating supplier with data:", Object.fromEntries(formData.entries()));
       router.post(route("admin.suppliers.storeSuppliers"), formData, {
         onSuccess: () => {
           reset();
@@ -334,7 +335,7 @@ export default function SupplierModal({ open, onClose, mode = "create", supplier
             {/* Section: Informations Financières & Image */}
             <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Financial & Media Information</h3>
-              
+
               {/* Dû précédent */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
