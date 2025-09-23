@@ -37,10 +37,6 @@ export default function CategoryModal({ open, onClose, mode = "create", category
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log("Mode:", mode, "Category ID:", category?.id);
-    console.log("Data main_image:", data.main_image);
-    console.log("Is main_image a File?", data.main_image instanceof File);
-
     const hasMainFile = data.main_image instanceof File;
 
     if (mode === "edit" && category?.id) {
@@ -115,11 +111,16 @@ export default function CategoryModal({ open, onClose, mode = "create", category
     }
   };
 
+  // Handler pour supprimer l'image
+  const handleRemoveImage = () => {
+    setData("main_image", null);
+  };
+
   if (!open) return null;
   return (
     <Modal open={open} onClose={handleClose} aria-labelledby="category-modal-title">
       <Box
-        className="bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh] transition-all duration-300 transform"
+        className="bg-white rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh] transition-all duration-300 transform"
         sx={{
           position: "absolute",
           top: "50%",
@@ -130,7 +131,7 @@ export default function CategoryModal({ open, onClose, mode = "create", category
         }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-200 p-6 bg-[#f7f3ee]">
           <h2 id="category-modal-title" className="text-3xl font-extrabold text-gray-900 flex items-center gap-2">
             {mode === "edit" ? (
               <>
@@ -149,141 +150,217 @@ export default function CategoryModal({ open, onClose, mode = "create", category
           </IconButton>
         </div>
 
-        {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Affichage des erreurs globales */}
-          {Object.keys(errors).length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="text-sm text-red-600">
-                {Object.entries(errors).map(([key, error]) => (
-                  <div key={key} className="mb-1">
-                    <strong>{key}:</strong> {error}
-                  </div>
-                ))}
+        <div className="mb-6 p-6 border-b border-gray-200">
+          {/* Formulaire */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Affichage des erreurs globales */}
+            {Object.keys(errors).length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="text-sm text-red-600">
+                  {Object.entries(errors).map(([key, error]) => (
+                    <div key={key} className="mb-1">
+                      <strong>{key}:</strong> {error}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Section: Informations Générales */}
-          <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Informations de la catégorie</h3>
-            <div className="space-y-4">
-              {/* Nom */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nom de la catégorie</label>
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => setData("name", e.target.value)}
-                  className="mt-1 w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-2 focus:ring-[#a68e55] focus:border-transparent transition"
-                  required
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
+            {/* Section: Informations Générales */}
+            <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Informations de la catégorie</h3>
+              <div className="space-y-4">
+                {/* Nom */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Nom de la catégorie</label>
+                  <input
+                    type="text"
+                    value={data.name}
+                    onChange={(e) => setData("name", e.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-2 focus:ring-[#a68e55] focus:border-transparent transition"
+                    required
+                  />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                </div>
 
-              {/* Note */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Note</label>
-                <textarea
-                  value={data.note}
-                  onChange={(e) => setData("note", e.target.value)}
-                  className="mt-1 w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-2 focus:ring-[#a68e55] focus:border-transparent transition"
-                  rows="2"
-                ></textarea>
-              </div>
+                {/* Note */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Note</label>
+                  <textarea
+                    value={data.note}
+                    onChange={(e) => setData("note", e.target.value)}
+                    className="mt-1 w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-2 focus:ring-[#a68e55] focus:border-transparent transition"
+                    rows="2"
+                  ></textarea>
+                </div>
 
-              {/* Checkbox Populaire */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={data.is_popular}
-                  onChange={(e) => setData("is_popular", e.target.checked)}
-                  className="form-checkbox h-4 w-4 text-[#8c6c3c] rounded focus:ring-[#a68e55]"
-                />
-                <label className="ml-2 block text-sm font-medium text-gray-700">
-                  Catégorie populaire
+                {/* Checkbox Populaire */}
+                {/* <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={data.is_popular}
+                    onChange={(e) => setData("is_popular", e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-[#8c6c3c] rounded focus:ring-[#a68e55]"
+                  />
+                  <label className="ml-2 block text-sm font-medium text-gray-700">
+                    Catégorie populaire
+                  </label>
+                </div> */}
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={data.is_popular}
+                    onChange={(e) => setData("is_popular", e.target.checked)}
+                    className="w-5 h-5 text-[#a68e55] border-gray-300 rounded focus:ring-[#a68e55]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Catégorie populaire
+                  </span>
                 </label>
               </div>
             </div>
-          </div>
 
-          {/* Section: Image */}
-          <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Image de la catégorie</h3>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleMainImageChange}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#f3eadc] file:text-[#8c6c3c] hover:file:bg-[#e7d8c6] transition"
-            />
-            {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
-            
-            {data.main_image && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Aperçu de l'image:</p>
-                {typeof data.main_image === "string" ? (
-                  <img
-                    src={`http://127.0.0.1:8000/${data.main_image}`}
-                    alt="Current Category"
-                    className="w-40 h-40 object-cover rounded-md shadow"
-                  />
-                ) : (
-                  <img
-                    src={URL.createObjectURL(data.main_image)}
-                    alt="New Category"
-                    className="w-40 h-40 object-cover rounded-md shadow"
-                  />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Add Status Toggle before the buttons section */}
-          <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">État de la catégorie</h3>
-            <div className="flex items-center">
+            {/* Section: Image */}
+            <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Image de la catégorie</h3>
               <input
-                type="checkbox"
-                checked={data.status}
-                onChange={(e) => setData("status", e.target.checked)}
-                className="form-checkbox h-4 w-4 text-[#8c6c3c] rounded focus:ring-[#a68e55]"
+                type="file"
+                accept="image/*"
+                onChange={handleMainImageChange}
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#f3eadc] file:text-[#8c6c3c] hover:file:bg-[#e7d8c6] transition"
               />
-              <label className="ml-2 block text-sm font-medium text-gray-700">
-                Catégorie active
-              </label>
+              {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
+              
+              {data.main_image && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Aperçu de l'image:</p>
+                  {typeof data.main_image === "string" ? (
+                    <img
+                      src={`http://127.0.0.1:8000/${data.main_image}`}
+                      alt="Current Category"
+                      className="w-40 h-40 object-cover rounded-md shadow"
+                    />
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(data.main_image)}
+                      alt="New Category"
+                      className="w-40 h-40 object-cover rounded-md shadow"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="mt-2 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                  >
+                    Remove Image
+                  </button>
+                </div>
+              )}
+              
+              {/* Aperçu de l'image actuelle en mode édition (fallback) */}
+              {mode === "edit" && category?.image && !data.main_image && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Current image:</span>
+                  <img
+                    src={`http://127.0.0.1:8000/${category.image}`}
+                    alt={category.name}
+                    className="w-16 h-16 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                  >
+                    Remove Image
+                  </button>
+                </div>
+              )}
             </div>
-            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
-          </div>
 
-          {/* Boutons */}
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition shadow-sm"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={processing}
-              className={clsx(
-                "px-8 py-2 text-white rounded-lg font-bold shadow-md transition-all duration-300",
-                processing
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-[#8c6c3c] to-[#a68e55] hover:opacity-90"
-              )}
-            >
-              {processing ? (
-                "Traitement..."
-              ) : mode === "edit" ? (
-                "Mettre à jour"
-              ) : (
-                "Créer"
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Add Status Toggle before the buttons section */}
+            <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">État de la catégorie</h3>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={data.status}
+                  onChange={(e) => setData("status", e.target.checked)}
+                  className="w-5 h-5 text-[#a68e55] border-gray-300 rounded focus:ring-[#a68e55]"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Catégorie active
+                </span>
+              </label>
+              {/* <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={data.status}
+                  onChange={(e) => setData("status", e.target.checked)}
+                  className="form-checkbox h-4 w-4 text-[#8c6c3c] rounded focus:ring-[#a68e55]"
+                />
+                <label className="ml-2 block text-sm font-medium text-gray-700">
+                  Catégorie active
+                </label>
+              </div> */}
+              {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
+            </div>
+
+            {/* Boutons */}
+            {/* <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition shadow-sm"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={processing}
+                className={clsx(
+                  "px-8 py-2 text-white rounded-lg font-bold shadow-md transition-all duration-300",
+                  processing
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#8c6c3c] to-[#a68e55] hover:opacity-90"
+                )}
+              >
+                {processing ? (
+                  "Traitement..."
+                ) : mode === "edit" ? (
+                  "Mettre à jour"
+                ) : (
+                  "Créer"
+                )}
+              </button>
+            </div> */}
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                disabled={processing}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={processing}
+                className={clsx(
+                  "flex-1 px-6 py-3 rounded-lg font-medium transition",
+                  processing
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-[#a68e55] hover:bg-[#8c6c3c] text-white"
+                )}
+              >
+                {processing
+                  ? "Processing..."
+                  : mode === "create"
+                  ? "Create Category"
+                  : "Update Category"}
+              </button>
+            </div>
+          </form>
+        </div>
       </Box>
     </Modal>
   );

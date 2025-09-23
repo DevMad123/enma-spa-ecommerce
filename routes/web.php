@@ -13,9 +13,12 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCategoryController;
+use App\Http\Controllers\Admin\ProductColorController;
+use App\Http\Controllers\Admin\ProductSizeController;
 use App\Http\Controllers\Admin\ProductSubcategoryController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\CustomerController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
@@ -69,9 +72,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::prefix('brands')->name('brands.')->group(function () {
         Route::get('/list', [BrandController::class, 'listBrands'])->name('list');
-        Route::post('/store', [BrandController::class, 'storeBrands'])->name('store');
-        Route::post('/update/{id}', [BrandController::class, 'updateBrands'])->name('update');
-        Route::delete('/delete/{id}', [BrandController::class, 'deleteBrands'])->name('delete');
+        Route::post('/store', [BrandController::class, 'storeBrands'])->name('storeBrands');
+        Route::put('/update/{id}', [BrandController::class, 'updateBrands'])->name('updateBrands');
+        Route::delete('/delete/{id}', [BrandController::class, 'deleteBrands'])->name('deleteBrands');
+    });
+
+    Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/list', [SupplierController::class, 'listSuppliers'])->name('list');
+        Route::post('/store', [SupplierController::class, 'storeSuppliers'])->name('storeSuppliers');
+        Route::put('/update/{id}', [SupplierController::class, 'updateSuppliers'])->name('updateSuppliers');
+        Route::delete('/delete/{id}', [SupplierController::class, 'deleteSuppliers'])->name('deleteSuppliers');
     });
 
     // CRUD Catégories
@@ -89,10 +99,36 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     })->name('subcategories.byCategory');
 
     // CRUD Marques
-    Route::resource('brands', BrandController::class);
+    // Route::resource('brands', BrandController::class);
 
-    // CRUD Fournisseurs
-    Route::resource('suppliers', SupplierController::class);
+    // // CRUD Fournisseurs
+    // Route::resource('suppliers', SupplierController::class);
+
+    // Routes pour les couleurs
+    Route::prefix('colors')->name('colors.')->group(function () {
+        Route::get('/', [ProductColorController::class, 'listColors'])->name('list');
+        Route::post('/', [ProductColorController::class, 'storeColors'])->name('storeColors');
+        Route::put('/{id}', [ProductColorController::class, 'updateColors'])->name('updateColors');
+        Route::delete('/{id}', [ProductColorController::class, 'deleteColors'])->name('deleteColors');
+    });
+
+    // Routes pour les tailles
+    Route::prefix('sizes')->name('sizes.')->group(function () {
+        Route::get('/', [ProductSizeController::class, 'listSizes'])->name('list');
+        Route::post('/', [ProductSizeController::class, 'storeSizes'])->name('storeSizes');
+        Route::put('/{id}', [ProductSizeController::class, 'updateSizes'])->name('updateSizes');
+        Route::delete('/{id}', [ProductSizeController::class, 'deleteSizes'])->name('deleteSizes');
+    });
+
+    // Routes pour les clients
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::get('/export/csv', [CustomerController::class, 'export'])->name('export');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
 
     // ... autres routes admin (commandes, utilisateurs, etc.)
 });

@@ -14,9 +14,12 @@ const links = [
   // { route: "admin.orders", label: "Orders", icon: <HiOutlineClipboardList /> },
   { route: "admin.categories.list", label: "Categories", icon: <HiOutlineClipboardList /> },
   { route: "admin.subcategories.list", label: "Subcategories", icon: <HiOutlineClipboardList /> },
+  { route: "admin.suppliers.list", label: "Suppliers", icon: <HiOutlineClipboardList /> },
   { route: "admin.brands.list", label: "Brands", icon: <HiOutlineClipboardList /> },
   { route: "admin.products.list", label: "Products", icon: <HiOutlineChartBar /> },
-  // { route: "admin.customers", label: "Customers", icon: <HiOutlineUserGroup /> },
+  { route: "admin.colors.list", label: "Colors", icon: <HiOutlineChartBar /> },
+  { route: "admin.sizes.list", label: "Sizes", icon: <HiOutlineChartBar /> },
+  { route: "admin.customers.index", label: "Customers", icon: <HiOutlineUserGroup /> },
   // { route: "admin.settings", label: "Settings", icon: <HiOutlineCog /> },
 ];
 

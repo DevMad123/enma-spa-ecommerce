@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Supplier extends Model
 {
     use HasFactory;
-    public $timestamps=false;
+    
     protected $fillable = [
         'supplier_name',
         'image',
@@ -22,12 +22,13 @@ class Supplier extends Model
         'supplier_email',
         'previous_due',
         'status',
-        'created_at',
         'created_by',
-        'updated_at',
         'updated_by',
-        'deleted',
-        'deleted_at',
         'deleted_by',
+    ];
+
+    protected $casts = [
+        'status' => 'boolean',
+        'previous_due' => 'decimal:3',
     ];
 }

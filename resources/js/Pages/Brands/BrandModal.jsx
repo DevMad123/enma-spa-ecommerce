@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useForm, usePage, router } from "@inertiajs/react";
 import { Modal, Box, IconButton } from "@mui/material";
-import { HiOutlineX } from "react-icons/hi";
+import { HiOutlineX, HiOutlinePlus, HiOutlinePencil } from "react-icons/hi";
 import clsx from "clsx";
 
 export default function BrandModal({ open, onClose, mode = "create", brand = null }) {
@@ -20,9 +20,8 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
       if (mode === "edit" && brand) {
         setData({
           name: brand.name || "",
-          image: null, // On ne met pas l'image existante ici, on la gère à part
+          image: brand.image || null, // Garder l'image existante comme string
           status: brand.status === 1,
-          existing_image: brand.image || null,
         });
       } else {
         reset();
@@ -44,14 +43,14 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
 
     if (mode === "edit" && brand?.id) {
       formData.append("_method", "PUT");
-      router.post(route("admin.brands.update", brand.id), formData, {
+      router.post(route("admin.brands.updateBrands", brand.id), formData, {
         onSuccess: () => {
           reset();
           onClose();
         },
       });
     } else {
-      router.post(route("admin.brands.store"), formData, {
+      router.post(route("admin.brands.storeBrands"), formData, {
         onSuccess: () => {
           reset();
           onClose();
@@ -69,7 +68,6 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
 
   const handleRemoveImage = () => {
     setData("image", null);
-    setData("existing_image", null);
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -81,9 +79,16 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b bg-[#f7f3ee]">
-            <h2 className="text-xl font-semibold text-[#8c6c3c]">
-              {mode === "create" ? "Add Brand" : "Edit Brand"}
-            </h2>
+            <div className="flex items-center gap-3">
+              {mode === "create" ? (
+                <HiOutlinePlus className="text-[#8c6c3c] text-xl" />
+              ) : (
+                <HiOutlinePencil className="text-[#8c6c3c] text-xl" />
+              )}
+              <h2 className="text-xl font-semibold text-[#8c6c3c]">
+                {mode === "create" ? "Add Brand" : "Edit Brand"}
+              </h2>
+            </div>
             <IconButton onClick={onClose} className="text-gray-500 hover:text-gray-700">
               <HiOutlineX size={24} />
             </IconButton>
@@ -150,11 +155,19 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
                 {data.image && (
                   <div className="mt-4">
                     <p className="text-sm font-medium text-gray-700 mb-2">Image preview:</p>
-                    <img
-                      src={URL.createObjectURL(data.image)}
-                      alt="New Brand"
-                      className="w-32 h-32 object-cover rounded-md shadow"
-                    />
+                    {typeof data.image === "string" ? (
+                      <img
+                        src={`/${data.image.replace(/^\/+/, "")}`}
+                        alt="Current Brand"
+                        className="w-32 h-32 object-cover rounded-md shadow"
+                      />
+                    ) : (
+                      <img
+                        src={URL.createObjectURL(data.image)}
+                        alt="New Brand"
+                        className="w-32 h-32 object-cover rounded-md shadow"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={handleRemoveImage}
@@ -165,13 +178,13 @@ export default function BrandModal({ open, onClose, mode = "create", brand = nul
                   </div>
                 )}
 
-                {/* Aperçu de l'image actuelle en mode édition */}
-                {mode === "edit" && data.existing_image && !data.image && (
+                {/* Aperçu de l'image actuelle en mode édition (fallback) */}
+                {mode === "edit" && brand?.image && !data.image && (
                   <div className="flex items-center gap-3 mt-2">
                     <span className="text-sm text-gray-600">Current image:</span>
                     <img
-                      src={`/${data.existing_image.replace(/^\/+/, "")}`}
-                      alt={data.name}
+                      src={`/${brand.image.replace(/^\/+/, "")}`}
+                      alt={brand.name}
                       className="w-16 h-16 object-cover rounded border"
                     />
                     <button

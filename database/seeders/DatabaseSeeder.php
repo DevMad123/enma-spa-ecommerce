@@ -16,20 +16,20 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        // User::factory()->create([
-        //     'id' => 1,
-        //     'name' => 'Zura',
-        //     'email' => 'zura@example.com',
-        //     'password' => bcrypt('123.321A'),
-        //     'email_verified_at' => time()
-        // ]);
-        // User::factory()->create([
-        //     'id' => 2,
-        //     'name' => 'John Smith',
-        //     'email' => 'john@example.com',
-        //     'password' => bcrypt('123.321A'),
-        //     'email_verified_at' => time()
-        // ]);
+        User::factory()->create([
+            'id' => 3,
+            'name' => 'Zura',
+            'email' => 'zura@example.com',
+            'password' => bcrypt('123.321A'),
+            'email_verified_at' => time()
+        ]);
+        User::factory()->create([
+            'id' => 2,
+            'name' => 'John Smith',
+            'email' => 'john@example.com',
+            'password' => bcrypt('123.321A'),
+            'email_verified_at' => time()
+        ]);
 
         // Project::factory()
         //     ->count(30)
@@ -39,13 +39,14 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserRoleSeeder::class,
             BannerSeeder::class,
-            ProductCategorySeeder::class,
+            // ProductCategorySeeder::class,
             ProductSubCategorySeeder::class,
             ProductColorSeeder::class,
             ProductSizeSeeder::class,
-            SupplierSeeder::class,
-            ProductSeeder::class,
+            // SupplierSeeder::class,
+            // ProductSeeder::class,
             ProductImageSeeder::class,
+            // CustomerSeeder::class,
         ]);
     }
 }

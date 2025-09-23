@@ -24,7 +24,7 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
         name: subcategory.name || "",
         category_id: subcategory.category_id || "",
         note: subcategory.note || "",
-        status: subcategory.status === 1,
+        status: subcategory.status === true || subcategory.status === 1,
         main_image: subcategory.image || null, // Garder l'image existante comme string
       });
     } else {
@@ -36,10 +36,6 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log("Mode:", mode, "Subcategory ID:", subcategory?.id);
-    console.log("Data main_image:", data.main_image);
-    console.log("Is main_image a File?", data.main_image instanceof File);
-
     const hasMainFile = data.main_image instanceof File;
 
     if (mode === "edit" && subcategory?.id) {
@@ -50,42 +46,45 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
         fd.append("name", data.name);
         fd.append("category_id", data.category_id);
         fd.append("note", data.note || "");
-        fd.append("status", data.status ? "1" : "0");
+        fd.append("status", data.status);
+ 
 
+        // Image principale - Envoyer seulement si
+        
         // Image principale - Envoyer seulement si c'est un nouveau fichier
         if (hasMainFile) {
           fd.append("image", data.main_image);
         }
-
+        
         // Method override pour PUT
         fd.append("_method", "PUT");
 
         // Envoi via Inertia POST (ne PAS fixer Content-Type manuellement)
         router.post(route("admin.subcategories.update", subcategory.id), fd, {
-          onSuccess: () => {
+          onSuccess: () => { 
             console.log("Subcategory updated successfully");
-            handleClose();
+            handleClose(); 
           },
-          onError: (err) => {
-            console.log("Update errors:", err);
+          onError: (err) => { 
+            console.log("Update errors:", err); 
           },
         });
       } else {
         // Pas de fichiers, simple PUT
         const dataToSend = { ...data };
-
+        
         // Ne pas envoyer l'image principale si ce n'est pas un nouveau fichier
         if (!(data.main_image instanceof File)) {
           delete dataToSend.main_image;
         }
-
+        
         router.put(route("admin.subcategories.update", subcategory.id), dataToSend, {
-          onSuccess: () => {
+          onSuccess: () => { 
             console.log("Subcategory updated successfully");
-            handleClose();
+            handleClose(); 
           },
-          onError: (err) => {
-            console.log("Update errors:", err);
+          onError: (err) => { 
+            console.log("Update errors:", err); 
           },
         });
       }
@@ -95,8 +94,8 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
       fd.append("name", data.name);
       fd.append("category_id", data.category_id);
       fd.append("note", data.note || "");
-      fd.append("status", data.status ? "1" : "0");
-
+      fd.append("status", data.status);
+      
       // Image principale
       if (hasMainFile) {
         fd.append("image", data.main_image);
@@ -104,12 +103,12 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
 
       // Envoi via Inertia POST
       router.post(route("admin.subcategories.store"), fd, {
-        onSuccess: () => {
+        onSuccess: () => { 
           console.log("Subcategory created successfully");
-          handleClose();
+          handleClose(); 
         },
-        onError: (err) => {
-          console.log("Creation errors:", err);
+        onError: (err) => { 
+          console.log("Creation errors:", err); 
         },
       });
     }
@@ -127,6 +126,11 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
     if (file) {
       setData("main_image", file);
     }
+  };
+
+  // Handler pour supprimer l'image
+  const handleRemoveImage = () => {
+    setData("main_image", null);
   };
 
   if (!open) return null;
@@ -253,7 +257,7 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
                 {errors.image && (
                   <p className="mt-1 text-sm text-red-600">{errors.image}</p>
                 )}
-
+                
                 {/* Aperçu de l'image */}
                 {data.main_image && (
                   <div className="mt-4">
@@ -271,9 +275,16 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
                         className="w-40 h-40 object-cover rounded-md shadow"
                       />
                     )}
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="mt-2 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                    >
+                      Remove Image
+                    </button>
                   </div>
                 )}
-
+                
                 {/* Aperçu de l'image actuelle en mode édition (fallback) */}
                 {mode === "edit" && subcategory?.image && !data.main_image && (
                   <div className="flex items-center gap-3">
@@ -283,6 +294,13 @@ export default function SubcategoryModal({ open, onClose, mode = "create", subca
                       alt={subcategory.name}
                       className="w-16 h-16 object-cover rounded border"
                     />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                    >
+                      Remove Image
+                    </button>
                   </div>
                 )}
               </div>

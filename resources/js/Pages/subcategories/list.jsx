@@ -129,7 +129,7 @@ function SubcategoriesListTable({ subcategories, sort, direction, onSort, onEdit
                 </td>
                 <td className="py-2 px-3">{subcategory.note || '-'}</td>
                 <td className="py-2 px-3">
-                  {subcategory.status === 1 ? (
+                  {subcategory.status === true ? (
                     <span className="inline-block px-3 py-1 text-xs rounded bg-green-100 text-green-700 font-semibold">Active</span>
                   ) : (
                     <span className="inline-block px-3 py-1 text-xs rounded bg-red-100 text-red-700 font-semibold">Inactive</span>
