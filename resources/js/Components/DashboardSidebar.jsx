@@ -7,11 +7,15 @@ import {
   HiOutlineCog,
   HiOutlineChartBar,
   HiOutlineLogout,
+  HiOutlineTruck,
+  HiOutlineUsers,
 } from "react-icons/hi";
 
 const links = [
   { route: "admin.dashboard", label: "Dashboard", icon: <HiOutlineHome /> },
-  // { route: "admin.orders", label: "Orders", icon: <HiOutlineClipboardList /> },
+  { route: "admin.orders.index", label: "Orders", icon: <HiOutlineClipboardList /> },
+  { route: "admin.payments.index", label: "Payments", icon: <HiOutlineClipboardList /> },
+  { route: "admin.shippings.index", label: "Shipping Methods", icon: <HiOutlineTruck /> },
   { route: "admin.categories.list", label: "Categories", icon: <HiOutlineClipboardList /> },
   { route: "admin.subcategories.list", label: "Subcategories", icon: <HiOutlineClipboardList /> },
   { route: "admin.suppliers.list", label: "Suppliers", icon: <HiOutlineClipboardList /> },
@@ -20,6 +24,7 @@ const links = [
   { route: "admin.colors.list", label: "Colors", icon: <HiOutlineChartBar /> },
   { route: "admin.sizes.list", label: "Sizes", icon: <HiOutlineChartBar /> },
   { route: "admin.customers.index", label: "Customers", icon: <HiOutlineUserGroup /> },
+  { route: "admin.users.index", label: "Users & Roles", icon: <HiOutlineUsers /> },
   // { route: "admin.settings", label: "Settings", icon: <HiOutlineCog /> },
 ];
 

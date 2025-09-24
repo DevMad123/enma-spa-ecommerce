@@ -1,0 +1,215 @@
+<?php
+
+namespace App\Http\Controllers\Frontend;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\ProductSubCategory;
+use App\Models\Brand;
+use App\Models\ProductColor;
+use App\Models\ProductSize;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class ShopController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
+            ->where('status', 1);
+
+        // Recherche
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('brand', function($brandQuery) use ($search) {
+                      $brandQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filtre par catégorie
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Filtre par sous-catégorie
+        if ($request->filled('subcategory')) {
+            $query->where('subcategory_id', $request->subcategory);
+        }
+
+        // Filtre par marque
+        if ($request->filled('brand')) {
+            $query->where('brand_id', $request->brand);
+        }
+
+        // Filtre par prix
+        if ($request->filled('min_price')) {
+            $query->where('current_sale_price', '>=', $request->min_price);
+        }
+        if ($request->filled('max_price')) {
+            $query->where('current_sale_price', '<=', $request->max_price);
+        }
+
+        // Tri
+        switch ($request->get('sort', 'newest')) {
+            case 'price_asc':
+                $query->orderBy('current_sale_price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('current_sale_price', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'popular':
+                $query->orderBy('is_popular', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $products = $query->paginate(12)->withQueryString();
+
+        // Données pour les filtres
+        $categories = ProductCategory::where('status', 1)->get();
+        $subcategories = ProductSubCategory::where('status', 1)->get();
+        $brands = Brand::where('status', 1)->get();
+        $colors = ProductColor::where('status', 1)->get();
+        $sizes = ProductSize::where('status', 1)->get();
+
+        // Statistiques prix pour le filtre
+        $priceRange = Product::where('status', 1)
+            ->selectRaw('MIN(current_sale_price) as min_price, MAX(current_sale_price) as max_price')
+            ->first();
+
+        return Inertia::render('Frontend/Shop/Index', [
+            'products' => $products,
+            'categories' => $categories,
+            'subcategories' => $subcategories,
+            'brands' => $brands,
+            'colors' => $colors,
+            'sizes' => $sizes,
+            'priceRange' => $priceRange,
+            'filters' => $request->only(['search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'sort']),
+        ]);
+    }
+
+    public function category($categoryId, Request $request)
+    {
+        $category = ProductCategory::findOrFail($categoryId);
+        
+        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
+            ->where('category_id', $categoryId)
+            ->where('status', 1);
+
+        // Appliquer les mêmes filtres que dans index()
+        $this->applyFilters($query, $request);
+
+        $products = $query->paginate(12)->withQueryString();
+        
+        $subcategories = ProductSubCategory::where('category_id', $categoryId)
+            ->where('status', 1)->get();
+        $brands = Brand::where('status', 1)->get();
+
+        return Inertia::render('Frontend/Shop/Category', [
+            'category' => $category,
+            'products' => $products,
+            'subcategories' => $subcategories,
+            'brands' => $brands,
+            'filters' => $request->only(['subcategory', 'brand', 'min_price', 'max_price', 'sort']),
+        ]);
+    }
+
+    public function subcategory($subcategoryId, Request $request)
+    {
+        $subcategory = ProductSubCategory::with('category')->findOrFail($subcategoryId);
+        
+        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
+            ->where('subcategory_id', $subcategoryId)
+            ->where('status', 1);
+
+        $this->applyFilters($query, $request);
+
+        $products = $query->paginate(12)->withQueryString();
+        $brands = Brand::where('status', 1)->get();
+
+        return Inertia::render('Frontend/Shop/Subcategory', [
+            'subcategory' => $subcategory,
+            'products' => $products,
+            'brands' => $brands,
+            'filters' => $request->only(['brand', 'min_price', 'max_price', 'sort']),
+        ]);
+    }
+
+    public function show($productId)
+    {
+        $product = Product::with([
+            'category', 
+            'subcategory', 
+            'brand', 
+            'supplier',
+            'colors', 
+            'sizes'
+        ])->findOrFail($productId);
+
+        // Produits similaires (même catégorie)
+        $relatedProducts = Product::with(['category', 'brand'])
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->where('status', 1)
+            ->limit(4)
+            ->get();
+
+        return Inertia::render('Frontend/Shop/ProductDetails', [
+            'product' => $product,
+            'relatedProducts' => $relatedProducts,
+        ]);
+    }
+
+    private function applyFilters($query, $request)
+    {
+        // Filtre par sous-catégorie
+        if ($request->filled('subcategory')) {
+            $query->where('subcategory_id', $request->subcategory);
+        }
+
+        // Filtre par marque
+        if ($request->filled('brand')) {
+            $query->where('brand_id', $request->brand);
+        }
+
+        // Filtre par prix
+        if ($request->filled('min_price')) {
+            $query->where('current_sale_price', '>=', $request->min_price);
+        }
+        if ($request->filled('max_price')) {
+            $query->where('current_sale_price', '<=', $request->max_price);
+        }
+
+        // Tri
+        switch ($request->get('sort', 'newest')) {
+            case 'price_asc':
+                $query->orderBy('current_sale_price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('current_sale_price', 'desc');
+                break;
+            case 'name':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'popular':
+                $query->orderBy('is_popular', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+    }
+}

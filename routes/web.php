@@ -9,6 +9,11 @@ use App\Http\Controllers\RealisationsController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 
+// Contrôleurs frontend
+use App\Http\Controllers\Frontend\ShopController;
+use App\Http\Controllers\Frontend\CartController;
+use App\Http\Controllers\Frontend\ProfileController as FrontendProfileController;
+
 // Contrôleurs admin
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
@@ -19,6 +24,10 @@ use App\Http\Controllers\Admin\ProductSubcategoryController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\SellController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ShippingController;
+use App\Http\Controllers\Admin\UserController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
@@ -33,6 +42,42 @@ Route::get('/realisations', [RealisationsController::class, 'index'])->name('rea
 Route::get('/a-propos-de-nous', [AboutController::class, 'index'])->name('a-propos-de-nous');
 Route::get('/a-propos-de-nous-pro', [AboutController::class, 'indexPro'])->name('a-propos-de-nous-pro');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// -------------------
+// Routes Frontend E-commerce
+// -------------------
+Route::prefix('shop')->name('frontend.shop.')->group(function () {
+    Route::get('/', [ShopController::class, 'index'])->name('index');
+    Route::get('/category/{category}', [ShopController::class, 'category'])->name('category');
+    Route::get('/subcategory/{subcategory}', [ShopController::class, 'subcategory'])->name('subcategory');
+    Route::get('/product/{product}', [ShopController::class, 'show'])->name('show');
+});
+
+// Routes Panier et Commandes
+Route::prefix('cart')->name('frontend.cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('index');
+    Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+    Route::post('/checkout', [CartController::class, 'processCheckout'])->name('process');
+    Route::get('/success/{sell}', [CartController::class, 'orderSuccess'])->name('success');
+});
+
+// API endpoints pour le panier (AJAX)
+Route::prefix('api/cart')->name('api.cart.')->group(function () {
+    Route::get('/product/{product}', [CartController::class, 'getProductForCart'])->name('product');
+});
+
+// Profil Client (Authentification requise)
+Route::middleware('auth')->prefix('profile')->name('frontend.profile.')->group(function () {
+    Route::get('/', [FrontendProfileController::class, 'index'])->name('index');
+    Route::get('/edit', [FrontendProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [FrontendProfileController::class, 'update'])->name('update');
+    Route::get('/orders', [FrontendProfileController::class, 'orders'])->name('orders');
+    Route::get('/orders/{order}', [FrontendProfileController::class, 'orderDetails'])->name('order.details');
+    Route::get('/addresses', [FrontendProfileController::class, 'addresses'])->name('addresses');
+});
+
+// Redirection ordre vers succès
+Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->name('frontend.order.success');
 
 // -------------------
 // Routes Admin protégées (InertiaJS)
@@ -130,16 +175,61 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
     });
 
-    // ... autres routes admin (commandes, utilisateurs, etc.)
-});
+    // Routes pour les commandes (Orders/Sells)
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [SellController::class, 'index'])->name('index');
+        Route::get('/create', [SellController::class, 'create'])->name('create');
+        Route::post('/', [SellController::class, 'store'])->name('store');
+        Route::get('/export/csv', [SellController::class, 'export'])->name('export');
+        Route::get('/search-products', [SellController::class, 'searchProducts'])->name('searchProducts');
+        Route::get('/{sell}', [SellController::class, 'show'])->name('show');
+        Route::get('/{sell}/edit', [SellController::class, 'edit'])->name('edit');
+        Route::put('/{sell}', [SellController::class, 'update'])->name('update');
+        Route::delete('/{sell}', [SellController::class, 'destroy'])->name('destroy');
+        Route::patch('/{sell}/status', [SellController::class, 'updateStatus'])->name('updateStatus');
+        Route::get('/{sell}/invoice', [SellController::class, 'downloadInvoice'])->name('downloadInvoice');
+    });
 
-// -------------------
-// Routes utilisateur protégées
-// -------------------
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Routes Paiements
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::get('/create', [PaymentController::class, 'create'])->name('create');
+        Route::post('/', [PaymentController::class, 'store'])->name('store');
+        Route::get('/export/csv', [PaymentController::class, 'export'])->name('export');
+        Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
+        Route::get('/{payment}/edit', [PaymentController::class, 'edit'])->name('edit');
+        Route::put('/{payment}', [PaymentController::class, 'update'])->name('update');
+        Route::delete('/{payment}', [PaymentController::class, 'destroy'])->name('destroy');
+        Route::patch('/{payment}/validate', [PaymentController::class, 'validatePayment'])->name('validate');
+        Route::patch('/{payment}/reject', [PaymentController::class, 'reject'])->name('reject');
+        Route::patch('/{payment}/refund', [PaymentController::class, 'refund'])->name('refund');
+    });
+
+    // Routes Modes de livraison
+    Route::prefix('shippings')->name('shippings.')->group(function () {
+        Route::get('/', [ShippingController::class, 'index'])->name('index');
+        Route::get('/create', [ShippingController::class, 'create'])->name('create');
+        Route::post('/', [ShippingController::class, 'store'])->name('store');
+        Route::get('/active', [ShippingController::class, 'getActiveShippings'])->name('active');
+        Route::get('/{shipping}', [ShippingController::class, 'show'])->name('show');
+        Route::get('/{shipping}/edit', [ShippingController::class, 'edit'])->name('edit');
+        Route::put('/{shipping}', [ShippingController::class, 'update'])->name('update');
+        Route::delete('/{shipping}', [ShippingController::class, 'destroy'])->name('destroy');
+        Route::patch('/{shipping}/toggle', [ShippingController::class, 'toggleStatus'])->name('toggle');
+        Route::put('/sort-order', [ShippingController::class, 'updateSortOrder'])->name('updateSortOrder');
+    });
+
+    // Routes Utilisateurs et Rôles (Admin et Manager seulement)
+    Route::prefix('users')->name('users.')->middleware(['hasAnyRole:admin,manager'])->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{user}', [UserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(['hasRole:admin'])->name('destroy');
+        Route::patch('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware(['hasRole:admin'])->name('toggleStatus');
+    });
 });
 
 // Auth routes (login, register, etc.)

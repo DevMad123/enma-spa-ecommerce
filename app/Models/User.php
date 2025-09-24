@@ -66,4 +66,40 @@ class User extends Authenticatable implements MustVerifyEmail
             })
             ->exists();
     }
+
+    public function assignRole($roleNameOrId)
+    {
+        $role = is_numeric($roleNameOrId) 
+            ? Role::find($roleNameOrId)
+            : Role::where('name', $roleNameOrId)->first();
+        
+        if ($role && !$this->hasRole($role->name)) {
+            $this->roles()->attach($role->id);
+        }
+    }
+
+    public function removeRole($roleNameOrId)
+    {
+        $role = is_numeric($roleNameOrId) 
+            ? Role::find($roleNameOrId)
+            : Role::where('name', $roleNameOrId)->first();
+        
+        if ($role) {
+            $this->roles()->detach($role->id);
+        }
+    }
+
+    // Helper pour vérifier si c'est un admin (pour compatibilité avec le middleware existant)
+    public function getIsAdminAttribute()
+    {
+        return $this->hasRole('admin');
+    }
+
+    // Scope pour filtrer par rôle
+    public function scopeWithRole($query, $roleName)
+    {
+        return $query->whereHas('roles', function($q) use ($roleName) {
+            $q->where('name', $roleName);
+        });
+    }
 }
