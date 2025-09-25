@@ -17,9 +17,38 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
-const ImageGallery = ({ images, productName }) => {
+const ImageGallery = ({ images, productName, productImage }) => {
     const [selectedImage, setSelectedImage] = useState(0);
-    const allImages = images && images.length > 0 ? images : ['/images/placeholder.jpg'];
+    
+    // Construire le tableau d'images
+    let allImages = [];
+    
+    // Ajouter l'image principale du produit en premier
+    if (productImage) {
+        allImages.push(productImage);
+    }
+    
+    // Ajouter les images additionnelles
+    if (images && images.length > 0) {
+        const additionalImages = images.map(img => {
+            if (typeof img === 'object' && img.image) {
+                // Si l'image commence par 'http', c'est une URL complète
+                if (img.image.startsWith('http')) {
+                    return img.image;
+                }
+                // Sinon, construire l'URL complète
+                return `${window.location.origin}/${img.image}`;
+            }
+            return img;
+        }).filter(img => img !== productImage); // Éviter les doublons avec l'image principale
+        
+        allImages = [...allImages, ...additionalImages];
+    }
+    
+    // Si aucune image, utiliser le placeholder
+    if (allImages.length === 0) {
+        allImages = ['/images/placeholder.jpg'];
+    }
 
     return (
         <div className="space-y-4">
@@ -325,7 +354,8 @@ function ProductShow({ product, relatedProducts = [], reviews = [] }) {
                     {/* Galerie d'images */}
                     <div className="lg:col-span-1">
                         <ImageGallery 
-                            images={product.images} 
+                            images={product.images}
+                            productImage={product.image}
                             productName={product.name} 
                         />
                     </div>

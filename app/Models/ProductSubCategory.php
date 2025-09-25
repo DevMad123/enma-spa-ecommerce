@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class ProductSubCategory extends Model
 {
@@ -13,6 +14,7 @@ class ProductSubCategory extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'slug',
         'image',
         'note',
         'status',
@@ -49,5 +51,51 @@ class ProductSubCategory extends Model
     public function scopeByCategory($query, $categoryId)
     {
         return $query->where('category_id', $categoryId);
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($subCategory) {
+            if (empty($subCategory->slug)) {
+                $subCategory->slug = static::generateUniqueSlug($subCategory->name);
+            }
+        });
+
+        static::updating(function ($subCategory) {
+            if ($subCategory->isDirty('name')) {
+                $subCategory->slug = static::generateUniqueSlug($subCategory->name, $subCategory->id);
+            }
+        });
+    }
+
+    /**
+     * Generate a unique slug for the sub-category.
+     */
+    protected static function generateUniqueSlug($name, $excludeId = null)
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        $query = static::where('slug', $slug);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        while ($query->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+            $query = static::where('slug', $slug);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+        }
+
+        return $slug;
     }
 }

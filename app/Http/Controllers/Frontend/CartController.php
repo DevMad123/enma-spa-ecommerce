@@ -22,7 +22,7 @@ class CartController extends Controller
 
     public function checkout()
     {
-        $shippingMethods = Shipping::where('status', 1)
+        $shippingMethods = Shipping::where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->get();
 

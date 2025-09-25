@@ -379,7 +379,7 @@ const FilterSidebar = ({
                                                 : 'bg-white text-gray-700 hover:bg-gray-50'
                                             }
                                         `}>
-                                            {size.name}
+                                            {size.size}
                                         </div>
                                     </label>
                                 ))}
@@ -409,19 +409,54 @@ function CategoryShow({
     sizes = [],
     filters = {} 
 }) {
+    // Protection complète contre les données nulles/undefined
+    const safeProducts = products && typeof products === 'object' ? {
+        data: Array.isArray(products.data) ? products.data.filter(p => p && p.id) : [],
+        links: Array.isArray(products.links) ? products.links : [],
+        total: products.total || 0
+    } : { data: [], links: [], total: 0 };
+    
+    const safeSubcategories = Array.isArray(subcategories) ? subcategories.filter(s => s && s.id) : [];
+    const safeBrands = Array.isArray(brands) ? brands.filter(b => b && b.id) : [];
+    const safeColors = Array.isArray(colors) ? colors.filter(c => c && c.id) : [];
+    const safeSizes = Array.isArray(sizes) ? sizes.filter(s => s && s.id) : [];
+    const safeFilters = filters && typeof filters === 'object' ? filters : {};
+    const safeCategory = category && typeof category === 'object' ? category : { name: '', slug: '' };
+    
+    // Fonction pour nettoyer les filtres avant envoi à Inertia
+    const cleanFilters = (filters) => {
+        if (!filters || typeof filters !== 'object') return {};
+        
+        const cleaned = {};
+        Object.keys(filters).forEach(key => {
+            const value = filters[key];
+            if (value !== null && value !== undefined && value !== '' && value !== 'null' && value !== 'undefined') {
+                if (Array.isArray(value) && value.length > 0) {
+                    cleaned[key] = value.filter(v => v !== null && v !== undefined && v !== '' && v !== 'null' && v !== 'undefined');
+                } else if (!Array.isArray(value)) {
+                    cleaned[key] = value;
+                }
+            }
+        });
+        return cleaned;
+    };
+    
     const [viewMode, setViewMode] = useState('grid');
-    const [sortBy, setSortBy] = useState(filters.sort || 'name');
-    const [localFilters, setLocalFilters] = useState(filters);
+    const [sortBy, setSortBy] = useState(() => {
+        return safeFilters && safeFilters.sort ? safeFilters.sort : 'name';
+    });
+    const [localFilters, setLocalFilters] = useState(() => cleanFilters(safeFilters));
     const [filtersOpen, setFiltersOpen] = useState(false);
 
     const handleFilterChange = (newFilters) => {
-        setLocalFilters(newFilters);
+        const cleanedFilters = cleanFilters(newFilters);
+        setLocalFilters(cleanedFilters);
         
         // Debounced filter application
         clearTimeout(window.filterTimeout);
         window.filterTimeout = setTimeout(() => {
-            if (category?.slug) {
-                router.get(route('frontend.shop.category', category.slug), newFilters, {
+            if (safeCategory?.slug) {
+                router.get(route('frontend.shop.category', safeCategory.slug), cleanedFilters, {
                     preserveState: true,
                     preserveScroll: true,
                     replace: true
@@ -432,11 +467,12 @@ function CategoryShow({
 
     const handleSortChange = (newSort) => {
         setSortBy(newSort);
-        if (category?.slug) {
-            router.get(route('frontend.shop.category', category.slug), {
+        if (safeCategory?.slug) {
+            const newFilters = cleanFilters({
                 ...localFilters,
                 sort: newSort
-            }, {
+            });
+            router.get(route('frontend.shop.category', safeCategory.slug), newFilters, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true
@@ -445,14 +481,14 @@ function CategoryShow({
     };
 
     return (
-        <FrontendLayout title={`${category.name} - ENMA SPA`}>
+        <FrontendLayout title={`${safeCategory.name} - ENMA SPA`}>
             {/* Hero Section */}
             <div className="relative bg-gradient-to-r from-gray-900 via-amber-900 to-orange-900 py-16">
                 <div className="absolute inset-0">
-                    {category.banner_image && (
+                    {safeCategory.banner_image && (
                         <img
-                            src={category.banner_image}
-                            alt={category.name}
+                            src={safeCategory.banner_image}
+                            alt={safeCategory.name}
                             className="w-full h-full object-cover opacity-30"
                         />
                     )}
@@ -479,17 +515,17 @@ function CategoryShow({
                             <li>
                                 <div className="flex items-center">
                                     <ChevronRightIcon className="flex-shrink-0 h-5 w-5 text-gray-300" />
-                                    <span className="ml-4 text-amber-300 font-medium">{category.name}</span>
+                                    <span className="ml-4 text-amber-300 font-medium">{safeCategory.name}</span>
                                 </div>
                             </li>
                         </ol>
                     </nav>
 
                     <div className="text-center text-white">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">{category.name}</h1>
-                        {category.description && (
+                        <h1 className="text-4xl md:text-5xl font-bold mb-4">{safeCategory.name}</h1>
+                        {safeCategory.description && (
                             <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-                                {category.description}
+                                {safeCategory.description}
                             </p>
                         )}
                     </div>
@@ -513,10 +549,10 @@ function CategoryShow({
                         <div className="hidden lg:block">
                             <h2 className="text-lg font-semibold mb-6">Affiner la recherche</h2>
                             <FilterSidebar
-                                subcategories={subcategories}
-                                brands={brands}
-                                colors={colors}
-                                sizes={sizes}
+                                subcategories={safeSubcategories}
+                                brands={safeBrands}
+                                colors={safeColors}
+                                sizes={safeSizes}
                                 filters={localFilters}
                                 onFilterChange={handleFilterChange}
                                 isOpen={false}
@@ -525,17 +561,19 @@ function CategoryShow({
                         </div>
                     </div>
 
-                    {/* Mobile Filter Sidebar */}
-                    <FilterSidebar
-                        subcategories={subcategories}
-                        brands={brands}
-                        colors={colors}
-                        sizes={sizes}
-                        filters={localFilters}
-                        onFilterChange={handleFilterChange}
-                        isOpen={filtersOpen}
-                        onClose={() => setFiltersOpen(false)}
-                    />
+                    {/* Mobile Filter Sidebar - uniquement sur mobile */}
+                    <div className="lg:hidden">
+                        <FilterSidebar
+                            subcategories={safeSubcategories}
+                            brands={safeBrands}
+                            colors={safeColors}
+                            sizes={safeSizes}
+                            filters={localFilters}
+                            onFilterChange={handleFilterChange}
+                            isOpen={filtersOpen}
+                            onClose={() => setFiltersOpen(false)}
+                        />
+                    </div>
 
                     {/* Main Content */}
                     <div className="flex-1">
@@ -543,7 +581,7 @@ function CategoryShow({
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
                             <div>
                                 <p className="text-gray-600">
-                                    {products.total} produit{products.total > 1 ? 's' : ''} trouvé{products.total > 1 ? 's' : ''}
+                                    {safeProducts.total} produit{safeProducts.total > 1 ? 's' : ''} trouvé{safeProducts.total > 1 ? 's' : ''}
                                 </p>
                             </div>
 
@@ -592,14 +630,14 @@ function CategoryShow({
                         </div>
 
                         {/* Products Grid */}
-                        {products.data.length > 0 ? (
+                        {safeProducts.data.length > 0 ? (
                             <>
                                 <div className={
                                     viewMode === 'grid'
                                         ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8'
                                         : 'space-y-6'
                                 }>
-                                    {products.data.map((product) => (
+                                    {safeProducts.data.map((product) => (
                                         <ProductCard 
                                             key={product.id} 
                                             product={product} 
@@ -609,10 +647,10 @@ function CategoryShow({
                                 </div>
 
                                 {/* Pagination */}
-                                {products.last_page > 1 && (
+                                {safeProducts.last_page > 1 && (
                                     <div className="mt-12 flex justify-center">
                                         <div className="flex items-center space-x-2">
-                                            {products.links.map((link, index) => (
+                                            {safeProducts.links.map((link, index) => (
                                                 <Link
                                                     key={index}
                                                     href={link.url}

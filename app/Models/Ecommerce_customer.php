@@ -15,6 +15,7 @@ class Ecommerce_customer extends Authenticatable
     protected $table = 'ecommerce_customers';
 
     protected $fillable = [
+        'user_id',
         'first_name',
         'last_name',
         'image',
@@ -36,6 +37,7 @@ class Ecommerce_customer extends Authenticatable
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
         'status' => 'integer',
         'created_by' => 'integer',
         'updated_by' => 'integer',
@@ -44,6 +46,11 @@ class Ecommerce_customer extends Authenticatable
     ];
 
     // Relations
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function sells()
     {
         return $this->hasMany(Sell::class, 'customer_id');

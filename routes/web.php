@@ -13,6 +13,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProfileController as FrontendProfileController;
+use App\Http\Controllers\Frontend\ContactController as FrontendContactController;
 
 // Contrôleurs admin
 use App\Http\Controllers\Admin\DashboardController;
@@ -39,9 +40,13 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home-2', [HomeController::class, 'index2'])->name('home-2');
 Route::get('/home-3', [HomeController::class, 'index3'])->name('home-3');
 Route::get('/realisations', [RealisationsController::class, 'index'])->name('realisations');
-Route::get('/a-propos-de-nous', [AboutController::class, 'index'])->name('a-propos-de-nous');
-Route::get('/a-propos-de-nous-pro', [AboutController::class, 'indexPro'])->name('a-propos-de-nous-pro');
-Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+// Pages About et Contact
+Route::get('/a-propos', function () {
+    return Inertia::render('Frontend/About');
+})->name('a-propos-de-nous');
+
+Route::get('/contact', [FrontendContactController::class, 'index'])->name('contact');
+Route::post('/contact', [FrontendContactController::class, 'store'])->name('contact.store');
 
 // -------------------
 // Routes Frontend E-commerce

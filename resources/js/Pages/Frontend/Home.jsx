@@ -1,5 +1,5 @@
 import React from 'react';
-import FrontendLayout, { CartProvider } from '@/Layouts/FrontendLayout';
+import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage } from '@inertiajs/react';
 import { 
     ArrowRightIcon, 
@@ -130,7 +130,7 @@ const CategoryCard = ({ category }) => {
     );
 };
 
-function Home({ 
+export default function Home({ 
     featuredProducts = [], 
     newProducts = [], 
     categories = [], 
@@ -212,6 +212,7 @@ function Home({
             </section>
 
             {/* Categories Section */}
+            {console.log('categories:', categories)}
             {categories.length > 0 && (
                 <section className="py-20 bg-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -330,14 +331,5 @@ function Home({
                 </div>
             </section>
         </FrontendLayout>
-    );
-}
-
-// Wrapper avec CartProvider
-export default function HomeWithCart(props) {
-    return (
-        <CartProvider>
-            <Home {...props} />
-        </CartProvider>
     );
 }

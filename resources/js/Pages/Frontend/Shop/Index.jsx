@@ -13,8 +13,22 @@ import {
 } from '@heroicons/react/24/outline';
 import { useCart } from '@/Layouts/FrontendLayout';
 
+// Wrapper sécurisé pour les liens
+const SafeLink = ({ href, children, ...props }) => {
+    // Si l'href est null, undefined ou invalide, retourne un span
+    if (!href || href === 'null' || href === 'undefined') {
+        return <span {...props}>{children}</span>;
+    }
+    return <Link href={href} {...props}>{children}</Link>;
+};
+
 const ProductCard = ({ product, viewMode = 'grid' }) => {
     const { addToCart } = useCart();
+
+    // Protection contre les produits invalides
+    if (!product || !product.id) {
+        return null;
+    }
 
     const handleAddToCart = () => {
         addToCart(product, 1);
@@ -38,12 +52,12 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                     {product.category?.name}
                                 </p>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                    <Link 
-                                        href={route('frontend.shop.show', product.id)}
+                                    <SafeLink 
+                                        href={product.id ? route('frontend.shop.show', product.id) : null}
                                         className="hover:text-amber-600 transition-colors"
                                     >
                                         {product.name}
-                                    </Link>
+                                    </SafeLink>
                                 </h3>
                                 <p className="text-gray-600 mb-4 line-clamp-2">
                                     {product.description}
@@ -132,9 +146,9 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
 
                 {/* Nom du produit */}
                 <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                    <Link href={route('frontend.shop.show', product.id)} className="hover:text-amber-600 transition-colors">
+                    <SafeLink href={product.id ? route('frontend.shop.show', product.id) : null} className="hover:text-amber-600 transition-colors">
                         {product.name}
-                    </Link>
+                    </SafeLink>
                 </h3>
 
                 {/* Description courte */}
@@ -197,6 +211,12 @@ const FilterSidebar = ({
     isOpen,
     onClose 
 }) => {
+    // Protection des données dans le sidebar
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeBrands = Array.isArray(brands) ? brands : [];
+    const safeColors = Array.isArray(colors) ? colors : [];
+    const safeSizes = Array.isArray(sizes) ? sizes : [];
+    
     const [priceRange, setPriceRange] = useState([filters.min_price || 0, filters.max_price || 1000]);
 
     const handlePriceChange = (index, value) => {
@@ -211,53 +231,63 @@ const FilterSidebar = ({
         });
     };
 
-    const sidebarClasses = `
-        fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:z-auto lg:shadow-none
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-    `;
+    // Styles différents selon le contexte (mobile vs desktop)
+    const isMobile = isOpen !== false; // Si isOpen est un booléen, c'est mobile
+    
+    const sidebarClasses = isMobile 
+        ? `fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
+        : 'w-full'; // Pour desktop, juste la largeur complète
 
     return (
         <>
-            {/* Overlay */}
-            {isOpen && (
+            {/* Overlay - Uniquement pour mobile */}
+            {isMobile && isOpen && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40"
                     onClick={onClose}
                 />
             )}
 
             <div className={sidebarClasses}>
-                <div className="h-full overflow-y-auto p-6">
-                    <div className="flex items-center justify-between mb-6 lg:hidden">
-                        <h2 className="text-lg font-semibold">Filtres</h2>
-                        <button onClick={onClose} className="p-2">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+                <div className={`${isMobile ? 'h-full overflow-y-auto p-6' : ''}`}>
+                    {/* Header mobile uniquement */}
+                    {isMobile && (
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-semibold">Filtres</h2>
+                            <button onClick={onClose} className="p-2">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Catégories */}
                     <div className="mb-8">
                         <h3 className="text-lg font-semibold mb-4">Catégories</h3>
                         <div className="space-y-3">
-                            {categories.map((category) => (
-                                <label key={category.id} className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={filters.categories?.includes(category.id.toString())}
-                                        onChange={(e) => {
-                                            const categories = filters.categories || [];
-                                            const newCategories = e.target.checked
-                                                ? [...categories, category.id.toString()]
-                                                : categories.filter(id => id !== category.id.toString());
-                                            onFilterChange({ ...filters, categories: newCategories });
-                                        }}
-                                        className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                                    />
-                                    <span className="ml-3 text-sm text-gray-700">{category.name}</span>
-                                </label>
-                            ))}
+                            {safeCategories.map((category) => {
+                                // Protection contre les objets category invalides
+                                if (!category || !category.id) return null;
+                                
+                                return (
+                                    <label key={category.id} className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.categories?.includes(category.id.toString())}
+                                            onChange={(e) => {
+                                                const categories = filters.categories || [];
+                                                const newCategories = e.target.checked
+                                                    ? [...categories, category.id.toString()]
+                                                    : categories.filter(id => id !== category.id.toString());
+                                                onFilterChange({ ...filters, categories: newCategories });
+                                            }}
+                                            className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                                        />
+                                        <span className="ml-3 text-sm text-gray-700">{category.name || 'Catégorie sans nom'}</span>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -295,23 +325,28 @@ const FilterSidebar = ({
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Marques</h3>
                             <div className="space-y-3">
-                                {brands.map((brand) => (
-                                    <label key={brand.id} className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={filters.brands?.includes(brand.id.toString())}
-                                            onChange={(e) => {
-                                                const brands = filters.brands || [];
-                                                const newBrands = e.target.checked
-                                                    ? [...brands, brand.id.toString()]
-                                                    : brands.filter(id => id !== brand.id.toString());
-                                                onFilterChange({ ...filters, brands: newBrands });
-                                            }}
-                                            className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                                        />
-                                        <span className="ml-3 text-sm text-gray-700">{brand.name}</span>
-                                    </label>
-                                ))}
+                                {safeBrands.map((brand) => {
+                                    // Protection contre les objets brand invalides
+                                    if (!brand || !brand.id) return null;
+                                    
+                                    return (
+                                        <label key={brand.id} className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.brands?.includes(brand.id.toString())}
+                                                onChange={(e) => {
+                                                    const brands = filters.brands || [];
+                                                    const newBrands = e.target.checked
+                                                        ? [...brands, brand.id.toString()]
+                                                        : brands.filter(id => id !== brand.id.toString());
+                                                    onFilterChange({ ...filters, brands: newBrands });
+                                                }}
+                                                className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                                            />
+                                            <span className="ml-3 text-sm text-gray-700">{brand.name || 'Marque sans nom'}</span>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -321,31 +356,36 @@ const FilterSidebar = ({
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Couleurs</h3>
                             <div className="grid grid-cols-4 gap-2">
-                                {colors.map((color) => (
-                                    <label key={color.id} className="flex flex-col items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={filters.colors?.includes(color.id.toString())}
-                                            onChange={(e) => {
-                                                const colors = filters.colors || [];
-                                                const newColors = e.target.checked
-                                                    ? [...colors, color.id.toString()]
-                                                    : colors.filter(id => id !== color.id.toString());
-                                                onFilterChange({ ...filters, colors: newColors });
-                                            }}
-                                            className="sr-only"
-                                        />
-                                        <div 
-                                            className="w-8 h-8 rounded-full border-2 border-gray-300 relative"
-                                            style={{ backgroundColor: color.hex_code || color.name.toLowerCase() }}
-                                        >
-                                            {filters.colors?.includes(color.id.toString()) && (
-                                                <div className="absolute inset-0 rounded-full border-2 border-amber-500" />
-                                            )}
-                                        </div>
-                                        <span className="text-xs text-gray-600 mt-1">{color.name}</span>
-                                    </label>
-                                ))}
+                                {safeColors.map((color) => {
+                                    // Protection contre les objets color invalides
+                                    if (!color || !color.id) return null;
+                                    
+                                    return (
+                                        <label key={color.id} className="flex flex-col items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.colors?.includes(color.id.toString())}
+                                                onChange={(e) => {
+                                                    const colors = filters.colors || [];
+                                                    const newColors = e.target.checked
+                                                        ? [...colors, color.id.toString()]
+                                                        : colors.filter(id => id !== color.id.toString());
+                                                    onFilterChange({ ...filters, colors: newColors });
+                                                }}
+                                                className="sr-only"
+                                            />
+                                            <div 
+                                                className="w-8 h-8 rounded-full border-2 border-gray-300 relative"
+                                                style={{ backgroundColor: color.color_code || color.name?.toLowerCase() || '#cccccc' }}
+                                            >
+                                                {filters.colors?.includes(color.id.toString()) && (
+                                                    <div className="absolute inset-0 rounded-full border-2 border-amber-500" />
+                                                )}
+                                            </div>
+                                            <span className="text-xs text-gray-600 mt-1">{color.name || 'Couleur'}</span>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -355,31 +395,36 @@ const FilterSidebar = ({
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Tailles</h3>
                             <div className="grid grid-cols-3 gap-2">
-                                {sizes.map((size) => (
-                                    <label key={size.id} className="cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={filters.sizes?.includes(size.id.toString())}
-                                            onChange={(e) => {
-                                                const sizes = filters.sizes || [];
-                                                const newSizes = e.target.checked
-                                                    ? [...sizes, size.id.toString()]
-                                                    : sizes.filter(id => id !== size.id.toString());
-                                                onFilterChange({ ...filters, sizes: newSizes });
-                                            }}
-                                            className="sr-only"
-                                        />
-                                        <div className={`
-                                            px-3 py-2 border border-gray-300 rounded-md text-center text-sm
-                                            ${filters.sizes?.includes(size.id.toString()) 
-                                                ? 'bg-amber-500 text-white border-amber-500' 
-                                                : 'bg-white text-gray-700 hover:bg-gray-50'
-                                            }
-                                        `}>
-                                            {size.name}
-                                        </div>
-                                    </label>
-                                ))}
+                                {safeSizes.map((size) => {
+                                    // Protection contre les objets size invalides
+                                    if (!size || !size.id) return null;
+                                    
+                                    return (
+                                        <label key={size.id} className="cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.sizes?.includes(size.id.toString())}
+                                                onChange={(e) => {
+                                                    const sizes = filters.sizes || [];
+                                                    const newSizes = e.target.checked
+                                                        ? [...sizes, size.id.toString()]
+                                                        : sizes.filter(id => id !== size.id.toString());
+                                                    onFilterChange({ ...filters, sizes: newSizes });
+                                                }}
+                                                className="sr-only"
+                                            />
+                                            <div className={`
+                                                px-3 py-2 border border-gray-300 rounded-md text-center text-sm
+                                                ${filters.sizes?.includes(size.id.toString()) 
+                                                    ? 'bg-amber-500 text-white border-amber-500' 
+                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                }
+                                            `}>
+                                                {size.size || size.name || 'Taille'}
+                                            </div>
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -397,18 +442,57 @@ const FilterSidebar = ({
     );
 };
 
-function Shop({ 
-    products, 
-    categories = [], 
-    brands = [], 
-    colors = [], 
-    sizes = [],
-    filters = {},
-    currentCategory = null
-}) {
+function Shop(props = {}) {
+    // Destructuration ultra-sécurisée
+    const {
+        products = { data: [], links: [], total: 0 },
+        categories = [],
+        brands = [],
+        colors = [],
+        sizes = [],
+        filters = {},
+        currentCategory = null
+    } = props;
+    
+    // Protection complète contre les données nulles/undefined
+    const safeProducts = products && typeof products === 'object' ? {
+        data: Array.isArray(products.data) ? products.data.filter(p => p && p.id) : [],
+        links: Array.isArray(products.links) ? products.links : [],
+        total: products.total || 0
+    } : { data: [], links: [], total: 0 };
+    
+    const safeCategories = Array.isArray(categories) ? categories.filter(c => c && c.id) : [];
+    const safeBrands = Array.isArray(brands) ? brands.filter(b => b && b.id) : [];
+    const safeColors = Array.isArray(colors) ? colors.filter(c => c && c.id) : [];
+    const safeSizes = Array.isArray(sizes) ? sizes.filter(s => s && s.id) : [];
+    const safeFilters = filters && typeof filters === 'object' ? filters : {};
+
+    // Fonction pour nettoyer les filtres avant envoi à Inertia
+    const cleanFilters = (filters) => {
+        const cleaned = {};
+        Object.entries(filters || {}).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                // Pour les arrays, on ne garde que les valeurs non nulles/undefined
+                if (Array.isArray(value)) {
+                    const cleanArray = value.filter(item => item !== null && item !== undefined && item !== '');
+                    if (cleanArray.length > 0) {
+                        cleaned[key] = cleanArray;
+                    }
+                } else {
+                    cleaned[key] = value;
+                }
+            }
+        });
+        return cleaned;
+    };
     const [viewMode, setViewMode] = useState('grid');
-    const [sortBy, setSortBy] = useState(filters.sort || 'name');
-    const [localFilters, setLocalFilters] = useState(filters);
+    const [sortBy, setSortBy] = useState(() => {
+        // Valeurs de tri valides
+        const validSortValues = ['newest', 'popular', 'name', 'name_desc', 'price', 'price_desc', 'created_at_desc', 'created_at'];
+        const filterSort = safeFilters?.sort;
+        return (filterSort && validSortValues.includes(filterSort)) ? filterSort : 'newest';
+    });
+    const [localFilters, setLocalFilters] = useState(() => cleanFilters(safeFilters));
     const [filtersOpen, setFiltersOpen] = useState(false);
 
     const handleFilterChange = (newFilters) => {
@@ -417,7 +501,8 @@ function Shop({
         // Debounced filter application
         clearTimeout(window.filterTimeout);
         window.filterTimeout = setTimeout(() => {
-            router.get(route('frontend.shop.index'), newFilters, {
+            const cleanedFilters = cleanFilters(newFilters);
+            router.get(route('frontend.shop.index'), cleanedFilters, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true
@@ -427,10 +512,11 @@ function Shop({
 
     const handleSortChange = (newSort) => {
         setSortBy(newSort);
-        router.get(route('frontend.shop.index'), {
+        const filtersToSend = cleanFilters({
             ...localFilters,
             sort: newSort
-        }, {
+        });
+        router.get(route('frontend.shop.index'), filtersToSend, {
             preserveState: true,
             preserveScroll: true,
             replace: true
@@ -478,30 +564,34 @@ function Shop({
                         
                         <div className="hidden lg:block">
                             <h2 className="text-lg font-semibold mb-6">Filtres</h2>
-                            <FilterSidebar
-                                categories={categories}
-                                brands={brands}
-                                colors={colors}
-                                sizes={sizes}
-                                filters={localFilters}
-                                onFilterChange={handleFilterChange}
-                                isOpen={false}
-                                onClose={() => {}}
-                            />
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <FilterSidebar
+                                    categories={safeCategories}
+                                    brands={safeBrands}
+                                    colors={safeColors}
+                                    sizes={safeSizes}
+                                    filters={localFilters}
+                                    onFilterChange={handleFilterChange}
+                                    isOpen={false}
+                                    onClose={() => {}}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Mobile Filter Sidebar */}
-                    <FilterSidebar
-                        categories={categories}
-                        brands={brands}
-                        colors={colors}
-                        sizes={sizes}
-                        filters={localFilters}
-                        onFilterChange={handleFilterChange}
-                        isOpen={filtersOpen}
-                        onClose={() => setFiltersOpen(false)}
-                    />
+                    {/* Mobile Filter Sidebar - Uniquement pour mobile */}
+                    <div className="lg:hidden">
+                        <FilterSidebar
+                            categories={safeCategories}
+                            brands={safeBrands}
+                            colors={safeColors}
+                            sizes={safeSizes}
+                            filters={localFilters}
+                            onFilterChange={handleFilterChange}
+                            isOpen={filtersOpen}
+                            onClose={() => setFiltersOpen(false)}
+                        />
+                    </div>
 
                     {/* Main Content */}
                     <div className="flex-1">
@@ -512,7 +602,7 @@ function Shop({
                                     {currentCategory ? currentCategory.name : 'Tous les produits'}
                                 </h1>
                                 <p className="text-gray-600">
-                                    {products.total} produit{products.total > 1 ? 's' : ''} trouvé{products.total > 1 ? 's' : ''}
+                                    {safeProducts?.total || 0} produit{(safeProducts?.total || 0) > 1 ? 's' : ''} trouvé{(safeProducts?.total || 0) > 1 ? 's' : ''}
                                 </p>
                             </div>
 
@@ -548,11 +638,13 @@ function Shop({
                                         onChange={(e) => handleSortChange(e.target.value)}
                                         className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                     >
+                                        <option value="newest">Plus récents</option>
+                                        <option value="popular">Plus populaires</option>
                                         <option value="name">Nom A-Z</option>
                                         <option value="name_desc">Nom Z-A</option>
                                         <option value="price">Prix croissant</option>
                                         <option value="price_desc">Prix décroissant</option>
-                                        <option value="created_at_desc">Plus récents</option>
+                                        <option value="created_at_desc">Plus récents (date)</option>
                                         <option value="created_at">Plus anciens</option>
                                     </select>
                                     <ChevronDownIcon className="absolute right-2 top-2.5 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -561,14 +653,14 @@ function Shop({
                         </div>
 
                         {/* Products Grid */}
-                        {products.data.length > 0 ? (
+                        {products?.data?.length > 0 ? (
                             <>
                                 <div className={
                                     viewMode === 'grid'
                                         ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8'
                                         : 'space-y-6'
                                 }>
-                                    {products.data.map((product) => (
+                                    {safeProducts.data.map((product) => (
                                         <ProductCard 
                                             key={product.id} 
                                             product={product} 
@@ -578,27 +670,38 @@ function Shop({
                                 </div>
 
                                 {/* Pagination */}
-                                {products.last_page > 1 && (
+                                {products?.last_page > 1 && (
                                     <div className="mt-12 flex justify-center">
                                         <div className="flex items-center space-x-2">
-                                            {products.links.map((link, index) => (
-                                                <Link
-                                                    key={index}
-                                                    href={link.url}
-                                                    preserveState
-                                                    preserveScroll
-                                                    className={`
-                                                        px-4 py-2 text-sm font-medium rounded-lg transition-colors
-                                                        ${link.active 
-                                                            ? 'bg-amber-500 text-white' 
-                                                            : link.url 
-                                                                ? 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' 
-                                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        }
-                                                    `}
-                                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                                />
-                                            ))}
+                                            {safeProducts.links?.map((link, index) => {
+                                                // Si pas d'URL (comme pour "..."), on affiche un span au lieu d'un Link
+                                                if (!link.url) {
+                                                    return (
+                                                        <span
+                                                            key={index}
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                                        />
+                                                    );
+                                                }
+                                                
+                                                return (
+                                                    <Link
+                                                        key={index}
+                                                        href={link.url}
+                                                        preserveState
+                                                        preserveScroll
+                                                        className={`
+                                                            px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                                                            ${link.active 
+                                                                ? 'bg-amber-500 text-white' 
+                                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                                            }
+                                                        `}
+                                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                                    />
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

@@ -36,14 +36,48 @@ class ShopController extends Controller
             $query->where('category_id', $request->category);
         }
 
+        // Filtre par catégories multiples
+        if ($request->filled('categories')) {
+            $categories = is_array($request->categories) ? $request->categories : [$request->categories];
+            $query->whereIn('category_id', $categories);
+        }
+
         // Filtre par sous-catégorie
         if ($request->filled('subcategory')) {
             $query->where('subcategory_id', $request->subcategory);
         }
 
+        // Filtre par sous-catégories multiples
+        if ($request->filled('subcategories')) {
+            $subcategories = is_array($request->subcategories) ? $request->subcategories : [$request->subcategories];
+            $query->whereIn('subcategory_id', $subcategories);
+        }
+
         // Filtre par marque
         if ($request->filled('brand')) {
             $query->where('brand_id', $request->brand);
+        }
+
+        // Filtre par marques multiples
+        if ($request->filled('brands')) {
+            $brands = is_array($request->brands) ? $request->brands : [$request->brands];
+            $query->whereIn('brand_id', $brands);
+        }
+
+        // Filtre par couleurs
+        if ($request->filled('colors')) {
+            $colors = is_array($request->colors) ? $request->colors : [$request->colors];
+            $query->whereHas('colors', function($colorQuery) use ($colors) {
+                $colorQuery->whereIn('product_colors.id', $colors);
+            });
+        }
+
+        // Filtre par tailles
+        if ($request->filled('sizes')) {
+            $sizes = is_array($request->sizes) ? $request->sizes : [$request->sizes];
+            $query->whereHas('sizes', function($sizeQuery) use ($sizes) {
+                $sizeQuery->whereIn('product_sizes.id', $sizes);
+            });
         }
 
         // Filtre par prix
@@ -80,13 +114,23 @@ class ShopController extends Controller
         $categories = ProductCategory::where('status', 1)->get();
         $subcategories = ProductSubCategory::where('status', 1)->get();
         $brands = Brand::where('status', 1)->get();
-        $colors = ProductColor::where('status', 1)->get();
-        $sizes = ProductSize::where('status', 1)->get();
+        $colors = ProductColor::all();
+        $sizes = ProductSize::all();
 
         // Statistiques prix pour le filtre
         $priceRange = Product::where('status', 1)
             ->selectRaw('MIN(current_sale_price) as min_price, MAX(current_sale_price) as max_price')
             ->first();
+
+        // Nettoyage des filtres pour éviter les valeurs null
+        $filters = collect($request->only([
+            'search', 'category', 'categories', 'subcategory', 'subcategories', 
+            'brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort'
+        ]))
+            ->filter(function ($value) {
+                return $value !== null && $value !== '' && !empty($value);
+            })
+            ->toArray();
 
         return Inertia::render('Frontend/Shop/Index', [
             'products' => $products,
@@ -96,16 +140,16 @@ class ShopController extends Controller
             'colors' => $colors,
             'sizes' => $sizes,
             'priceRange' => $priceRange,
-            'filters' => $request->only(['search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'sort']),
+            'filters' => $filters,
         ]);
     }
 
-    public function category($categoryId, Request $request)
+    public function category($categorySlug, Request $request)
     {
-        $category = ProductCategory::findOrFail($categoryId);
+        $category = ProductCategory::where('slug', $categorySlug)->firstOrFail();
         
         $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
-            ->where('category_id', $categoryId)
+            ->where('category_id', $category->id)
             ->where('status', 1);
 
         // Appliquer les mêmes filtres que dans index()
@@ -113,25 +157,29 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
         
-        $subcategories = ProductSubCategory::where('category_id', $categoryId)
+        $subcategories = ProductSubCategory::where('category_id', $category->id)
             ->where('status', 1)->get();
         $brands = Brand::where('status', 1)->get();
+        $colors = ProductColor::all();
+        $sizes = ProductSize::all();
 
         return Inertia::render('Frontend/Shop/Category', [
             'category' => $category,
             'products' => $products,
             'subcategories' => $subcategories,
             'brands' => $brands,
-            'filters' => $request->only(['subcategory', 'brand', 'min_price', 'max_price', 'sort']),
+            'colors' => $colors,
+            'sizes' => $sizes,
+            'filters' => $request->only(['subcategory', 'subcategories', 'brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort']),
         ]);
     }
 
-    public function subcategory($subcategoryId, Request $request)
+    public function subcategory($subcategorySlug, Request $request)
     {
-        $subcategory = ProductSubCategory::with('category')->findOrFail($subcategoryId);
+        $subcategory = ProductSubCategory::with('category')->where('slug', $subcategorySlug)->firstOrFail();
         
         $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
-            ->where('subcategory_id', $subcategoryId)
+            ->where('subcategory_id', $subcategory->id)
             ->where('status', 1);
 
         $this->applyFilters($query, $request);
@@ -143,7 +191,7 @@ class ShopController extends Controller
             'subcategory' => $subcategory,
             'products' => $products,
             'brands' => $brands,
-            'filters' => $request->only(['brand', 'min_price', 'max_price', 'sort']),
+            'filters' => $request->only(['brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort']),
         ]);
     }
 
@@ -155,7 +203,8 @@ class ShopController extends Controller
             'brand', 
             'supplier',
             'colors', 
-            'sizes'
+            'sizes',
+            'images'
         ])->findOrFail($productId);
 
         // Produits similaires (même catégorie)
@@ -166,7 +215,7 @@ class ShopController extends Controller
             ->limit(4)
             ->get();
 
-        return Inertia::render('Frontend/Shop/ProductDetails', [
+        return Inertia::render('Frontend/Shop/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
         ]);
@@ -179,9 +228,37 @@ class ShopController extends Controller
             $query->where('subcategory_id', $request->subcategory);
         }
 
+        // Filtre par sous-catégories multiples
+        if ($request->filled('subcategories')) {
+            $subcategories = is_array($request->subcategories) ? $request->subcategories : [$request->subcategories];
+            $query->whereIn('subcategory_id', $subcategories);
+        }
+
         // Filtre par marque
         if ($request->filled('brand')) {
             $query->where('brand_id', $request->brand);
+        }
+
+        // Filtre par marques multiples
+        if ($request->filled('brands')) {
+            $brands = is_array($request->brands) ? $request->brands : [$request->brands];
+            $query->whereIn('brand_id', $brands);
+        }
+
+        // Filtre par couleurs
+        if ($request->filled('colors')) {
+            $colors = is_array($request->colors) ? $request->colors : [$request->colors];
+            $query->whereHas('colors', function($colorQuery) use ($colors) {
+                $colorQuery->whereIn('product_colors.id', $colors);
+            });
+        }
+
+        // Filtre par tailles
+        if ($request->filled('sizes')) {
+            $sizes = is_array($request->sizes) ? $request->sizes : [$request->sizes];
+            $query->whereHas('sizes', function($sizeQuery) use ($sizes) {
+                $sizeQuery->whereIn('product_sizes.id', $sizes);
+            });
         }
 
         // Filtre par prix

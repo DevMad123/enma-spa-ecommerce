@@ -74,4 +74,45 @@ class Product extends Model
     {
         return $this->hasMany(ProductAttribute::class);
     }
+
+    /**
+     * Récupère les couleurs disponibles pour ce produit via les variantes.
+     */
+    public function colors()
+    {
+        return $this->belongsToMany(ProductColor::class, 'product_variants', 'product_id', 'color_id')
+                    ->distinct();
+    }
+
+    /**
+     * Récupère les tailles disponibles pour ce produit via les variantes.
+     */
+    public function sizes()
+    {
+        return $this->belongsToMany(ProductSize::class, 'product_variants', 'product_id', 'size_id')
+                    ->distinct();
+    }
+
+    /**
+     * Accesseur pour l'attribut image - retourne l'image_path ou une image par défaut.
+     */
+    public function getImageAttribute()
+    {
+        if ($this->image_path) {
+            // Si l'image_path commence par 'http', c'est une URL complète
+            if (str_starts_with($this->image_path, 'http')) {
+                return $this->image_path;
+            }
+            // Sinon, on construit l'URL complète
+            return asset($this->image_path);
+        }
+        
+        // Retourne l'image par défaut
+        return asset('images/placeholder.jpg');
+    }
+
+    /**
+     * Accesseur pour les propriétés calculées.
+     */
+    protected $appends = ['image'];
 }

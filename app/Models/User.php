@@ -48,6 +48,11 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function ecommerceCustomer()
+    {
+        return $this->hasOne(Ecommerce_customer::class);
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_role');
