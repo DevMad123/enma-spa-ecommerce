@@ -8,13 +8,13 @@ import {
     ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { useCart } from '@/Layouts/FrontendLayout';
+import WishlistButton from '@/Components/Frontend/WishlistButton';
+import CartButton from '@/Components/Frontend/CartButton';
+import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
+import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
 
 const ProductCard = ({ product }) => {
     const { addToCart } = useCart();
-
-    const handleAddToCart = () => {
-        addToCart(product, 1);
-    };
 
     return (
         <div className="group relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
@@ -28,9 +28,12 @@ const ProductCard = ({ product }) => {
             )}
 
             {/* Bouton favoris */}
-            <button className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <HeartIcon className="h-5 w-5 text-gray-600 hover:text-red-500" />
-            </button>
+            <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <WishlistButton 
+                    product={product}
+                    size="default"
+                />
+            </div>
 
             {/* Image du produit */}
             <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-100">
@@ -92,13 +95,13 @@ const ProductCard = ({ product }) => {
                 </div>
 
                 {/* Bouton d'ajout au panier */}
-                <button
-                    onClick={handleAddToCart}
-                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 px-4 rounded-xl font-medium hover:from-amber-600 hover:to-orange-700 transition-all duration-200 flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
-                >
-                    <ShoppingCartIcon className="h-5 w-5" />
-                    <span>Ajouter au panier</span>
-                </button>
+                <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                    <CartButton 
+                        product={product} 
+                        className="w-full"
+                        variant="gradient"
+                    />
+                </div>
             </div>
         </div>
     );
@@ -130,7 +133,7 @@ const CategoryCard = ({ category }) => {
     );
 };
 
-export default function Home({ 
+function HomeContent({ 
     featuredProducts = [], 
     newProducts = [], 
     categories = [], 
@@ -138,7 +141,7 @@ export default function Home({
     stats = {} 
 }) {
     return (
-        <FrontendLayout title="Accueil - ENMA SPA">
+        <>
             {/* Hero Section */}
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
                 {/* Background */}
@@ -299,37 +302,23 @@ export default function Home({
             )}
 
             {/* Newsletter Section */}
-            <section className="py-20 bg-gradient-to-r from-amber-600 to-orange-600">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="max-w-3xl mx-auto text-white">
-                        <h2 className="text-4xl font-bold mb-4">
-                            Restez informé de nos nouveautés
-                        </h2>
-                        <p className="text-xl mb-8 text-orange-100">
-                            Inscrivez-vous à notre newsletter et recevez 10% de réduction sur votre première commande
-                        </p>
-                        
-                        <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                            <input
-                                type="email"
-                                placeholder="Votre adresse email"
-                                className="flex-1 px-6 py-4 rounded-full text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-white focus:outline-none"
-                                required
-                            />
-                            <button
-                                type="submit"
-                                className="bg-white text-amber-600 px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
-                            >
-                                S'inscrire
-                            </button>
-                        </form>
-                        
-                        <p className="text-sm text-orange-100 mt-4">
-                            Nous respectons votre vie privée. Aucun spam.
-                        </p>
-                    </div>
-                </div>
-            </section>
+            <NewsletterSection
+                title="Restez informé de nos nouveautés"
+                subtitle="Inscrivez-vous à notre newsletter et recevez 10% de réduction sur votre première commande"
+                variant="colored"
+                showFeatures={true}
+            />
+        </>
+    );
+}
+
+export default function Home({ wishlistItems, ...props }) {
+    return (
+        <FrontendLayout 
+            title="Accueil - ENMA SPA" 
+            wishlistItems={wishlistItems}
+        >
+            <HomeContent {...props} />
         </FrontendLayout>
     );
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Brand;
+use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -49,6 +50,7 @@ class HomeController extends Controller
             'bestSellers' => $bestSellers,
             'categories' => $categories,
             'brands' => $brands,
+            'wishlist' => auth()->check() ? auth()->user()->wishlistItems()->pluck('product_id')->toArray() : [],
         ]);
     }
 

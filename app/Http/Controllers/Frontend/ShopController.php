@@ -9,6 +9,8 @@ use App\Models\ProductSubCategory;
 use App\Models\Brand;
 use App\Models\ProductColor;
 use App\Models\ProductSize;
+use App\Models\Wishlist;
+use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -207,6 +209,41 @@ class ShopController extends Controller
             'images'
         ])->findOrFail($productId);
 
+        // Récupérer les avis du produit avec les utilisateurs
+        $reviews = \App\Models\ProductReview::with(['user'])
+            ->where('product_id', $product->id)
+            ->where('is_approved', true)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($review) {
+                return [
+                    'id' => $review->id,
+                    'user_id' => $review->user_id,
+                    'product_id' => $review->product_id,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'is_approved' => $review->is_approved,
+                    'is_verified_purchase' => $review->is_verified_purchase ?? false,
+                    'helpful_count' => $review->helpful_count ?? 0,
+                    'created_at' => $review->created_at->format('d/m/Y'),
+                    'updated_at' => $review->updated_at->format('d/m/Y'),
+                    'user' => [
+                        'id' => $review->user->id,
+                        'name' => $review->user->name,
+                        'email' => $review->user->email,
+                    ]
+                ];
+            });
+
+        // Vérifier si l'utilisateur connecté peut laisser un avis
+        $userCanReview = false;
+        if (auth()->check()) {
+            // L'utilisateur peut laisser un avis s'il n'en a pas déjà laissé un
+            $userCanReview = !\App\Models\ProductReview::where('product_id', $product->id)
+                ->where('user_id', auth()->id())
+                ->exists();
+        }
+
         // Produits similaires (même catégorie)
         $relatedProducts = Product::with(['category', 'brand'])
             ->where('category_id', $product->category_id)
@@ -218,6 +255,9 @@ class ShopController extends Controller
         return Inertia::render('Frontend/Shop/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
+            'reviews' => $reviews,
+            'userCanReview' => $userCanReview,
+            'wishlist' => auth()->check() ? auth()->user()->wishlistItems()->pluck('product_id')->toArray() : [],
         ]);
     }
 

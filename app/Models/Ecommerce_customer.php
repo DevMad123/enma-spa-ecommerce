@@ -126,4 +126,64 @@ class Ecommerce_customer extends Authenticatable
     {
         return $this->sells()->latest()->first()?->created_at;
     }
+
+    /**
+     * Un utilisateur peut avoir plusieurs éléments dans sa wishlist.
+     */
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'user_id');
+    }
+
+    /**
+     * Un utilisateur peut écrire plusieurs avis.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'user_id');
+    }
+
+    /**
+     * Récupère les produits dans la wishlist de l'utilisateur.
+     */
+    public function wishlistProducts()
+    {
+        return $this->belongsToMany(Product::class, 'wishlists', 'user_id', 'product_id')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Vérifie si un produit est dans la wishlist de l'utilisateur.
+     */
+    public function hasInWishlist($productId)
+    {
+        return $this->wishlists()->where('product_id', $productId)->exists();
+    }
+
+    /**
+     * Ajoute un produit à la wishlist.
+     */
+    public function addToWishlist($productId)
+    {
+        if (!$this->hasInWishlist($productId)) {
+            return $this->wishlists()->create(['product_id' => $productId]);
+        }
+        return false;
+    }
+
+    /**
+     * Retire un produit de la wishlist.
+     */
+    public function removeFromWishlist($productId)
+    {
+        return $this->wishlists()->where('product_id', $productId)->delete();
+    }
+
+    /**
+     * Vérifie si l'utilisateur peut écrire un avis pour un produit.
+     */
+    public function canReviewProduct($productId)
+    {
+        return !$this->reviews()->where('product_id', $productId)->exists();
+    }
 }

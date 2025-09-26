@@ -112,7 +112,59 @@ class Product extends Model
     }
 
     /**
+     * Un produit peut être dans plusieurs wishlists.
+     */
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Un produit peut avoir plusieurs avis.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * Récupère les avis approuvés uniquement.
+     */
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class)->where('is_approved', true);
+    }
+
+    /**
+     * Calcule la note moyenne du produit.
+     */
+    public function getAverageRatingAttribute()
+    {
+        return $this->approvedReviews()->avg('rating') ?? 0;
+    }
+
+    /**
+     * Compte le nombre total d'avis approuvés.
+     */
+    public function getReviewsCountAttribute()
+    {
+        return $this->approvedReviews()->count();
+    }
+
+    /**
+     * Vérifie si un produit est dans la wishlist d'un utilisateur.
+     */
+    public function isInWishlist($userId = null)
+    {
+        if (!$userId) {
+            return false;
+        }
+        
+        return $this->wishlists()->where('user_id', $userId)->exists();
+    }
+
+    /**
      * Accesseur pour les propriétés calculées.
      */
-    protected $appends = ['image'];
+    protected $appends = ['image', 'average_rating', 'reviews_count'];
 }

@@ -9,6 +9,8 @@ import {
     XMarkIcon,
     ChevronDownIcon
 } from '@heroicons/react/24/outline';
+import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
+import { WishlistProvider, useWishlist } from '@/Contexts/WishlistContext';
 
 // Contexte du panier
 const CartContext = createContext();
@@ -123,6 +125,7 @@ const FrontendLayout = ({ children, title }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const { getTotalItems } = useCart();
+    const { getTotalItems: getWishlistTotalItems } = useWishlist();
 
     const navigation = [
         { name: 'Accueil', href: route('home') },
@@ -207,14 +210,24 @@ const FrontendLayout = ({ children, title }) => {
                             {/* Actions */}
                             <div className="flex items-center space-x-4">
                                 {/* Wishlist */}
-                                <button className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative">
+                                <Link 
+                                    href={route('frontend.wishlist.index')}
+                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative"
+                                    title="Ma Wishlist"
+                                >
                                     <HeartIcon className="h-6 w-6" />
-                                </button>
+                                    {getWishlistTotalItems() > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                            {getWishlistTotalItems()}
+                                        </span>
+                                    )}
+                                </Link>
 
                                 {/* Cart */}
                                 <Link
                                     href={route('frontend.cart.index')}
                                     className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative"
+                                    data-cart-icon
                                 >
                                     <ShoppingCartIcon className="h-6 w-6" />
                                     {getTotalItems() > 0 && (
@@ -395,4 +408,18 @@ const FrontendLayout = ({ children, title }) => {
     );
 };
 
-export default FrontendLayout;
+const LayoutWithProviders = ({ children, title = 'ENMA SPA', wishlistItems = [] }) => {
+    return (
+        <NotificationProvider>
+            <WishlistProvider initialWishlistItems={wishlistItems}>
+                <CartProvider>
+                    <FrontendLayout title={title}>
+                        {children}
+                    </FrontendLayout>
+                </CartProvider>
+            </WishlistProvider>
+        </NotificationProvider>
+    );
+};
+
+export default LayoutWithProviders;

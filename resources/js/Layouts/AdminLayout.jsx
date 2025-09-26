@@ -67,6 +67,15 @@ const navigationLinks = [
     icon: HiOutlineUserGroup,
     color: "text-indigo-600"
   },
+  {
+    label: "Communication",
+    icon: HiOutlineBell,
+    color: "text-orange-600",
+    submenu: [
+      { route: "admin.contact-messages.index", label: "Messages de Contact", icon: HiOutlineBell },
+      { route: "admin.newsletters.index", label: "Newsletter", icon: HiOutlineUsers },
+    ]
+  },
   { 
     route: "admin.users.index", 
     label: "Utilisateurs", 

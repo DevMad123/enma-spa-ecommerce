@@ -1,11 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Http\Controllers\Frontend\WishlistController;
 
 // Contrôleurs publics
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RealisationsController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 
@@ -14,6 +17,7 @@ use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProfileController as FrontendProfileController;
 use App\Http\Controllers\Frontend\ContactController as FrontendContactController;
+use App\Http\Controllers\Frontend\NewsletterController;
 
 // Contrôleurs admin
 use App\Http\Controllers\Admin\DashboardController;
@@ -29,6 +33,8 @@ use App\Http\Controllers\Admin\SellController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
@@ -47,6 +53,13 @@ Route::get('/a-propos', function () {
 
 Route::get('/contact', [FrontendContactController::class, 'index'])->name('contact');
 Route::post('/contact', [FrontendContactController::class, 'store'])->name('contact.store');
+
+// Routes Newsletter
+Route::prefix('newsletter')->name('newsletter.')->group(function () {
+    Route::post('/subscribe', [NewsletterController::class, 'subscribe'])->name('subscribe');
+    Route::post('/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe');
+    Route::post('/check', [NewsletterController::class, 'checkSubscription'])->name('check');
+});
 
 // -------------------
 // Routes Frontend E-commerce
@@ -69,6 +82,32 @@ Route::prefix('cart')->name('frontend.cart.')->group(function () {
 // API endpoints pour le panier (AJAX)
 Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('/product/{product}', [CartController::class, 'getProductForCart'])->name('product');
+});
+
+// Routes Wishlist
+Route::middleware('auth')->prefix('wishlist')->name('frontend.wishlist.')->group(function () {
+    Route::get('/', [WishlistController::class, 'index'])->name('index');
+    Route::post('/add', [WishlistController::class, 'store'])->name('store');
+    Route::delete('/remove/{productId}', [WishlistController::class, 'destroy'])->name('destroy');
+    Route::delete('/clear', [WishlistController::class, 'clear'])->name('clear');
+});
+
+// Routes Reviews (Authentification requise pour création/modification/suppression)
+Route::prefix('reviews')->name('frontend.reviews.')->group(function () {
+    // Ajouter un avis (authentification requise)
+    Route::middleware('auth')->post('/', [ReviewController::class, 'store'])->name('store');
+    
+    // Modifier un avis (authentification requise + ownership)
+    Route::middleware('auth')->put('/{review}', [ReviewController::class, 'update'])->name('update');
+    
+    // Supprimer un avis (authentification requise + ownership)
+    Route::middleware('auth')->delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
+    
+    // Marquer un avis comme utile (authentification requise)
+    Route::middleware('auth')->post('/{review}/helpful', [ReviewController::class, 'markHelpful'])->name('helpful');
+    
+    // Signaler un avis (authentification requise)
+    Route::middleware('auth')->post('/{review}/report', [ReviewController::class, 'report'])->name('report');
 });
 
 // Profil Client (Authentification requise)
@@ -234,6 +273,24 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(['hasRole:admin'])->name('destroy');
         Route::patch('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware(['hasRole:admin'])->name('toggleStatus');
+    });
+
+    // Routes Messages de Contact
+    Route::prefix('contact-messages')->name('contact-messages.')->group(function () {
+        Route::get('/', [ContactMessageController::class, 'index'])->name('index');
+        Route::get('/{contactMessage}', [ContactMessageController::class, 'show'])->name('show');
+        Route::put('/{contactMessage}', [ContactMessageController::class, 'update'])->name('update');
+        Route::delete('/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-action', [ContactMessageController::class, 'bulkAction'])->name('bulk-action');
+    });
+
+    // Routes Newsletter
+    Route::prefix('newsletters')->name('newsletters.')->group(function () {
+        Route::get('/', [AdminNewsletterController::class, 'index'])->name('index');
+        Route::delete('/{newsletter}', [AdminNewsletterController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [AdminNewsletterController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::get('/export', [AdminNewsletterController::class, 'export'])->name('export');
+        Route::get('/statistics', [AdminNewsletterController::class, 'statistics'])->name('statistics');
     });
 });
 

@@ -13,12 +13,17 @@ import {
     AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 import { useCart } from '@/Layouts/FrontendLayout';
+import WishlistButton from '@/Components/Frontend/WishlistButton';
+import CartButton from '@/Components/Frontend/CartButton';
+import { useNotification } from '@/Components/Notifications/NotificationProvider';
 
 const ProductCard = ({ product, viewMode = 'grid' }) => {
     const { addToCart } = useCart();
+    const { showSuccess } = useNotification();
 
     const handleAddToCart = () => {
         addToCart(product, 1);
+        showSuccess(`${product.name} ajouté au panier`, "🛒 Produit ajouté");
     };
 
     if (viewMode === 'list') {
@@ -82,16 +87,18 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                             </div>
                             
                             <div className="ml-6 flex flex-col items-end space-y-2">
-                                <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                                    <HeartIcon className="h-6 w-6" />
-                                </button>
-                                <button
-                                    onClick={handleAddToCart}
+                                <WishlistButton 
+                                    product={product} 
+                                    size="default"
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors" 
+                                />
+                                <CartButton
+                                    product={product}
                                     className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl font-medium hover:from-amber-600 hover:to-orange-700 transition-all duration-200 flex items-center space-x-2"
                                 >
                                     <ShoppingCartIcon className="h-5 w-5" />
                                     <span>Ajouter</span>
-                                </button>
+                                </CartButton>
                             </div>
                         </div>
                     </div>
@@ -112,9 +119,13 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
             )}
 
             {/* Bouton favoris */}
-            <button className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <HeartIcon className="h-5 w-5 text-gray-600 hover:text-red-500" />
-            </button>
+            <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <WishlistButton 
+                    product={product} 
+                    size="default"
+                    className="p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all" 
+                />
+            </div>
 
             {/* Image du produit */}
             <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden">
@@ -176,13 +187,13 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 </div>
 
                 {/* Bouton d'ajout au panier */}
-                <button
-                    onClick={handleAddToCart}
+                <CartButton
+                    product={product}
                     className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 px-4 rounded-xl font-medium hover:from-amber-600 hover:to-orange-700 transition-all duration-200 flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
                 >
                     <ShoppingCartIcon className="h-5 w-5" />
                     <span>Ajouter au panier</span>
-                </button>
+                </CartButton>
             </div>
         </div>
     );
@@ -481,7 +492,7 @@ function CategoryShow({
     };
 
     return (
-        <FrontendLayout title={`${safeCategory.name} - ENMA SPA`}>
+        <>
             {/* Hero Section */}
             <div className="relative bg-gradient-to-r from-gray-900 via-amber-900 to-orange-900 py-16">
                 <div className="absolute inset-0">
@@ -696,15 +707,18 @@ function CategoryShow({
                     </div>
                 </div>
             </div>
-        </FrontendLayout>
+        </>
     );
 }
 
-// Wrapper avec CartProvider
-export default function CategoryShowWithCart(props) {
+// Wrapper avec le nouveau système
+export default function CategoryShowWithCart({ wishlistItems, ...props }) {
     return (
-        <CartProvider>
+        <FrontendLayout 
+            title={`${props.category?.name || 'Catégorie'} - ENMA SPA`} 
+            wishlistItems={wishlistItems}
+        >
             <CategoryShow {...props} />
-        </CartProvider>
+        </FrontendLayout>
     );
 }

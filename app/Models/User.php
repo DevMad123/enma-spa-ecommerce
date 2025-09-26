@@ -58,6 +58,49 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Role::class, 'user_role');
     }
 
+    /**
+     * Relation avec la wishlist
+     */
+    public function wishlistItems()
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
+    /**
+     * Relation avec les avis produits
+     */
+    public function productReviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * Vérifier si un produit est dans la wishlist
+     */
+    public function hasInWishlist($productId)
+    {
+        return $this->wishlistItems()->where('product_id', $productId)->exists();
+    }
+
+    /**
+     * Ajouter un produit à la wishlist
+     */
+    public function addToWishlist($productId)
+    {
+        if (!$this->hasInWishlist($productId)) {
+            return $this->wishlistItems()->create(['product_id' => $productId]);
+        }
+        return false;
+    }
+
+    /**
+     * Retirer un produit de la wishlist
+     */
+    public function removeFromWishlist($productId)
+    {
+        return $this->wishlistItems()->where('product_id', $productId)->delete();
+    }
+
     public function hasRole($roleName)
     {
         return $this->roles()->where('name', $roleName)->exists();
