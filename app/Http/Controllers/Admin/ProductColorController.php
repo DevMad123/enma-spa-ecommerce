@@ -30,7 +30,7 @@ class ProductColorController extends Controller
         $perPage = $request->get('perPage', 10);
         $colorList = $query->paginate($perPage)->appends($request->all());
 
-        return Inertia::render('Colors/list', [
+        return Inertia::render('Admin/Colors/Index', [
             'title' => 'Color List',
             'colorList' => $colorList,
             'filters' => [

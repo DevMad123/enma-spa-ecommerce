@@ -80,7 +80,7 @@ class SellController extends Controller
                                       ->orderBy('first_name')
                                       ->get();
 
-        return Inertia::render('Admin/Orders/list', [
+        return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
             'stats' => $stats,
             'customers' => $customers,

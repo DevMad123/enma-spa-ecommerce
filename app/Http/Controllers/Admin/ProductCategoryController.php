@@ -28,7 +28,8 @@ class ProductCategoryController extends Controller
     {
         // Start a new query for the ProductCategory model, excluding deleted records.
         $query = ProductCategory::query()
-            ->with('subcategory') // Eager load subcategories if you need them.
+            ->with(['subcategory', 'products']) // Eager load subcategories and products
+            ->withCount('products') // Count products for each category
             ->whereNull('deleted_at');
 
         // Global search filter
@@ -36,7 +37,8 @@ class ProductCategoryController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                  ->orWhere('note', 'like', "%$search%");
+                  ->orWhere('note', 'like', "%$search%")
+                  ->orWhere('slug', 'like', "%$search%");
             });
         }
 
@@ -45,23 +47,58 @@ class ProductCategoryController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Popularity filter
+        if ($request->filled('is_popular')) {
+            $query->where('is_popular', $request->is_popular);
+        }
+
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Products count filter
+        if ($request->filled('products_count_filter')) {
+            if ($request->products_count_filter === 'with_products') {
+                $query->has('products');
+            } elseif ($request->products_count_filter === 'without_products') {
+                $query->doesntHave('products');
+            }
+        }
+
         // Sorting
         $sort = $request->get('sort', 'id');
         $direction = $request->get('direction', 'desc');
         $query->orderBy($sort, $direction);
 
         // Pagination
-        $perPage = $request->get('perPage', 10);
+        $perPage = $request->get('per_page', 15);
         $categoryList = $query->paginate($perPage)->appends($request->all());
 
+        // Calculate statistics
+        $stats = [
+            'total_categories' => ProductCategory::whereNull('deleted_at')->count(),
+            'active_categories' => ProductCategory::whereNull('deleted_at')->where('status', 1)->count(),
+            'popular_categories' => ProductCategory::whereNull('deleted_at')->where('is_popular', 1)->count(),
+            'categories_with_products' => ProductCategory::whereNull('deleted_at')->has('products')->count(),
+        ];
+
         // Return the Inertia view with the necessary data.
-        return Inertia::render('categories/list', [
+        return Inertia::render('Admin/categories/Index', [
             'title' => 'Category List',
             'categoryList' => $categoryList,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? '',
-                'perPage' => $perPage,
+                'is_popular' => $request->is_popular ?? '',
+                'date_from' => $request->date_from ?? '',
+                'date_to' => $request->date_to ?? '',
+                'products_count_filter' => $request->products_count_filter ?? '',
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
             ],

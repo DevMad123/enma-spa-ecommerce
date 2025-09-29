@@ -30,7 +30,7 @@ class ProductSizeController extends Controller
         // Récupérer toutes les tailles sans pagination pour simplifier
         $sizes = $query->get();
 
-        return Inertia::render('Sizes/list', [
+        return Inertia::render('Admin/Sizes/Index', [
             'title' => 'Size List',
             'sizes' => $sizes,
             'filters' => [

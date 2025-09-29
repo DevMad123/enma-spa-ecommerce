@@ -20,9 +20,13 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
-        'email_verified_at'
+        'email_verified_at',
+        'status',
+        'last_login_at'
     ];
 
     /**
@@ -44,7 +48,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'status' => 'integer',
         ];
     }
 
@@ -149,5 +155,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->whereHas('roles', function($q) use ($roleName) {
             $q->where('name', $roleName);
         });
+    }
+
+    // Scope pour filtrer par statut
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('status', 0);
+    }
+
+    // Accessor pour le nom complet
+    public function getFullNameAttribute()
+    {
+        return $this->first_name && $this->last_name 
+            ? $this->first_name . ' ' . $this->last_name 
+            : $this->name;
+    }
+
+    // Accessor pour le statut texte
+    public function getStatusTextAttribute()
+    {
+        return $this->status ? 'Actif' : 'Inactif';
     }
 }

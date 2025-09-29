@@ -50,9 +50,9 @@ class CustomerController extends Controller
             return $customer;
         });
 
-        return Inertia::render('Customers/list', [
+        return Inertia::render('Admin/Customers/Index', [
             'title' => 'Customer Management',
-            'customerList' => $customerList,
+            'customers' => $customerList,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
@@ -140,7 +140,7 @@ class CustomerController extends Controller
                              ->paginate(10)
                              ->appends($request->all());
 
-        return Inertia::render('Customers/show', [
+        return Inertia::render('Admin/Customers/show', [
             'title' => 'Customer Details',
             'customer' => $customer,
             'stats' => $stats,
@@ -337,5 +337,111 @@ class CustomerController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Bulk delete customers.
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:ecommerce_customers,id'
+            ]);
+
+            DB::beginTransaction();
+
+            $deletedCount = 0;
+            $deactivatedCount = 0;
+
+            foreach ($request->ids as $id) {
+                $customer = Ecommerce_customer::findOrFail($id);
+                
+                // Vérifier s'il y a des commandes liées
+                $hasOrders = $customer->sells()->exists();
+                
+                if ($hasOrders) {
+                    // Soft delete si il y a des commandes
+                    $customer->update(['deleted_by' => auth()->id()]);
+                    $customer->delete();
+                    $deactivatedCount++;
+                } else {
+                    // Hard delete si pas de commandes
+                    if ($customer->image && \Storage::exists('public/' . $customer->image)) {
+                        \Storage::delete('public/' . $customer->image);
+                    }
+                    $customer->forceDelete();
+                    $deletedCount++;
+                }
+            }
+
+            DB::commit();
+
+            $message = '';
+            if ($deletedCount > 0) {
+                $message .= "$deletedCount client(s) supprimé(s). ";
+            }
+            if ($deactivatedCount > 0) {
+                $message .= "$deactivatedCount client(s) désactivé(s) (avec historique de commandes).";
+            }
+
+            return redirect()->back()->with('flash.success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error bulk deleting customers: ' . $e->getMessage());
+            return redirect()->back()->with('flash.error', 'Erreur lors de la suppression groupée.');
+        }
+    }
+
+    /**
+     * Bulk activate customers.
+     */
+    public function bulkActivate(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:ecommerce_customers,id'
+            ]);
+
+            $count = Ecommerce_customer::whereIn('id', $request->ids)
+                ->update([
+                    'status' => 1,
+                    'updated_by' => auth()->id()
+                ]);
+
+            return redirect()->back()->with('flash.success', "$count client(s) activé(s) avec succès.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error bulk activating customers: ' . $e->getMessage());
+            return redirect()->back()->with('flash.error', 'Erreur lors de l\'activation groupée.');
+        }
+    }
+
+    /**
+     * Bulk deactivate customers.
+     */
+    public function bulkDeactivate(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:ecommerce_customers,id'
+            ]);
+
+            $count = Ecommerce_customer::whereIn('id', $request->ids)
+                ->update([
+                    'status' => 0,
+                    'updated_by' => auth()->id()
+                ]);
+
+            return redirect()->back()->with('flash.success', "$count client(s) désactivé(s) avec succès.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error bulk deactivating customers: ' . $e->getMessage());
+            return redirect()->back()->with('flash.error', 'Erreur lors de la désactivation groupée.');
+        }
     }
 }

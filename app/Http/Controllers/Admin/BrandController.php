@@ -21,6 +21,9 @@ class BrandController extends Controller
     {
         $query = Brand::query()->whereNull('deleted_at');
 
+        // Ajouter le comptage des produits
+        $query->withCount('products');
+
         // Filtres
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -34,11 +37,26 @@ class BrandController extends Controller
         $query->orderBy($sort, $direction);
 
         $perPage = $request->get('perPage', 10);
-        $brandList = $query->paginate($perPage)->appends($request->all());
+        $brands = $query->paginate($perPage)->appends($request->all());
 
-        return Inertia::render('Brands/list', [
+        // Mapper les données pour correspondre aux attentes du frontend
+        $brands->getCollection()->transform(function ($brand) {
+            return [
+                'id' => $brand->id,
+                'brand_name' => $brand->name,
+                'slug' => $brand->slug ?? null,
+                'description' => $brand->description ?? null,
+                'logo' => $brand->image,
+                'status' => $brand->status,
+                'products_count' => $brand->products_count,
+                'created_at' => $brand->created_at,
+                'updated_at' => $brand->updated_at,
+            ];
+        });
+
+        return Inertia::render('Admin/Brands/Index', [
             'title' => 'Brand List',
-            'brandList' => $brandList,
+            'brands' => $brands,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,

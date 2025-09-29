@@ -45,18 +45,15 @@ class ShippingController extends Controller
 
         $shippings = $query->paginate(15)->withQueryString();
 
-        return Inertia::render('Admin/Shippings/list', [
+        return Inertia::render('Admin/Shippings/Index', [
             'shippings' => $shippings,
             'filters' => $request->only(['search', 'status', 'sort', 'direction']),
             'stats' => [
                 'total' => Shipping::count(),
                 'active' => Shipping::active()->count(),
                 'inactive' => Shipping::inactive()->count(),
+                'total_orders' => Shipping::withCount('sells')->get()->sum('sells_count'),
             ],
-            'flash' => [
-                'success' => session('flash.success'),
-                'error' => session('flash.error'),
-            ]
         ]);
     }
 
@@ -103,6 +100,180 @@ class ShippingController extends Controller
                 ->withInput()
                 ->with('flash.error', 'Erreur lors de la création : ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Suppression groupée de modes de livraison (AJAX)
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:shippings,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $shippings = Shipping::whereIn('id', $request->ids)->get();
+            $deletedCount = 0;
+
+            foreach ($shippings as $shipping) {
+                // Vérifier s'il y a des commandes liées
+                if (!$shipping->sells()->exists()) {
+                    $shipping->delete();
+                    $deletedCount++;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$deletedCount mode(s) de livraison supprimé(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression groupée: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Activation groupée de modes de livraison (AJAX)
+     */
+    public function bulkActivate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:shippings,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $count = Shipping::whereIn('id', $request->ids)
+                            ->update(['is_active' => true, 'updated_by' => auth()->id()]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$count mode(s) de livraison activé(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'activation groupée: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Désactivation groupée de modes de livraison (AJAX)
+     */
+    public function bulkDeactivate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:shippings,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $count = Shipping::whereIn('id', $request->ids)
+                            ->update(['is_active' => false, 'updated_by' => auth()->id()]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$count mode(s) de livraison désactivé(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la désactivation groupée: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Exporter les modes de livraison en CSV
+     */
+    public function export(Request $request)
+    {
+        $query = Shipping::with(['createdBy'])->withCount('sells');
+
+        // Appliquer les mêmes filtres que l'index
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('is_active', $request->status);
+        }
+
+        if ($request->filled('ids')) {
+            $query->whereIn('id', explode(',', $request->ids));
+        }
+
+        $shippings = $query->get();
+
+        $filename = 'modes_livraison_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($shippings) {
+            $file = fopen('php://output', 'w');
+            
+            // En-têtes CSV
+            fputcsv($file, [
+                'ID',
+                'Nom',
+                'Description',
+                'Prix',
+                'Délai (jours)',
+                'Statut',
+                'Commandes',
+                'Date création',
+            ]);
+
+            // Données
+            foreach ($shippings as $shipping) {
+                fputcsv($file, [
+                    $shipping->id,
+                    $shipping->name,
+                    $shipping->description ?? 'N/A',
+                    number_format($shipping->price, 2) . ' XOF',
+                    $shipping->estimated_days ?? 'N/A',
+                    $shipping->is_active ? 'Actif' : 'Inactif',
+                    $shipping->sells_count ?? 0,
+                    $shipping->created_at->format('d/m/Y H:i'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

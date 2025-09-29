@@ -73,7 +73,7 @@ class PaymentController extends Controller
                      ->limit(100)
                      ->get();
 
-        return Inertia::render('Admin/Payments/list', [
+        return Inertia::render('Admin/Payments/Index', [
             'payments' => $payments,
             'stats' => $stats,
             'sells' => $sells,
@@ -88,10 +88,6 @@ class PaymentController extends Controller
             ],
             'paymentMethods' => Payment::METHODS,
             'paymentStatuses' => Payment::STATUSES,
-            'flash' => [
-                'success' => session('flash.success'),
-                'error' => session('flash.error'),
-            ],
         ]);
     }
 
@@ -263,6 +259,94 @@ class PaymentController extends Controller
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de l\'annulation: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Suppression groupée de paiements (AJAX)
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payments,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $payments = Payment::whereIn('id', $request->ids)->get();
+            $deletedCount = 0;
+
+            foreach ($payments as $payment) {
+                if (!in_array($payment->status, ['success', 'refunded'])) {
+                    $payment->update([
+                        'status' => 'cancelled',
+                        'deleted_by' => auth()->id(),
+                        'updated_by' => auth()->id(),
+                    ]);
+                    $payment->delete();
+                    $deletedCount++;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$deletedCount paiement(s) supprimé(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la suppression groupée: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Validation groupée de paiements (AJAX)
+     */
+    public function bulkValidate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payments,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $payments = Payment::whereIn('id', $request->ids)
+                              ->where('status', 'pending')
+                              ->get();
+
+            $validatedCount = 0;
+
+            foreach ($payments as $payment) {
+                $payment->markAsSuccess();
+                $validatedCount++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$validatedCount paiement(s) validé(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la validation groupée: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
 

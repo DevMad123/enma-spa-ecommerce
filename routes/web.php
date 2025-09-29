@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Controllers\Frontend\WishlistController;
 
@@ -9,8 +8,6 @@ use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RealisationsController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\AboutController;
-use App\Http\Controllers\ContactController;
 
 // Contrôleurs frontend
 use App\Http\Controllers\Frontend\ShopController;
@@ -173,12 +170,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/delete/{id}', [SupplierController::class, 'deleteSuppliers'])->name('deleteSuppliers');
     });
 
-    // CRUD Catégories
-    // Route::resource('categories', ProductCategoryController::class);
-
-    // CRUD Sous-catégories
-    // Route::resource('subcategories', ProductSubcategoryController::class);
-
     // Route pour obtenir les sous-catégories par ID de catégorie (AJAX)
     Route::get('subcategories/{category_id}', function ($category_id) {
         return \App\Models\ProductSubCategory::where('category_id', $category_id)
@@ -186,12 +177,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->whereNull('deleted_at')
             ->get();
     })->name('subcategories.byCategory');
-
-    // CRUD Marques
-    // Route::resource('brands', BrandController::class);
-
-    // // CRUD Fournisseurs
-    // Route::resource('suppliers', SupplierController::class);
 
     // Routes pour les couleurs
     Route::prefix('colors')->name('colors.')->group(function () {
@@ -217,6 +202,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
         Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
         Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
+        
+        // Actions groupées
+        Route::post('/bulk-delete', [CustomerController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-activate', [CustomerController::class, 'bulkActivate'])->name('bulk-activate');
+        Route::post('/bulk-deactivate', [CustomerController::class, 'bulkDeactivate'])->name('bulk-deactivate');
     });
 
     // Routes pour les commandes (Orders/Sells)
@@ -240,6 +230,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/create', [PaymentController::class, 'create'])->name('create');
         Route::post('/', [PaymentController::class, 'store'])->name('store');
         Route::get('/export/csv', [PaymentController::class, 'export'])->name('export');
+        Route::post('/bulk-delete', [PaymentController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-validate', [PaymentController::class, 'bulkValidate'])->name('bulk-validate');
         Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
         Route::get('/{payment}/edit', [PaymentController::class, 'edit'])->name('edit');
         Route::put('/{payment}', [PaymentController::class, 'update'])->name('update');
@@ -254,6 +246,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/', [ShippingController::class, 'index'])->name('index');
         Route::get('/create', [ShippingController::class, 'create'])->name('create');
         Route::post('/', [ShippingController::class, 'store'])->name('store');
+        Route::get('/export/csv', [ShippingController::class, 'export'])->name('export');
+        Route::post('/bulk-delete', [ShippingController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-activate', [ShippingController::class, 'bulkActivate'])->name('bulk-activate');
+        Route::post('/bulk-deactivate', [ShippingController::class, 'bulkDeactivate'])->name('bulk-deactivate');
         Route::get('/active', [ShippingController::class, 'getActiveShippings'])->name('active');
         Route::get('/{shipping}', [ShippingController::class, 'show'])->name('show');
         Route::get('/{shipping}/edit', [ShippingController::class, 'edit'])->name('edit');
@@ -268,6 +264,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
         Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/export', [UserController::class, 'export'])->name('export');
         Route::get('/{user}', [UserController::class, 'show'])->name('show');
         Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
         Route::put('/{user}', [UserController::class, 'update'])->name('update');

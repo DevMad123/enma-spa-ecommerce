@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import DataTable from '@/Components/DataTable';
 import { 
     MagnifyingGlassIcon, 
     PlusIcon, 
@@ -121,6 +122,131 @@ export default function OrdersList() {
             </span>
         );
     };
+
+    // Configuration DataTable
+    const columns = [
+        {
+            key: 'order_reference',
+            label: 'Référence',
+            render: (order) => (
+                <div>
+                    <div className="text-sm font-medium text-gray-900">
+                        {order.order_reference || `#${order.id}`}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        ID: {order.id}
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'customer',
+            label: 'Client',
+            render: (order) => (
+                <div>
+                    <div className="text-sm font-medium text-gray-900">
+                        {order.customer?.first_name} {order.customer?.last_name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {order.customer?.email}
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'created_at',
+            label: 'Date',
+            render: (order) => (
+                <span className="text-sm text-gray-900">
+                    {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                </span>
+            )
+        },
+        {
+            key: 'total_amount',
+            label: 'Montant',
+            render: (order) => (
+                <div>
+                    <div className="text-sm font-medium text-gray-900">
+                        {new Intl.NumberFormat('fr-FR', {
+                            style: 'currency',
+                            currency: 'EUR'
+                        }).format(order.total_payable_amount || 0)}
+                    </div>
+                    {order.total_due > 0 && (
+                        <div className="text-sm text-red-600">
+                            Dû: {new Intl.NumberFormat('fr-FR', { 
+                                style: 'currency', 
+                                currency: 'EUR' 
+                            }).format(order.total_due)}
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'order_status',
+            label: 'Statut Commande',
+            render: (order) => getOrderStatusBadge(order.order_status)
+        },
+        {
+            key: 'payment_status',
+            label: 'Paiement',
+            render: (order) => getPaymentStatusBadge(order.payment_status)
+        },
+        {
+            key: 'articles',
+            label: 'Articles',
+            render: (order) => (
+                <span className="text-sm text-gray-900">
+                    {order.sell_details?.length || 0} article(s)
+                </span>
+            )
+        }
+    ];
+
+    const actions = [
+        {
+            type: 'link',
+            href: (order) => route('admin.orders.show', order.id),
+            icon: EyeIcon,
+            label: 'Voir les détails',
+            className: 'text-indigo-600 hover:text-indigo-900'
+        },
+        {
+            type: 'link',
+            href: (order) => route('admin.orders.edit', order.id),
+            icon: PencilIcon,
+            label: 'Modifier',
+            className: 'text-yellow-600 hover:text-yellow-900',
+            condition: (order) => order.order_status < 6
+        },
+        {
+            type: 'button',
+            onClick: (order) => handleDelete(order),
+            icon: TrashIcon,
+            label: 'Annuler',
+            className: 'text-red-600 hover:text-red-900',
+            condition: (order) => order.order_status < 6
+        }
+    ];
+
+    const bulkActions = [
+        {
+            label: 'Exporter CSV',
+            value: 'export',
+            icon: ArrowDownTrayIcon,
+            className: 'bg-green-600 text-white hover:bg-green-700'
+        }
+    ];
+
+    const handleBulkAction = (action, selectedIds) => {
+        if (action === 'export') {
+            handleExport();
+        }
+    };
+
+    const searchableFields = ['order_number', 'customer.name', 'customer.email'];
 
     return (
         <AdminLayout>
@@ -383,182 +509,22 @@ export default function OrdersList() {
                 </div>
             </div>
 
-            {/* Tableau des commandes */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Référence
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Client
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Montant
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Statut Commande
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Paiement
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Articles
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {orders.data.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
-                                        Aucune commande trouvée
-                                    </td>
-                                </tr>
-                            ) : (
-                                orders.data.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {order.order_reference || `#${order.id}`}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                ID: {order.id}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {order.customer?.first_name} {order.customer?.last_name}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {order.customer?.email}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {new Intl.NumberFormat('fr-FR', { 
-                                                    style: 'currency', 
-                                                    currency: 'EUR' 
-                                                }).format(order.total_payable_amount)}
-                                            </div>
-                                            {order.total_due > 0 && (
-                                                <div className="text-sm text-red-600">
-                                                    Dû: {new Intl.NumberFormat('fr-FR', { 
-                                                        style: 'currency', 
-                                                        currency: 'EUR' 
-                                                    }).format(order.total_due)}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getOrderStatusBadge(order.order_status)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getPaymentStatusBadge(order.payment_status)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {order.sell_details?.length || 0} article(s)
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end space-x-2">
-                                                <Link
-                                                    href={route('admin.orders.show', order.id)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                    title="Voir les détails"
-                                                >
-                                                    <EyeIcon className="h-4 w-4" />
-                                                </Link>
-                                                {order.order_status < 6 && (
-                                                    <Link
-                                                        href={route('admin.orders.edit', order.id)}
-                                                        className="text-yellow-600 hover:text-yellow-900"
-                                                        title="Modifier"
-                                                    >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Link>
-                                                )}
-                                                {order.order_status < 6 && (
-                                                    <button
-                                                        onClick={() => handleDelete(order)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                        title="Annuler"
-                                                    >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {orders.links && (
-                    <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                        <div className="flex-1 flex justify-between sm:hidden">
-                            {orders.prev_page_url && (
-                                <Link
-                                    href={orders.prev_page_url}
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    Précédent
-                                </Link>
-                            )}
-                            {orders.next_page_url && (
-                                <Link
-                                    href={orders.next_page_url}
-                                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    Suivant
-                                </Link>
-                            )}
-                        </div>
-                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm text-gray-700">
-                                    Affichage de <span className="font-medium">{orders.from}</span> à{' '}
-                                    <span className="font-medium">{orders.to}</span> sur{' '}
-                                    <span className="font-medium">{orders.total}</span> résultats
-                                </p>
-                            </div>
-                            <div>
-                                {/* Liens de pagination générés par Laravel */}
-                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    {orders.links.map((link, index) => (
-                                        <Link
-                                            key={index}
-                                            href={link.url || '#'}
-                                            className={`relative inline-flex items-center px-2 py-2 border text-sm font-medium ${
-                                                link.active
-                                                    ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                            } ${
-                                                index === 0 ? 'rounded-l-md' : ''
-                                            } ${
-                                                index === orders.links.length - 1 ? 'rounded-r-md' : ''
-                                            }`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+            {/* DataTable */}
+            <DataTable
+                data={orders.data || []}
+                columns={columns}
+                actions={actions}
+                bulkActions={bulkActions}
+                searchableFields={searchableFields}
+                onBulkAction={handleBulkAction}
+                searchPlaceholder="Rechercher par n° commande, nom client ou email..."
+                pagination={orders.links ? {
+                    from: orders.from,
+                    to: orders.to,
+                    total: orders.total,
+                    links: orders.links
+                } : null}
+            />
         </AdminLayout>
     );
 }

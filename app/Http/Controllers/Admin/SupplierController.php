@@ -21,6 +21,9 @@ class SupplierController extends Controller
     {
         $query = Supplier::query()->whereNull('deleted_at');
 
+        // Ajouter le comptage des produits
+        $query->withCount('products');
+
         // Filtres
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
@@ -38,11 +41,30 @@ class SupplierController extends Controller
         $query->orderBy($sort, $direction);
 
         $perPage = $request->get('perPage', 10);
-        $supplierList = $query->paginate($perPage)->appends($request->all());
+        $suppliers = $query->paginate($perPage)->appends($request->all());
 
-        return Inertia::render('Suppliers/list', [
+        // Mapper les données pour correspondre aux attentes du frontend
+        $suppliers->getCollection()->transform(function ($supplier) {
+            return [
+                'id' => $supplier->id,
+                'company_name' => $supplier->company_name ?? $supplier->supplier_name,
+                'contact_person' => $supplier->supplier_name,
+                'email' => $supplier->supplier_email,
+                'phone' => $supplier->supplier_phone_one,
+                'address' => $supplier->supplier_address ?? $supplier->company_address,
+                'city' => null, // Pas dans la base actuelle
+                'country' => null, // Pas dans la base actuelle
+                'logo' => $supplier->image,
+                'status' => $supplier->status,
+                'products_count' => $supplier->products_count,
+                'created_at' => $supplier->created_at,
+                'updated_at' => $supplier->updated_at,
+            ];
+        });
+
+        return Inertia::render('Admin/Suppliers/Index', [
             'title' => 'Supplier List',
-            'supplierList' => $supplierList,
+            'suppliers' => $suppliers,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,

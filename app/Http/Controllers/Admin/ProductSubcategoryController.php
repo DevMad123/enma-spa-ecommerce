@@ -27,7 +27,8 @@ class ProductSubcategoryController extends Controller
     {
         // Start a new query for the ProductSubCategory model
         $query = ProductSubCategory::query()
-            ->with('category') // Eager load parent categories
+            ->with(['category', 'products']) // Eager load parent categories and products
+            ->withCount('products') // Count products for each subcategory
             ->whereNull('deleted_at');
 
         // Global search filter
@@ -36,6 +37,7 @@ class ProductSubcategoryController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('note', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%")
                   ->orWhereHas('category', function($categoryQuery) use ($search) {
                       $categoryQuery->where('name', 'like', "%{$search}%");
                   });
@@ -52,6 +54,23 @@ class ProductSubcategoryController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Products count filter
+        if ($request->filled('products_count_filter')) {
+            if ($request->products_count_filter === 'with_products') {
+                $query->has('products');
+            } elseif ($request->products_count_filter === 'without_products') {
+                $query->doesntHave('products');
+            }
+        }
+
         // Sorting
         $sort = $request->get('sort', 'id');
         $direction = $request->get('direction', 'desc');
@@ -65,7 +84,7 @@ class ProductSubcategoryController extends Controller
         }
 
         // Pagination
-        $perPage = $request->get('perPage', 10);
+        $perPage = $request->get('per_page', 15);
         $subcategoryList = $query->paginate($perPage)->appends($request->all());
 
         // Get categories for filter dropdown
@@ -74,20 +93,36 @@ class ProductSubcategoryController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        // Calculate statistics
+        $stats = [
+            'total_subcategories' => ProductSubCategory::whereNull('deleted_at')->count(),
+            'active_subcategories' => ProductSubCategory::whereNull('deleted_at')->where('status', 1)->count(),
+            'subcategories_with_products' => ProductSubCategory::whereNull('deleted_at')->has('products')->count(),
+            'subcategories_by_category' => ProductSubCategory::whereNull('deleted_at')
+                ->with('category')
+                ->get()
+                ->groupBy('category.name')
+                ->map->count()
+                ->take(5)
+        ];
+
         // Return the Inertia view with the necessary data
-        return Inertia::render('subcategories/list', [
+        return Inertia::render('Admin/subcategories/Index', [
             'title' => 'Subcategory List',
             'subcategoryList' => $subcategoryList,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
                 'category_id' => $request->category_id,
-                'perPage' => $perPage,
+                'date_from' => $request->date_from ?? '',
+                'date_to' => $request->date_to ?? '',
+                'products_count_filter' => $request->products_count_filter ?? '',
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
-                'categories' => $categories,
             ],
-            'categories' => $categories, // Pour le modal
+            'categoryList' => $categories, // Pour les filtres et modal
             'flash' => [
                 'success' => session('flash.success'),
                 'error' => session('flash.error'),

@@ -22,7 +22,9 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%");
             });
         }
 
@@ -42,7 +44,7 @@ class UserController extends Controller
 
         $roles = Role::where('status', 1)->get();
 
-        return Inertia::render('Admin/Users/list', [
+        return Inertia::render('Admin/Users/Index', [
             'users' => $users,
             'roles' => $roles,
             'filters' => $request->only(['search', 'role', 'status']),
@@ -152,5 +154,84 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'Statut utilisateur modifié avec succès.');
+    }
+
+    /**
+     * Export users to CSV.
+     */
+    public function export(Request $request)
+    {
+        $query = User::with('roles');
+
+        // Apply same filters as index
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role')) {
+            $query->withRole($request->role);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // If specific IDs are provided
+        if ($request->filled('ids')) {
+            $ids = explode(',', $request->ids);
+            $query->whereIn('id', $ids);
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->get();
+
+        $csvData = [];
+        $csvData[] = [
+            'ID',
+            'Nom',
+            'Prénom',
+            'Nom complet',
+            'Email',
+            'Rôles',
+            'Statut',
+            'Dernière connexion',
+            'Date de création'
+        ];
+
+        foreach ($users as $user) {
+            $csvData[] = [
+                $user->id,
+                $user->first_name ?: '',
+                $user->last_name ?: '',
+                $user->name,
+                $user->email,
+                $user->roles->pluck('name')->join(', '),
+                $user->status_text,
+                $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i:s') : 'Jamais connecté',
+                $user->created_at->format('Y-m-d H:i:s'),
+            ];
+        }
+
+        $filename = 'users_export_' . date('Y-m-d_H-i-s') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($csvData) {
+            $file = fopen('php://output', 'w');
+            foreach ($csvData as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

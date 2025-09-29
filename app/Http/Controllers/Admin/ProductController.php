@@ -38,18 +38,59 @@ class ProductController extends Controller
                 'images',
             ])
             ->whereNull('deleted_at');
+
         // Recherche globale
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                ->orWhere('code', 'like', "%$search%");
+                  ->orWhere('code', 'like', "%$search%")
+                  ->orWhereHas('category', function($catQuery) use ($search) {
+                      $catQuery->where('name', 'like', "%$search%");
+                  })
+                  ->orWhereHas('brand', function($brandQuery) use ($search) {
+                      $brandQuery->where('brand_name', 'like', "%$search%");
+                  });
             });
         }
 
-        // Filtre status
+        // Filtre par catégorie
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filtre par marque
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
+
+        // Filtre par statut
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filtre par prix
+        if ($request->filled('price_min')) {
+            $query->where('current_sale_price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('current_sale_price', '<=', $request->price_max);
+        }
+
+        // Filtre par stock
+        if ($request->filled('stock_status')) {
+            switch ($request->stock_status) {
+                case 'in_stock':
+                    $query->where('available_quantity', '>', 10);
+                    break;
+                case 'low_stock':
+                    $query->where('available_quantity', '>', 0)
+                          ->where('available_quantity', '<=', 10);
+                    break;
+                case 'out_of_stock':
+                    $query->where('available_quantity', '<=', 0);
+                    break;
+            }
         }
 
         // Tri
@@ -58,27 +99,47 @@ class ProductController extends Controller
         $query->orderBy($sort, $direction);
 
         // Pagination
-        $perPage = $request->get('perPage', 10);
+        $perPage = $request->get('per_page', 15);
         $productList = $query->paginate($perPage)->appends($request->all());
 
-        $productCategory = ProductCategory::whereNull('deleted_at')->where('status', 1)->get();
+        // Récupérer les données pour les filtres
+        $categories = ProductCategory::whereNull('deleted_at')->where('status', 1)->get();
+        $brands = Brand::whereNull('deleted_at')->where('status', 1)->get();
         $supplierList = Supplier::whereNull('deleted_at')->where('status', 1)->get();
-        $brand = Brand::get();
         $color = ProductColor::get();
         $size = ProductSize::get();
 
-        return Inertia::render('products/list', [
+        // Calculer les statistiques
+        $stats = [
+            'total_products' => Product::whereNull('deleted_at')->count(),
+            'active_products' => Product::whereNull('deleted_at')->where('status', 1)->count(),
+            'low_stock_products' => Product::whereNull('deleted_at')
+                ->where('available_quantity', '>', 0)
+                ->where('available_quantity', '<=', 10)
+                ->count(),
+            'out_of_stock_products' => Product::whereNull('deleted_at')
+                ->where('available_quantity', '<=', 0)
+                ->count(),
+        ];
+
+        return Inertia::render('Admin/products/Index', [
             'title' => 'Product List',
             'productList' => $productList,
-            'productCategory' => $productCategory,
+            'categories' => $categories,
+            'brands' => $brands,
             'supplierList' => $supplierList,
-            'brand' => $brand,
             'color' => $color,
             'size' => $size,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->search ?? '',
+                'category_id' => $request->category_id ?? '',
+                'brand_id' => $request->brand_id ?? '',
                 'status' => $request->status ?? '',
-                'perPage' => $perPage,
+                'price_min' => $request->price_min ?? '',
+                'price_max' => $request->price_max ?? '',
+                'stock_status' => $request->stock_status ?? '',
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
             ],

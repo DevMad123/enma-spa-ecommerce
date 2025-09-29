@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     
     protected $fillable = [
         'supplier_name',
@@ -31,4 +32,12 @@ class Supplier extends Model
         'status' => 'boolean',
         'previous_due' => 'decimal:3',
     ];
+
+    /**
+     * Relation avec les produits
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'supplier_id');
+    }
 }

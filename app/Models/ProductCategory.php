@@ -36,6 +36,10 @@ class ProductCategory extends Model
         return $this->hasMany(ProductSubCategory::class,'category_id','id');
     }
 
+    public function products(){
+        return $this->hasMany(Product::class,'category_id','id');
+    }
+
     /**
      * Boot the model.
      */
@@ -87,7 +91,7 @@ class ProductCategory extends Model
      */
     public function getImageAttribute()
     {
-        if($this->attributes['image']){
+        if(isset($this->attributes['image']) && $this->attributes['image']){
             // Si l'image commence par 'http', c'est une URL complète
             if (str_starts_with($this->attributes['image'], 'http')) {
                 return $this->attributes['image'];

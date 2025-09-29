@@ -41,6 +41,11 @@ class ProductSubCategory extends Model
         return $this->belongsTo(ProductCategory::class, 'category_id', 'id');
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'subcategory_id', 'id');
+    }
+
     // Scope pour filtrer les sous-catégories actives
     public function scopeActive($query)
     {
