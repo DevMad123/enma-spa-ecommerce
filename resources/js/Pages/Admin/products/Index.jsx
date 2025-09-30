@@ -19,11 +19,9 @@ import {
     ClockIcon,
     ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
-import ProductModal from "./ProductModal";
 
 export default function ProductsList() {
     const { productList, categories, brands, filters, stats, flash } = usePage().props;
-    const [showProductModal, setShowProductModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -108,8 +106,7 @@ export default function ProductsList() {
     };
 
     const handleEdit = (product) => {
-        setEditingProduct(product);
-        setShowProductModal(true);
+        router.visit(route('admin.products.edit', product.id));
     };
 
     const handleView = (productId) => {
@@ -312,13 +309,13 @@ export default function ProductsList() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Produits</h1>
-                    <button
-                        onClick={() => setShowProductModal(true)}
+                    <Link
+                        href={route('admin.products.create')}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
                     >
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Nouveau Produit
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Statistiques */}
@@ -593,19 +590,6 @@ export default function ProductsList() {
                     links: productList.links
                 } : null}
             />
-
-            {/* Modal ProductModal */}
-            {showProductModal && (
-                <ProductModal
-                    open={showProductModal}
-                    onClose={() => {
-                        setShowProductModal(false);
-                        setEditingProduct(null);
-                    }}
-                    mode={editingProduct ? "edit" : "create"}
-                    product={editingProduct}
-                />
-            )}
         </AdminLayout>
     );
 }

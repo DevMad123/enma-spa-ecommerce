@@ -116,8 +116,8 @@ export default function SubcategoriesList() {
     };
 
     const handleEdit = (subcategory) => {
-        setEditingSubcategory(subcategory);
-        setShowSubcategoryModal(true);
+        // Navigation vers la page d'édition dédiée
+        router.visit(route('admin.subcategories.edit', subcategory.id));
     };
 
     const handleView = (subcategoryId) => {
@@ -297,13 +297,13 @@ export default function SubcategoriesList() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Sous-catégories</h1>
-                    <button
-                        onClick={() => setShowSubcategoryModal(true)}
+                    <Link
+                        href={route('admin.subcategories.create')}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
                     >
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Nouvelle Sous-catégorie
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Statistiques */}

@@ -19,11 +19,9 @@ import {
     ClockIcon,
     ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
-import CategoryModal from "./CategoryModal";
 
 export default function CategoriesList() {
     const { categoryList, stats, filters, flash } = usePage().props;
-    const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -106,8 +104,8 @@ export default function CategoriesList() {
     };
 
     const handleEdit = (category) => {
-        setEditingCategory(category);
-        setShowCategoryModal(true);
+        // Nouvelle méthode : rediriger vers la page d'édition dédiée
+        router.visit(route('admin.categories.edit', category.id));
     };
 
     const handleView = (categoryId) => {
@@ -293,13 +291,13 @@ export default function CategoriesList() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
-                    <button
-                        onClick={() => setShowCategoryModal(true)}
+                    <Link
+                        href={route('admin.categories.create')}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
                     >
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Nouvelle Catégorie
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Statistiques */}
@@ -550,19 +548,6 @@ export default function CategoriesList() {
                     links: categoryList.links
                 } : null}
             />
-
-            {/* Modal CategoryModal */}
-            {showCategoryModal && (
-                <CategoryModal
-                    open={showCategoryModal}
-                    onClose={() => {
-                        setShowCategoryModal(false);
-                        setEditingCategory(null);
-                    }}
-                    mode={editingCategory ? "edit" : "create"}
-                    category={editingCategory}
-                />
-            )}
         </AdminLayout>
     );
 }

@@ -130,30 +130,39 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // CRUD Produits (personnalisé)
     Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::get('/create', [ProductController::class, 'createProduct'])->name('create');
-        Route::post('/store', [ProductController::class, 'storeProduct'])->name('store');
-        Route::get('/list', [ProductController::class, 'productList'])->name('list');
-        Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('edit');
-        Route::put('/update/{id}', [ProductController::class, 'updateProduct'])->name('update');
-        Route::delete('/delete/{id}', [ProductController::class, 'deleteProduct'])->name('delete');
+        Route::post('/', [ProductController::class, 'store'])->name('store');
+        Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+        Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
+        Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+        Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('editDetails');
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {
-        Route::get('/create', [ProductCategoryController::class, 'createCategory'])->name('create');
-        Route::post('/store', [ProductCategoryController::class, 'storeCategory'])->name('store');
-        Route::get('/list', [ProductCategoryController::class, 'listCategory'])->name('list');
-        Route::get('/edit', [ProductCategoryController::class, 'editCategory'])->name('edit');
-        Route::put('/update/{id}', [ProductCategoryController::class, 'updateCategory'])->name('update');
-        Route::delete('/delete/{id}', [ProductCategoryController::class, 'deleteCategory'])->name('delete');
+        Route::get('/', [ProductCategoryController::class, 'index'])->name('index');
+        Route::get('/create', [ProductCategoryController::class, 'create'])->name('create');
+        Route::post('/store', [ProductCategoryController::class, 'store'])->name('store');
+        Route::get('/{category}', [ProductCategoryController::class, 'show'])->name('show');
+        Route::get('/{category}/edit', [ProductCategoryController::class, 'edit'])->name('edit');
+        Route::put('/update/{id}', [ProductCategoryController::class, 'update'])->name('update');
+        Route::delete('/delete/{id}', [ProductCategoryController::class, 'delete'])->name('delete');
     });
 
     Route::prefix('subcategories')->name('subcategories.')->group(function () {
-        Route::get('/create', [ProductSubcategoryController::class, 'createSubcategory'])->name('create');
-        Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store');
-        Route::get('/', [ProductSubcategoryController::class, 'listSubcategory'])->name('list');
-        Route::get('/edit', [ProductSubcategoryController::class, 'editSubcategory'])->name('edit');
-        Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update');
-        Route::delete('/delete/{id}', [ProductSubcategoryController::class, 'deleteSubcategory'])->name('delete');
+        Route::get('/', [ProductSubcategoryController::class, 'index'])->name('index');
+        Route::get('/create', [ProductSubcategoryController::class, 'create'])->name('create');
+        Route::post('/', [ProductSubcategoryController::class, 'store'])->name('store');
+        Route::get('/{subcategory}', [ProductSubcategoryController::class, 'show'])->name('show');
+        Route::get('/{subcategory}/edit', [ProductSubcategoryController::class, 'edit'])->name('edit');
+        Route::put('/{subcategory}', [ProductSubcategoryController::class, 'update'])->name('update');
+        Route::delete('/{subcategory}', [ProductSubcategoryController::class, 'delete'])->name('destroy');
+        
+        // Legacy routes for backward compatibility
+        Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store.legacy');
+        Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update.legacy');
+        Route::delete('/delete/{id}', [ProductSubcategoryController::class, 'deleteSubcategory'])->name('delete.legacy');
     });
 
     Route::prefix('brands')->name('brands.')->group(function () {
@@ -180,7 +189,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // Routes pour les couleurs
     Route::prefix('colors')->name('colors.')->group(function () {
-        Route::get('/', [ProductColorController::class, 'listColors'])->name('list');
+        Route::get('/', [ProductColorController::class, 'index'])->name('index');
         Route::post('/', [ProductColorController::class, 'storeColors'])->name('storeColors');
         Route::put('/{id}', [ProductColorController::class, 'updateColors'])->name('updateColors');
         Route::delete('/{id}', [ProductColorController::class, 'deleteColors'])->name('deleteColors');
@@ -188,7 +197,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // Routes pour les tailles
     Route::prefix('sizes')->name('sizes.')->group(function () {
-        Route::get('/', [ProductSizeController::class, 'listSizes'])->name('list');
+        Route::get('/', [ProductSizeController::class, 'index'])->name('index');
         Route::post('/', [ProductSizeController::class, 'storeSizes'])->name('storeSizes');
         Route::put('/{id}', [ProductSizeController::class, 'updateSizes'])->name('updateSizes');
         Route::delete('/{id}', [ProductSizeController::class, 'deleteSizes'])->name('deleteSizes');

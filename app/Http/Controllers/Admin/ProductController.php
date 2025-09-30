@@ -23,7 +23,7 @@ use PDF;
 
 class ProductController extends Controller
 {
-    public function productList(Request $request)
+    public function index(Request $request)
     {
         $query = Product::query()
             ->with([
@@ -122,7 +122,7 @@ class ProductController extends Controller
                 ->count(),
         ];
 
-        return Inertia::render('Admin/products/Index', [
+        return Inertia::render('Admin/Products/Index', [
             'title' => 'Product List',
             'productList' => $productList,
             'categories' => $categories,
@@ -156,7 +156,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function storeProduct(Request $request)
+    public function store(Request $request)
     {
         DB::beginTransaction();
 
@@ -328,7 +328,7 @@ class ProductController extends Controller
         }
     }
 
-    public function updateProduct(Request $request, $id)
+    public function update(Request $request, $id)
     {
         \Log::info('UPDATE Product request data: ', $request->all());
         \Log::info('UPDATE Product ID: ' . $id);
@@ -486,6 +486,107 @@ class ProductController extends Controller
         }
 
         return null;
+    }
+
+    public function createProduct()
+    {
+        $categories = ProductCategory::orderBy('name', 'asc')->get();
+        $subcategories = ProductSubCategory::orderBy('name', 'asc')->get();
+        $brands = Brand::orderBy('name', 'asc')->get();
+        $suppliers = Supplier::orderBy('supplier_name', 'asc')->get();
+        $colors = ProductColor::orderBy('name', 'asc')->get();
+        $sizes = ProductSize::orderBy('size', 'asc')->get();
+
+        return Inertia::render('Admin/Products/create', [
+            'categories' => $categories,
+            'subcategories' => $subcategories,
+            'brands' => $brands,
+            'suppliers' => $suppliers,
+            'colors' => $colors,
+            'sizes' => $sizes,
+        ]);
+    }
+
+    /**
+     * Afficher un produit spécifique
+     */
+    public function show(Product $product)
+    {
+        $product->load([
+            'category',
+            'subcategory',
+            'brand',
+            'supplier',
+            'attributes.color',
+            'attributes.size',
+            'variants.color',
+            'variants.size',
+            'images'
+        ]);
+
+        return Inertia::render('Admin/Products/show', [
+            'product' => $product,
+            'flash' => [
+                'success' => session('flash.success'),
+                'error' => session('flash.error'),
+            ],
+        ]);
+    }
+
+    /**
+     * Afficher le formulaire d'édition d'un produit
+     */
+    public function edit(Product $product)
+    {
+        $product->load([
+            'category',
+            'subcategory',
+            'brand',
+            'supplier',
+            'attributes.color',
+            'attributes.size',
+            'variants.color',
+            'variants.size',
+            'images'
+        ]);
+
+        $categories = ProductCategory::orderBy('name', 'asc')->get();
+        $subcategories = ProductSubCategory::orderBy('name', 'asc')->get();
+        $brands = Brand::orderBy('name', 'asc')->get();
+        $suppliers = Supplier::orderBy('supplier_name', 'asc')->get();
+        $colors = ProductColor::orderBy('name', 'asc')->get();
+        $sizes = ProductSize::orderBy('size', 'asc')->get();
+
+        return Inertia::render('Admin/Products/edit', [
+            'product' => $product,
+            'categories' => $categories,
+            'subcategories' => $subcategories,
+            'brands' => $brands,
+            'suppliers' => $suppliers,
+            'colors' => $colors,
+            'sizes' => $sizes,
+        ]);
+    }
+
+    /**
+     * Supprimer un produit (méthode RESTful)
+     */
+    public function destroy(Product $product)
+    {
+        try {
+            // Soft delete du produit
+            $product->delete();
+
+            return redirect()
+                ->route('admin.products.list')
+                ->with('flash', ['success' => 'Produit supprimé avec succès !']);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression du produit: ' . $e->getMessage());
+            
+            return redirect()
+                ->back()
+                ->with('flash', ['error' => 'Erreur lors de la suppression du produit.']);
+        }
     }
 
     public function productBarcodeGenerate(Request $request)

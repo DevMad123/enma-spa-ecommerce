@@ -23,7 +23,7 @@ class ProductSubcategoryController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      */
-    public function listSubcategory(Request $request)
+    public function index(Request $request)
     {
         // Start a new query for the ProductSubCategory model
         $query = ProductSubCategory::query()
@@ -107,7 +107,7 @@ class ProductSubcategoryController extends Controller
         ];
 
         // Return the Inertia view with the necessary data
-        return Inertia::render('Admin/subcategories/Index', [
+        return Inertia::render('Admin/Subcategories/Index', [
             'title' => 'Subcategory List',
             'subcategoryList' => $subcategoryList,
             'stats' => $stats,
@@ -136,7 +136,7 @@ class ProductSubcategoryController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function storeSubcategory(Request $request)
+    public function store(Request $request)
     {
         DB::beginTransaction();
 
@@ -176,7 +176,7 @@ class ProductSubcategoryController extends Controller
             \Log::info('Product subcategory data after commit: ', $subcategory->fresh()->toArray());
 
             // Utiliser le même format de flash message que ProductController
-            return redirect()->route('admin.subcategories.list')->with([
+            return redirect()->route('admin.subcategories.index')->with([
                 'flash' => [
                     'success' => 'Subcategory created successfully!'
                 ]
@@ -201,7 +201,7 @@ class ProductSubcategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateSubcategory(Request $request, $id)
+    public function update(Request $request, $id)
     {
         DB::beginTransaction();
 
@@ -251,7 +251,7 @@ class ProductSubcategoryController extends Controller
             \Log::info('Product subcategory data after commit: ', $subcategory->fresh()->toArray());
 
             // Utiliser le même format de flash message que ProductController
-            return redirect()->route('admin.subcategories.list')->with([
+            return redirect()->route('admin.subcategories.index')->with([
                 'flash' => [
                     'success' => 'Subcategory updated successfully!'
                 ]
@@ -312,7 +312,7 @@ class ProductSubcategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function deleteSubcategory($id)
+    public function delete($id)
     {
         DB::beginTransaction();
 
@@ -325,7 +325,7 @@ class ProductSubcategoryController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.subcategories.list')->with([
+            return redirect()->route('admin.subcategories.index')->with([
                 'flash' => [
                     'success' => 'Subcategory deleted successfully!'
                 ]
@@ -339,5 +339,48 @@ class ProductSubcategoryController extends Controller
             \Log::error('Error deleting subcategory: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression']);
         }
+    }
+    /**
+     * Show the form for creating a new subcategory.
+     */
+    public function create()
+    {
+        $categories = ProductCategory::where('status', 1)
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return Inertia::render('Admin/Subcategories/create', [
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * Display the specified subcategory.
+     */
+    public function show(ProductSubCategory $subcategory)
+    {
+        $subcategory->load(['category', 'products']);
+        $subcategory->loadCount('products');
+        
+        return Inertia::render('Admin/Subcategories/show', [
+            'subcategory' => $subcategory
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified subcategory.
+     */
+    public function edit(ProductSubCategory $subcategory)
+    {
+        $categories = ProductCategory::where('status', 1)
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return Inertia::render('Admin/Subcategories/edit', [
+            'subcategory' => $subcategory,
+            'categories' => $categories
+        ]);
     }
 }

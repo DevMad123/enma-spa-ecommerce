@@ -24,7 +24,7 @@ class ProductCategoryController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      */
-    public function listCategory(Request $request)
+    public function index(Request $request)
     {
         // Start a new query for the ProductCategory model, excluding deleted records.
         $query = ProductCategory::query()
@@ -87,7 +87,7 @@ class ProductCategoryController extends Controller
         ];
 
         // Return the Inertia view with the necessary data.
-        return Inertia::render('Admin/categories/Index', [
+        return Inertia::render('Admin/Categories/Index', [
             'title' => 'Category List',
             'categoryList' => $categoryList,
             'stats' => $stats,
@@ -114,7 +114,7 @@ class ProductCategoryController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function storeCategory(Request $request)
+    public function store(Request $request)
     {
         DB::beginTransaction();
 
@@ -154,7 +154,7 @@ class ProductCategoryController extends Controller
             \Log::info('Product category data after commit: ', $category->fresh()->toArray());
 
             // Utiliser le même format de flash message que ProductController
-            return redirect()->route('admin.categories.list')->with([
+            return redirect()->route('admin.categories.index')->with([
                 'flash' => [
                     'success' => 'Catégorie créée avec succès'
                 ]
@@ -240,7 +240,7 @@ class ProductCategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateCategory(Request $request, $id)
+    public function update(Request $request, $id)
     {
         DB::beginTransaction();
 
@@ -291,7 +291,7 @@ class ProductCategoryController extends Controller
             \Log::info('Product category updated successfully: ', $category->fresh()->toArray());
 
             // Utiliser le même format de flash message que ProductController
-            return redirect()->route('admin.categories.list')->with([
+            return redirect()->route('admin.categories.index')->with([
                 'flash' => [
                     'success' => 'Catégorie mise à jour avec succès'
                 ]
@@ -310,6 +310,69 @@ class ProductCategoryController extends Controller
             \Log::error('Error updating category: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
             return back()->withErrors(['error' => 'Une erreur est survenue lors de la mise à jour'])->withInput();
+        }
+    }
+
+    /**
+     * Display the specified category.
+     */
+    public function show(ProductCategory $category)
+    {
+        $category->load(['subcategory', 'products']);
+        $category->loadCount('products');
+        
+        return Inertia::render('Admin/Categories/show', [
+            'category' => $category
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified category.
+     */
+    public function edit(ProductCategory $category)
+    {
+        return Inertia::render('Admin/Categories/edit', [
+            'category' => $category
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new category.
+     */
+    public function create()
+    {
+        return Inertia::render('Admin/Categories/create');
+    }
+
+    /**
+     * Remove the specified category from storage.
+     */
+    public function delete($id)
+    {
+        try {
+            $category = ProductCategory::findOrFail($id);
+            
+            // Check if category has products
+            if ($category->products()->exists()) {
+                return back()->withErrors(['error' => 'Impossible de supprimer une catégorie qui contient des produits']);
+            }
+
+            // Delete image if exists
+            if ($category->image && Storage::disk('public')->exists(str_replace('storage/', '', $category->image))) {
+                Storage::disk('public')->delete(str_replace('storage/', '', $category->image));
+            }
+
+            $category->delete();
+
+            return redirect()->route('admin.categories.index')->with([
+                'flash' => [
+                    'success' => 'Catégorie supprimée avec succès'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error deleting category: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression']);
         }
     }
 }

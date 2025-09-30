@@ -45,11 +45,11 @@ const navigationLinks = [
     icon: HiOutlineCollection,
     color: "text-purple-600",
     submenu: [
-      { route: "admin.products.list", label: "Produits", icon: HiOutlineCube },
-      { route: "admin.categories.list", label: "Catégories", icon: HiOutlineCollection },
-      { route: "admin.subcategories.list", label: "Sous-catégories", icon: HiOutlineCollection },
-      { route: "admin.colors.list", label: "Couleurs", icon: HiOutlineColorSwatch },
-      { route: "admin.sizes.list", label: "Tailles", icon: HiOutlineChartBar },
+      { route: "admin.products.index", label: "Produits", icon: HiOutlineCube },
+      { route: "admin.categories.index", label: "Catégories", icon: HiOutlineCollection },
+      { route: "admin.subcategories.index", label: "Sous-catégories", icon: HiOutlineCollection },
+      { route: "admin.colors.index", label: "Couleurs", icon: HiOutlineColorSwatch },
+      { route: "admin.sizes.index", label: "Tailles", icon: HiOutlineChartBar },
     ]
   },
   {
