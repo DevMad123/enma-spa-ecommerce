@@ -14,7 +14,7 @@ class ProductColorController extends Controller
     /**
      * Display a listing of the colors.
      */
-    public function listColors(Request $request)
+    public function index(Request $request)
     {
         $query = ProductColor::query();
 
@@ -65,7 +65,7 @@ class ProductColorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.colors.list')->with([
+            return redirect()->route('admin.colors.index')->with([
                 'flash' => [
                     'success' => 'Color created successfully!'
                 ]
@@ -98,7 +98,7 @@ class ProductColorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.colors.list')->with([
+            return redirect()->route('admin.colors.index')->with([
                 'flash' => [
                     'success' => 'Color updated successfully!'
                 ]
@@ -124,7 +124,7 @@ class ProductColorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.colors.list')->with([
+            return redirect()->route('admin.colors.index')->with([
                 'flash' => [
                     'success' => 'Color deleted successfully!'
                 ]

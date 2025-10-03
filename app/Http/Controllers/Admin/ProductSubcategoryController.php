@@ -211,20 +211,29 @@ class ProductSubcategoryController extends Controller
             // Décoder les JSON strings si nécessaire
             $requestData = $request->all();
 
-            // Validation
+            // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:product_categories,id',
                 'note' => 'nullable|string',
-                'status' => 'required|in:0,1',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+                'status' => 'nullable',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image_deleted' => 'nullable'
             ]);
 
             $subcategory = ProductSubCategory::findOrFail($id);
 
             // Gérer l'image
-            $imagePath = $subcategory->image; // Conserver l'image existante par défaut
-            if ($request->hasFile('image')) {
+            if ($request->boolean('image_deleted')) {
+                // Supprimer l'image existante
+                if ($subcategory->image) {
+                    $oldImagePath = str_replace('storage/', '', $subcategory->image);
+                    if (Storage::disk('public')->exists($oldImagePath)) {
+                        Storage::disk('public')->delete($oldImagePath);
+                    }
+                }
+                $subcategory->image = null;
+            } elseif ($request->hasFile('image')) {
                 // Supprimer l'ancienne image si elle existe
                 if ($subcategory->image) {
                     $oldImagePath = str_replace('storage/', '', $subcategory->image);
@@ -233,14 +242,14 @@ class ProductSubcategoryController extends Controller
                     }
                 }
                 // Sauvegarder la nouvelle image
-                $imagePath = $this->subcategoryImageSave($request->file('image'));
+                $subcategory->image = $this->subcategoryImageSave($request->file('image'));
             }
 
             $subcategory->name = $validated['name'];
             $subcategory->category_id = $validated['category_id'];
             $subcategory->note = $validated['note'] ?? '';
-            $subcategory->status = $validated['status'];
-            $subcategory->image = $imagePath;
+            // Convertir le booléen explicitement
+            $subcategory->status = $request->boolean('status');
             $subcategory->updated_by = auth()->id();
             $subcategory->save();
 

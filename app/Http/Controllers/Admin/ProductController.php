@@ -239,9 +239,13 @@ class ProductController extends Controller
             $productData = $request->only([
                 'name', 'category_id', 'subcategory_id', 'brand_id',
                 'supplier_id', 'description', 'unit_type',
-                'is_popular', 'is_trending', 'discount', 'discount_type',
+                'discount', 'discount_type',
                 'purchase_cost', 'sale_price', 'wholesale_price', 'available_quantity'
             ]);
+
+            // Convertir les booléens explicitement pour éviter les erreurs MySQL
+            $productData['is_popular'] = $request->boolean('is_popular');
+            $productData['is_trending'] = $request->boolean('is_trending');
 
             // On s'assure que les champs financiers sont toujours présents
             if ($request->type === 'variable') {
@@ -315,7 +319,7 @@ class ProductController extends Controller
             DB::commit();
 
             // Remplace redirect()->back() par redirect()->route(...)
-            return redirect()->route('admin.products.list')->with('flash', ['success' => 'Produit créé avec succès !']);
+            return redirect()->route('admin.products.index')->with('flash', ['success' => 'Produit créé avec succès !']);
 
         } catch (ValidationException $e) {
             DB::rollBack();
@@ -330,8 +334,6 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
-        \Log::info('UPDATE Product request data: ', $request->all());
-        \Log::info('UPDATE Product ID: ' . $id);
         DB::beginTransaction();
 
         try {
@@ -342,9 +344,9 @@ class ProductController extends Controller
             }
 
             foreach (['attributes', 'variants'] as $field) {
-                $value = $request->input($field);
+                $value = $request->input($field);                
                 if (!empty($value) && is_string($value)) {
-                    $decoded = json_decode($value, true);
+                    $decoded = json_decode($value, true);                    
                     if (json_last_error() === JSON_ERROR_NONE) {
                         $request->merge([$field => $decoded]);
                     } else {
@@ -410,10 +412,17 @@ class ProductController extends Controller
                 $product->image_path = $this->productImageSave($request->file('main_image'));
             }
 
-            $product->fill($request->only([
+            // Préparer les données avec conversion des booléens
+            $productData = $request->only([
                 'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id',
-                'description', 'unit_type', 'is_popular', 'is_trending', 'discount', 'discount_type'
-            ]));
+                'description', 'unit_type', 'discount', 'discount_type'
+            ]);
+            
+            // Convertir les booléens explicitement pour éviter les erreurs MySQL
+            $productData['is_popular'] = $request->boolean('is_popular');
+            $productData['is_trending'] = $request->boolean('is_trending');
+            
+            $product->fill($productData);
             $product->type = $request->type;
             if (empty($request->code) && !$product->code) {
                 $product->code = 1000 + $product->id;
@@ -434,9 +443,12 @@ class ProductController extends Controller
                     $product->variants()->create($variant);
                 }
             }
-            if ($request->has('attributes')) {
+            // Récupérer les attributs décodés (déjà traités par le merge() ci-dessus)
+            $decodedAttributes = $request->input('attributes', []);
+            
+            if (!empty($decodedAttributes)) {
                 $product->attributes()->delete();
-                foreach ($request->attributes as $attr) {
+                foreach ($decodedAttributes as $attr) {
                     $product->attributes()->create([
                         'color_id' => $attr['color_id'] ?? null,
                         'size_id'  => $attr['size_id'] ?? null,
@@ -444,12 +456,14 @@ class ProductController extends Controller
                         'price'    => $attr['price'] ?? null,
                     ]);
                 }
+            } else {
+                \Log::info('⚠️ Aucun attribut à traiter');
             }
 
             DB::commit();
 
             // ✅ Redirection Inertia (et non JSON)
-            return redirect()->route('admin.products.list')->with('flash', ['success' => 'Produit mis à jour avec succès !']);
+            return redirect()->route('admin.products.index')->with('flash', ['success' => 'Produit mis à jour avec succès !']);
 
         } catch (ValidationException $e) {
             DB::rollBack();
@@ -578,7 +592,7 @@ class ProductController extends Controller
             $product->delete();
 
             return redirect()
-                ->route('admin.products.list')
+                ->route('admin.products.index')
                 ->with('flash', ['success' => 'Produit supprimé avec succès !']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression du produit: ' . $e->getMessage());
@@ -602,6 +616,24 @@ class ProductController extends Controller
 //      return view('adminPanel.pos.sell_invoice');
 //      return $pdf->download('buy_invoice.pdf');
         return $pdf->stream('buy_invoice.pdf');
+    }
 
+    /**
+     * Obtenir les sous-catégories par ID de catégorie (pour AJAX)
+     */
+    public function getSubcategoriesByCategory($category_id)
+    {
+        try {
+            $subcategories = ProductSubCategory::where('category_id', $category_id)
+                ->where('status', 1)
+                ->whereNull('deleted_at')
+                ->select('id', 'name', 'category_id')
+                ->get();
+            
+            return response()->json($subcategories);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du chargement des sous-catégories: ' . $e->getMessage());
+            return response()->json(['error' => 'Erreur lors du chargement des sous-catégories'], 500);
+        }
     }
 }

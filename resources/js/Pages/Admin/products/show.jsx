@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { normalizeImageUrl } from '@/Utils/imageUtils.jsx';
 import { 
     ArrowLeftIcon,
     PencilIcon,
@@ -71,7 +72,7 @@ export default function ShowProduct({ product, flash }) {
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-4">
                         <Link
-                            href={route('admin.products.list')}
+                            href={route('admin.products.index')}
                             className="flex items-center text-gray-500 hover:text-gray-700"
                         >
                             <ArrowLeftIcon className="h-5 w-5 mr-1" />
@@ -278,7 +279,7 @@ export default function ShowProduct({ product, flash }) {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-500 mb-2">Image principale</label>
                                     <img 
-                                        src={product.image} 
+                                        src={normalizeImageUrl(product.image)} 
                                         alt={product.name}
                                         className="w-full h-48 object-cover rounded-lg border"
                                     />
@@ -291,7 +292,7 @@ export default function ShowProduct({ product, flash }) {
                                             {product.images.map((image, index) => (
                                                 <img 
                                                     key={index}
-                                                    src={image.image} 
+                                                    src={normalizeImageUrl(image.image)} 
                                                     alt={`${product.name} ${index + 1}`}
                                                     className="w-full h-24 object-cover rounded border"
                                                 />

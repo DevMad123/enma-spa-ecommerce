@@ -124,13 +124,13 @@ class ProductCategoryController extends Controller
             // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
             $requestData = $request->all();
             
-            // Validation
+            // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
                 'note' => 'nullable|string',
-                'is_popular' => 'required|in:0,1',
-                'status' => 'required|in:0,1'
+                'is_popular' => 'nullable',
+                'status' => 'nullable'
             ]);
 
             $imagePath = null;
@@ -141,8 +141,9 @@ class ProductCategoryController extends Controller
             $category = new ProductCategory();
             $category->name = $validated['name'];
             $category->note = $validated['note'] ?? '';
-            $category->is_popular = $validated['is_popular'];
-            $category->status = $validated['status'];
+            // Convertir les booléens explicitement
+            $category->is_popular = $request->boolean('is_popular');
+            $category->status = $request->boolean('status');
             $category->image = $imagePath;
             $category->created_by = auth()->id();
             $category->save();
@@ -247,23 +248,34 @@ class ProductCategoryController extends Controller
         try {
             \Log::info('Product category update request data: ', $request->all());
 
-            // Décoder les JSON strings si nécessaire (pour la cohérence avec ProductController)
-            $requestData = $request->all();
-
             // Trouver la catégorie
             $category = ProductCategory::findOrFail($id);
 
-            // Validation
+            // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name,' . $id,
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'image_deleted' => 'nullable',
                 'note' => 'nullable|string',
-                'is_popular' => 'required|in:0,1',
-                'status' => 'required|in:0,1'
+                'is_popular' => 'nullable',
+                'status' => 'nullable'
             ]);
 
+            // Convertir les booléens explicitement
+            $category->is_popular = $request->boolean('is_popular');
+            $category->status = $request->boolean('status');
+
             // Gestion de l'image
-            if ($request->hasFile('image')) {
+            if ($request->boolean('image_deleted')) {
+                // Supprimer l'image existante
+                if ($category->image) {
+                    $oldPath = str_replace('storage/', '', $category->image);
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+                $category->image = null;
+            } elseif ($request->hasFile('image')) {
                 // Supprimer l'ancienne image si elle existe
                 if ($category->image) {
                     $oldPath = str_replace('storage/', '', $category->image);
@@ -279,8 +291,6 @@ class ProductCategoryController extends Controller
             // Mise à jour des autres champs
             $category->name = $validated['name'];
             $category->note = $validated['note'] ?? '';
-            $category->is_popular = $validated['is_popular'];
-            $category->status = $validated['status'];
             $category->updated_by = auth()->id();
             $category->save();
 

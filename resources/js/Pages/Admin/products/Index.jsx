@@ -40,7 +40,7 @@ export default function ProductsList() {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
         
-        router.get(route('admin.products.list'), {
+        router.get(route('admin.products.index'), {
             search: searchTerm,
             ...updatedFilters,
         }, {
@@ -67,7 +67,7 @@ export default function ProductsList() {
             stock_status: '',
             per_page: 15,
         });
-        router.get(route('admin.products.list'));
+        router.get(route('admin.products.index'));
     };
 
     const handleBulkAction = (action, selectedIds) => {
@@ -143,7 +143,7 @@ export default function ProductsList() {
                     {product.image ? (
                         <img 
                             className="h-12 w-12 rounded-lg object-cover" 
-                            src={product.image} 
+                            src={product.image?.startsWith('http') ? product.image : `/${product.image}`} 
                             alt={product.name}
                         />
                     ) : (

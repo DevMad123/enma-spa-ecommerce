@@ -15,8 +15,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function CreateProduct() {
-    console.log('🔄 Composant CreateProduct chargé');
-    
     const { categories = [], suppliers = [], brands = [], colors = [], sizes = [], subcategories: initialSubcategories = [] } = usePage().props;
     console.log('Props reçues:', { categories, suppliers, brands, colors, sizes });
     
@@ -57,12 +55,39 @@ export default function CreateProduct() {
     // Charger sous-catégories quand category change
     useEffect(() => {
         if (data.category_id) {
-            fetch(route("admin.subcategories.byCategory", data.category_id))
-                .then((res) => res.json())
-                .then((subs) => setSubcategories(subs || []))
+            // Utiliser la nouvelle route dans le contrôleur ProductController
+            const url = route("admin.products.subcategories.byCategory", data.category_id);
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+                .then((res) => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error(`Expected JSON, got ${contentType}`);
+                    }
+                    
+                    return res.json();
+                })
+                .then((subs) => {
+                    setSubcategories(subs || []);
+                })
                 .catch(error => {
-                    console.error('Erreur lors du chargement des sous-catégories:', error);
-                    setSubcategories([]);
+                    // Fallback: essayer de récupérer toutes les sous-catégories depuis les props initiales
+                    const filteredSubs = initialSubcategories.filter(sub => 
+                        sub.category_id === parseInt(data.category_id)
+                    );
+                    setSubcategories(filteredSubs);
                 });
         } else {
             setSubcategories([]);
@@ -256,14 +281,6 @@ export default function CreateProduct() {
             formData.append('attributes', JSON.stringify(data.attributes));
         }
 
-        // Couleurs et tailles sélectionnées
-        selectedColors.forEach(colorId => {
-            formData.append('colors[]', colorId);
-        });
-        selectedSizes.forEach(sizeId => {
-            formData.append('sizes[]', sizeId);
-        });
-
         // Envoyer via Inertia
         router.post(route('admin.products.store'), formData, {
             onStart: () => {
@@ -289,7 +306,7 @@ export default function CreateProduct() {
             <div className="mb-6">
                 <div className="flex items-center space-x-4 mb-4">
                     <button
-                        onClick={() => router.visit(route('admin.products.list'))}
+                        onClick={() => router.visit(route('admin.products.index'))}
                         className="flex items-center text-gray-500 hover:text-gray-700"
                     >
                         <ArrowLeftIcon className="h-5 w-5 mr-1" />
@@ -846,7 +863,7 @@ export default function CreateProduct() {
                                         <option value="">Sélectionner une catégorie</option>
                                         {categories?.map((category) => (
                                             <option key={category.id} value={category.id}>
-                                                {category.category_name}
+                                                {category.name}
                                             </option>
                                         ))}
                                     </select>
@@ -865,7 +882,7 @@ export default function CreateProduct() {
                                             <option value="">Sélectionner une sous-catégorie</option>
                                             {subcategories.map((subcategory) => (
                                                 <option key={subcategory.id} value={subcategory.id}>
-                                                    {subcategory.subcategory_name}
+                                                    {subcategory.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -884,7 +901,7 @@ export default function CreateProduct() {
                                         <option value="">Sélectionner une marque</option>
                                         {brands?.map((brand) => (
                                             <option key={brand.id} value={brand.id}>
-                                                {brand.brand_name}
+                                                {brand.name}
                                             </option>
                                         ))}
                                     </select>
@@ -962,7 +979,7 @@ export default function CreateProduct() {
 
                                 <button
                                     type="button"
-                                    onClick={() => router.visit(route('admin.products.list'))}
+                                    onClick={() => router.visit(route('admin.products.index'))}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                 >
                                     Annuler

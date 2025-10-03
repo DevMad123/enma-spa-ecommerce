@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
+import { normalizeImageUrl } from '@/Utils/imageUtils';
 import { 
     PlusIcon,
     MagnifyingGlassIcon,
@@ -22,11 +23,9 @@ import {
     ChevronDownIcon,
     FolderIcon
 } from '@heroicons/react/24/outline';
-import SubcategoryModal from "./SubcategoryModal";
 
 export default function SubcategoriesList() {
     const { subcategoryList, categoryList, stats, filters, flash, auth } = usePage().props;
-    const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
     const [editingSubcategory, setEditingSubcategory] = useState(null);
     const [selectedSubcategories, setSelectedSubcategories] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,7 +142,7 @@ export default function SubcategoriesList() {
                     {subcategory.image ? (
                         <img 
                             className="h-12 w-12 rounded-lg object-cover" 
-                            src={subcategory.image} 
+                            src={normalizeImageUrl(subcategory.image)} 
                             alt={subcategory.name}
                         />
                     ) : (
@@ -207,11 +206,11 @@ export default function SubcategoriesList() {
             label: 'Statut',
             render: (subcategory) => (
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    subcategory.status === 1 
+                    subcategory.status === true || subcategory.status === 1 || subcategory.status === "1"
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                 }`}>
-                    {subcategory.status === 1 ? (
+                    {subcategory.status === true || subcategory.status === 1 || subcategory.status === "1" ? (
                         <>
                             <CheckCircleIcon className="h-3 w-3 mr-1" />
                             Actif
@@ -560,20 +559,6 @@ export default function SubcategoriesList() {
                     links: subcategories.links
                 } : null}
             />
-
-            {/* Modal SubcategoryModal */}
-            {showSubcategoryModal && (
-                <SubcategoryModal
-                    open={showSubcategoryModal}
-                    onClose={() => {
-                        setShowSubcategoryModal(false);
-                        setEditingSubcategory(null);
-                    }}
-                    mode={editingSubcategory ? "edit" : "create"}
-                    subcategory={editingSubcategory}
-                    categories={categories}
-                />
-            )}
         </AdminLayout>
     );
 }

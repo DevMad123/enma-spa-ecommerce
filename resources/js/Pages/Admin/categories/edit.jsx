@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { 
     ArrowLeftIcon,
@@ -9,20 +9,30 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function EditCategory({ category }) {
-    const [imagePreview, setImagePreview] = useState(category.image || null);
+    // Normaliser l'URL de l'image existante
+    const normalizeImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+        if (imagePath.startsWith('http')) return imagePath;
+        return imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    };
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const [imagePreview, setImagePreview] = useState(normalizeImageUrl(category.image));
+    const [imageDeleted, setImageDeleted] = useState(false);
+
+    const { data, setData, processing, errors } = useForm({
         name: category.name || '',
         note: category.note || '',
         is_popular: category.is_popular === 1,
         status: category.status === 1,
         image: null,
+        _method: 'PUT'
     });
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setData('image', file);
+            setImageDeleted(false);
             const reader = new FileReader();
             reader.onload = (e) => setImagePreview(e.target.result);
             reader.readAsDataURL(file);
@@ -31,14 +41,50 @@ export default function EditCategory({ category }) {
 
     const removeImage = () => {
         setData('image', null);
-        setImagePreview(category.image || null);
+        setImagePreview(null);
+        setImageDeleted(true);
         // Reset file input
-        document.getElementById('image-upload').value = '';
+        const fileInput = document.getElementById('image-upload');
+        if (fileInput) fileInput.value = '';
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('admin.categories.update', category.id));
+        
+        // Préparer FormData pour l'upload de fichiers
+        const formData = new FormData();
+        
+        // Ajouter tous les champs du formulaire
+        Object.keys(data).forEach(key => {
+            if (key === 'image' && data[key]) {
+                formData.append(key, data[key]);
+            } else if (key !== 'image') {
+                formData.append(key, data[key]);
+            }
+        });
+
+        // Ajouter le flag de suppression d'image si nécessaire
+        if (imageDeleted) {
+            formData.append('image_deleted', '1');
+        }
+
+        console.log('📦 Données envoyées:', Object.fromEntries(formData));
+
+        // Envoyer via router.post pour supporter l'upload de fichiers
+        router.post(route('admin.categories.update', category.id), formData, {
+            onStart: () => {
+                console.log('🚀 Début de la requête PUT');
+            },
+            onSuccess: (data) => {
+                console.log('✅ Succès:', data);
+            },
+            onError: (errors) => {
+                console.error('❌ Erreurs:', errors);
+            },
+            onFinish: () => {
+                console.log('🏁 Requête terminée');
+            }
+        });
     };
 
     return (
@@ -178,16 +224,19 @@ export default function EditCategory({ category }) {
                                                         PNG, JPG, WEBP jusqu'à 2MB
                                                     </span>
                                                 </label>
-                                                <input
-                                                    id="image-upload"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
-                                                />
                                             </div>
                                         </div>
                                     )}
+                                    
+                                    {/* Input file toujours présent */}
+                                    <input
+                                        id="image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
+                                    
                                     {errors.image && (
                                         <p className="text-sm text-red-600">{errors.image}</p>
                                     )}

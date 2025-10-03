@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { normalizeImageUrl } from '@/Utils/imageUtils';
 import { 
     ArrowLeftIcon,
     PencilIcon,
@@ -162,7 +163,7 @@ export default function ShowSubcategory({ subcategory }) {
                             {subcategory.image ? (
                                 <div className="space-y-4">
                                     <img
-                                        src={subcategory.image}
+                                        src={normalizeImageUrl(subcategory.image)}
                                         alt={subcategory.name}
                                         className="w-full h-48 object-cover rounded-lg border border-gray-200"
                                     />

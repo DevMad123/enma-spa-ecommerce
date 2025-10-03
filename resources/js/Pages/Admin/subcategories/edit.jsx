@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { normalizeImageUrl } from '@/Utils/imageUtils';
 import { 
     ArrowLeftIcon,
     PhotoIcon,
@@ -10,20 +11,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function EditSubcategory({ subcategory, categories }) {
-    const [imagePreview, setImagePreview] = useState(subcategory.image || null);
+    // Normaliser l'URL de l'image existante
+    const [imagePreview, setImagePreview] = useState(normalizeImageUrl(subcategory.image));
+    const [imageDeleted, setImageDeleted] = useState(false);
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, processing, errors } = useForm({
         name: subcategory.name || '',
         category_id: subcategory.category_id || '',
         note: subcategory.note || '',
         status: subcategory.status || false,
         image: null,
+        _method: 'PUT'
     });
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setData('image', file);
+            setImageDeleted(false);
             const reader = new FileReader();
             reader.onload = (e) => setImagePreview(e.target.result);
             reader.readAsDataURL(file);
@@ -33,13 +38,49 @@ export default function EditSubcategory({ subcategory, categories }) {
     const removeImage = () => {
         setData('image', null);
         setImagePreview(null);
+        setImageDeleted(true);
         // Reset file input
-        document.getElementById('image-upload').value = '';
+        const fileInput = document.getElementById('image-upload');
+        if (fileInput) fileInput.value = '';
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('admin.subcategories.update', subcategory.id));
+        
+        // Préparer FormData pour l'upload de fichiers
+        const formData = new FormData();
+        
+        // Ajouter tous les champs du formulaire
+        Object.keys(data).forEach(key => {
+            if (key === 'image' && data[key]) {
+                formData.append(key, data[key]);
+            } else if (key !== 'image') {
+                formData.append(key, data[key]);
+            }
+        });
+
+        // Ajouter le flag de suppression d'image si nécessaire
+        if (imageDeleted) {
+            formData.append('image_deleted', '1');
+        }
+
+        console.log('📦 Données envoyées:', Object.fromEntries(formData));
+
+        // Envoyer via router.post pour supporter l'upload de fichiers
+        router.post(route('admin.subcategories.update', subcategory.id), formData, {
+            onStart: () => {
+                console.log('🚀 Début de la requête PUT');
+            },
+            onSuccess: (data) => {
+                console.log('✅ Succès:', data);
+            },
+            onError: (errors) => {
+                console.error('❌ Erreurs:', errors);
+            },
+            onFinish: () => {
+                console.log('🏁 Requête terminée');
+            }
+        });
     };
 
     return (
@@ -193,16 +234,19 @@ export default function EditSubcategory({ subcategory, categories }) {
                                                         PNG, JPG, WEBP jusqu'à 2MB
                                                     </span>
                                                 </label>
-                                                <input
-                                                    id="image-upload"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageChange}
-                                                    className="hidden"
-                                                />
                                             </div>
                                         </div>
                                     )}
+                                    
+                                    {/* Input file toujours présent */}
+                                    <input
+                                        id="image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
+                                    
                                     {errors.image && (
                                         <p className="text-sm text-red-600">{errors.image}</p>
                                     )}

@@ -138,6 +138,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/{product}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('editDetails');
+        
+        // Route pour obtenir les sous-catégories par catégorie (AJAX)
+        Route::get('/subcategories/{category_id}', [ProductController::class, 'getSubcategoriesByCategory'])->name('subcategories.byCategory');
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {
@@ -179,13 +182,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/delete/{id}', [SupplierController::class, 'deleteSuppliers'])->name('deleteSuppliers');
     });
 
-    // Route pour obtenir les sous-catégories par ID de catégorie (AJAX)
-    Route::get('subcategories/{category_id}', function ($category_id) {
-        return \App\Models\ProductSubCategory::where('category_id', $category_id)
-            ->where('status', 1)
-            ->whereNull('deleted_at')
-            ->get();
-    })->name('subcategories.byCategory');
+    // Route supprimée - utilise admin.products.subcategories.byCategory dans le ProductController
 
     // Routes pour les couleurs
     Route::prefix('colors')->name('colors.')->group(function () {

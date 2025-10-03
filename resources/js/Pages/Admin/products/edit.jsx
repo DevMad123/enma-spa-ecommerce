@@ -17,14 +17,44 @@ import {
 
 export default function EditProduct({ product, categories, subcategories: initialSubcategories, brands, suppliers, colors, sizes }) {
     console.log('🔄 Composant EditProduct chargé');
+    console.log('🔍 Attributs reçus:', product, typeof product.attributes);
+    
+    // Parser les attributs s'ils sont en format JSON string
+    const parseAttributes = (attributes) => {
+        if (!attributes) return [];
+        if (typeof attributes === 'string') {
+            try {
+                return JSON.parse(attributes);
+            } catch (e) {
+                console.error('Erreur parsing attributs:', e);
+                return [];
+            }
+        }
+        return Array.isArray(attributes) ? attributes : [];
+    };
+
+    const parsedAttributes = parseAttributes(product.attributes);
+    console.log('🔍 Attributs parsés:', parsedAttributes);
     
     const [subcategories, setSubcategories] = useState(initialSubcategories || []);
-    const [selectedColors, setSelectedColors] = useState(product.attributes?.map(attr => attr.color_id).filter(Boolean) || []);
-    const [selectedSizes, setSelectedSizes] = useState(product.attributes?.map(attr => attr.size_id).filter(Boolean) || []);
+    const [selectedColors, setSelectedColors] = useState([...new Set(parsedAttributes.map(attr => attr.color_id).filter(Boolean))] || []);
+    const [selectedSizes, setSelectedSizes] = useState([...new Set(parsedAttributes.map(attr => attr.size_id).filter(Boolean))] || []);
+    
+    console.log('🎨 Couleurs sélectionnées:', selectedColors);
+    console.log('📏 Tailles sélectionnées:', selectedSizes);
+    
     const [productType, setProductType] = useState(product.type || 'simple');
     const [variants, setVariants] = useState(product.variants || []);
-    const [mainImagePreview, setMainImagePreview] = useState(product.image);
-    const [additionalImagePreviews, setAdditionalImagePreviews] = useState(product.images?.map(img => img.image) || []);
+    const [mainImagePreview, setMainImagePreview] = useState(
+        product.image?.startsWith('http') ? product.image : `/${product.image}`
+    );
+    const [additionalImagePreviews, setAdditionalImagePreviews] = useState(
+        product.images?.map(img => img.image?.startsWith('http') ? img.image : `/${img.image}`) || []
+    );
+    // Tracker les images existantes (pour les différencier des nouvelles)
+    const [existingImages, setExistingImages] = useState(
+        product.images?.map(img => img.image) || []
+    );
     const [showVariantSection, setShowVariantSection] = useState(product.type === 'variable');
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -50,15 +80,29 @@ export default function EditProduct({ product, categories, subcategories: initia
         main_image: null,
         product_images: [],
         variants: product.variants || [],
-        attributes: product.attributes || [],
+        attributes: parsedAttributes,
         _method: 'PUT'
     });
 
     // Charger sous-catégories quand category change
     useEffect(() => {
         if (data.category_id) {
-            fetch(route("admin.subcategories.byCategory", data.category_id))
-                .then((res) => res.json())
+            fetch(route("admin.products.subcategories.byCategory", data.category_id), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+                .then((res) => {
+                    // Vérifier que la réponse est bien du JSON
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('La réponse n\'est pas du JSON valide');
+                    }
+                    return res.json();
+                })
                 .then((subs) => setSubcategories(subs || []))
                 .catch(error => {
                     console.error('Erreur lors du chargement des sous-catégories:', error);
@@ -158,8 +202,10 @@ export default function EditProduct({ product, categories, subcategories: initia
         const files = Array.from(e.target.files);
         if (files.length > 0) {
             setData('product_images', files);
-            const previews = files.map(file => URL.createObjectURL(file));
-            setAdditionalImagePreviews(previews);
+            const newPreviews = files.map(file => URL.createObjectURL(file));
+            // Conserver les images existantes et ajouter les nouvelles
+            const existingPreviews = existingImages.map(img => img.startsWith('http') ? img : `/${img}`);
+            setAdditionalImagePreviews([...existingPreviews, ...newPreviews]);
         }
     };
 
@@ -167,6 +213,12 @@ export default function EditProduct({ product, categories, subcategories: initia
     const removeAdditionalImage = (index) => {
         const updatedPreviews = additionalImagePreviews.filter((_, i) => i !== index);
         setAdditionalImagePreviews(updatedPreviews);
+        
+        // Si c'est une image existante, la retirer de la liste des images existantes
+        if (index < existingImages.length) {
+            const updatedExistingImages = existingImages.filter((_, i) => i !== index);
+            setExistingImages(updatedExistingImages);
+        }
     };
 
     // Supprimer l'image principale
@@ -180,6 +232,9 @@ export default function EditProduct({ product, categories, subcategories: initia
         e.preventDefault();
         
         console.log('🎯 HandleSubmit appelé pour modification !');
+        console.log('🎨 Couleurs sélectionnées au submit:', selectedColors);
+        console.log('📏 Tailles sélectionnées au submit:', selectedSizes);
+        console.log('📋 Attributs actuels dans data:', data.attributes);
 
         if (!data.name.trim()) {
             alert('Le nom du produit est requis');
@@ -192,6 +247,7 @@ export default function EditProduct({ product, categories, subcategories: initia
         // Ajouter tous les champs du formulaire
         Object.keys(data).forEach(key => {
             if (key === 'attributes' || key === 'variants') {
+                console.log(`📤 Envoi ${key}:`, data[key]);
                 formData.append(key, JSON.stringify(data[key]));
             } else if (key === 'main_image' && data[key]) {
                 formData.append(key, data[key]);
@@ -204,12 +260,9 @@ export default function EditProduct({ product, categories, subcategories: initia
             }
         });
 
-        // Ajouter les couleurs et tailles sélectionnées
-        selectedColors.forEach(colorId => {
-            formData.append('colors[]', colorId);
-        });
-        selectedSizes.forEach(sizeId => {
-            formData.append('sizes[]', sizeId);
+        // Ajouter les images existantes qui doivent être conservées
+        existingImages.forEach((imagePath, index) => {
+            formData.append(`existing_images[${index}]`, imagePath);
         });
 
         // Ajouter les variantes si produit variable
