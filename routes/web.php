@@ -93,16 +93,16 @@ Route::middleware('auth')->prefix('wishlist')->name('frontend.wishlist.')->group
 Route::prefix('reviews')->name('frontend.reviews.')->group(function () {
     // Ajouter un avis (authentification requise)
     Route::middleware('auth')->post('/', [ReviewController::class, 'store'])->name('store');
-    
+
     // Modifier un avis (authentification requise + ownership)
     Route::middleware('auth')->put('/{review}', [ReviewController::class, 'update'])->name('update');
-    
+
     // Supprimer un avis (authentification requise + ownership)
     Route::middleware('auth')->delete('/{review}', [ReviewController::class, 'destroy'])->name('destroy');
-    
+
     // Marquer un avis comme utile (authentification requise)
     Route::middleware('auth')->post('/{review}/helpful', [ReviewController::class, 'markHelpful'])->name('helpful');
-    
+
     // Signaler un avis (authentification requise)
     Route::middleware('auth')->post('/{review}/report', [ReviewController::class, 'report'])->name('report');
 });
@@ -138,7 +138,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/{product}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('editDetails');
-        
+
         // Route pour obtenir les sous-catégories par catégorie (AJAX)
         Route::get('/subcategories/{category_id}', [ProductController::class, 'getSubcategoriesByCategory'])->name('subcategories.byCategory');
     });
@@ -161,7 +161,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/{subcategory}/edit', [ProductSubcategoryController::class, 'edit'])->name('edit');
         Route::put('/{subcategory}', [ProductSubcategoryController::class, 'update'])->name('update');
         Route::delete('/{subcategory}', [ProductSubcategoryController::class, 'delete'])->name('destroy');
-        
+
         // Legacy routes for backward compatibility
         Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store.legacy');
         Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update.legacy');
@@ -187,17 +187,33 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Routes pour les couleurs
     Route::prefix('colors')->name('colors.')->group(function () {
         Route::get('/', [ProductColorController::class, 'index'])->name('index');
-        Route::post('/', [ProductColorController::class, 'storeColors'])->name('storeColors');
-        Route::put('/{id}', [ProductColorController::class, 'updateColors'])->name('updateColors');
-        Route::delete('/{id}', [ProductColorController::class, 'deleteColors'])->name('deleteColors');
+        Route::get('/create', [ProductColorController::class, 'create'])->name('create');
+        Route::post('/', [ProductColorController::class, 'store'])->name('store');
+        Route::get('/{color}', [ProductColorController::class, 'show'])->name('show');
+        Route::get('/{color}/edit', [ProductColorController::class, 'edit'])->name('edit');
+        Route::put('/{color}', [ProductColorController::class, 'update'])->name('update');
+        Route::delete('/{color}', [ProductColorController::class, 'destroy'])->name('destroy');
+
+        // Routes legacy pour le modal existant
+        Route::post('/storeColors', [ProductColorController::class, 'storeColors'])->name('storeColors');
+        Route::put('/updateColors/{id}', [ProductColorController::class, 'updateColors'])->name('updateColors');
+        Route::delete('/deleteColors/{id}', [ProductColorController::class, 'deleteColors'])->name('deleteColors');
     });
 
     // Routes pour les tailles
     Route::prefix('sizes')->name('sizes.')->group(function () {
         Route::get('/', [ProductSizeController::class, 'index'])->name('index');
-        Route::post('/', [ProductSizeController::class, 'storeSizes'])->name('storeSizes');
-        Route::put('/{id}', [ProductSizeController::class, 'updateSizes'])->name('updateSizes');
-        Route::delete('/{id}', [ProductSizeController::class, 'deleteSizes'])->name('deleteSizes');
+        Route::get('/create', [ProductSizeController::class, 'create'])->name('create');
+        Route::post('/', [ProductSizeController::class, 'store'])->name('store');
+        Route::get('/{size}', [ProductSizeController::class, 'show'])->name('show');
+        Route::get('/{size}/edit', [ProductSizeController::class, 'edit'])->name('edit');
+        Route::put('/{size}', [ProductSizeController::class, 'update'])->name('update');
+        Route::delete('/{size}', [ProductSizeController::class, 'destroy'])->name('destroy');
+
+        // Routes legacy pour le modal existant
+        Route::post('/storeSizes', [ProductSizeController::class, 'storeSizes'])->name('storeSizes');
+        Route::put('/updateSizes/{id}', [ProductSizeController::class, 'updateSizes'])->name('updateSizes');
+        Route::delete('/deleteSizes/{id}', [ProductSizeController::class, 'deleteSizes'])->name('deleteSizes');
     });
 
     // Routes pour les clients
@@ -208,7 +224,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
         Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
         Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
-        
+
         // Actions groupées
         Route::post('/bulk-delete', [CustomerController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-activate', [CustomerController::class, 'bulkActivate'])->name('bulk-activate');

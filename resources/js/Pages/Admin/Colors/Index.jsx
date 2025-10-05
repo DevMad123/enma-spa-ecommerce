@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -34,7 +34,7 @@ export default function ColorsList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.colors.list'), {
             search: searchTerm,
             ...updatedFilters,
@@ -82,13 +82,12 @@ export default function ColorsList() {
 
     const handleDelete = (colorId) => {
         if (confirm('Êtes-vous sûr de vouloir supprimer cette couleur ?')) {
-            router.delete(route('admin.colors.deleteColors', colorId));
+            router.delete(route('admin.colors.destroy', colorId));
         }
     };
 
     const handleEdit = (color) => {
-        setEditingColor(color);
-        setShowColorModal(true);
+        router.visit(route('admin.colors.edit', color.id));
     };
 
     const handleView = (colorId) => {
@@ -169,6 +168,13 @@ export default function ColorsList() {
     const actions = [
         {
             type: 'button',
+            onClick: (color) => handleView(color.id),
+            icon: EyeIcon,
+            label: 'Voir les détails',
+            className: 'text-blue-600 hover:text-blue-900'
+        },
+        {
+            type: 'button',
             onClick: (color) => handleEdit(color),
             icon: PencilIcon,
             label: 'Modifier',
@@ -204,18 +210,27 @@ export default function ColorsList() {
     return (
         <AdminLayout>
             <Head title="Gestion des Couleurs" />
-            
+
             {/* En-tête avec statistiques */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Couleurs</h1>
-                    <button
-                        onClick={() => setShowColorModal(true)}
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
-                    >
-                        <PlusIcon className="w-4 h-4 mr-2" />
-                        Nouvelle Couleur
-                    </button>
+                    <div className="flex items-center space-x-3">
+                        <Link
+                            href={route('admin.colors.create')}
+                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <PlusIcon className="w-4 h-4 mr-2" />
+                            Nouvelle Couleur
+                        </Link>
+                        {/* <button
+                            onClick={() => setShowColorModal(true)}
+                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <PlusIcon className="w-4 h-4 mr-2" />
+                            Modal (Legacy)
+                        </button> */}
+                    </div>
                 </div>
 
                 {/* Statistiques */}
