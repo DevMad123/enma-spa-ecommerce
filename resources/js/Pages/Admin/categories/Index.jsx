@@ -178,45 +178,51 @@ export default function CategoriesList() {
         {
             key: 'is_popular',
             label: 'Populaire',
-            render: (category) => (
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    category.is_popular === 1 
-                        ? 'bg-yellow-100 text-yellow-800' 
-                        : 'bg-gray-100 text-gray-800'
-                }`}>
-                    {category.is_popular === 1 ? (
-                        <>
-                            <StarIcon className="h-3 w-3 mr-1" />
-                            Populaire
-                        </>
-                    ) : (
-                        'Standard'
-                    )}
-                </span>
-            )
+            render: (category) => {
+                const isPopular = category.is_popular === 1 || category.is_popular === true || category.is_popular === '1';
+                return (
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        isPopular 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : 'bg-gray-100 text-gray-800'
+                    }`}>
+                        {isPopular ? (
+                            <>
+                                <StarIcon className="h-3 w-3 mr-1" />
+                                Populaire
+                            </>
+                        ) : (
+                            'Standard'
+                        )}
+                    </span>
+                );
+            }
         },
         {
             key: 'status',
             label: 'Statut',
-            render: (category) => (
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    category.status === 1 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                }`}>
-                    {category.status === 1 ? (
-                        <>
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            Actif
-                        </>
-                    ) : (
-                        <>
-                            <XCircleIcon className="h-3 w-3 mr-1" />
-                            Inactif
-                        </>
-                    )}
-                </span>
-            )
+            render: (category) => {
+                const isActive = category.status === 1 || category.status === true || category.status === '1';
+                return (
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                    }`}>
+                        {isActive ? (
+                            <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Actif
+                            </>
+                        ) : (
+                            <>
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                                Inactif
+                            </>
+                        )}
+                    </span>
+                );
+            }
         },
         {
             key: 'created_at',

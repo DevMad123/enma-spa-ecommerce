@@ -169,17 +169,38 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     });
 
     Route::prefix('brands')->name('brands.')->group(function () {
-        Route::get('/list', [BrandController::class, 'listBrands'])->name('list');
-        Route::post('/store', [BrandController::class, 'storeBrands'])->name('storeBrands');
-        Route::put('/update/{id}', [BrandController::class, 'updateBrands'])->name('updateBrands');
-        Route::delete('/delete/{id}', [BrandController::class, 'deleteBrands'])->name('deleteBrands');
+        // Routes REST modernes
+        Route::get('/', [BrandController::class, 'index'])->name('index');
+        Route::get('/create', [BrandController::class, 'create'])->name('create');
+        Route::post('/', [BrandController::class, 'store'])->name('store');
+        Route::get('/{brand}', [BrandController::class, 'show'])->name('show');
+        Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+        Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
+        Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [BrandController::class, 'bulkDelete'])->name('bulk-delete');
+        
+        // Routes legacy pour compatibilité (temporaires)
+        Route::get('/list', [BrandController::class, 'index'])->name('list');
+        Route::post('/store', [BrandController::class, 'store'])->name('storeBrands');
+        Route::put('/update/{id}', [BrandController::class, 'update'])->name('updateBrands');
+        Route::delete('/delete/{id}', [BrandController::class, 'destroy'])->name('deleteBrands');
     });
 
     Route::prefix('suppliers')->name('suppliers.')->group(function () {
-        Route::get('/list', [SupplierController::class, 'listSuppliers'])->name('list');
-        Route::post('/store', [SupplierController::class, 'storeSuppliers'])->name('storeSuppliers');
-        Route::put('/update/{id}', [SupplierController::class, 'updateSuppliers'])->name('updateSuppliers');
-        Route::delete('/delete/{id}', [SupplierController::class, 'deleteSuppliers'])->name('deleteSuppliers');
+        // Routes REST modernes
+        Route::get('/', [SupplierController::class, 'index'])->name('index');
+        Route::get('/create', [SupplierController::class, 'create'])->name('create');
+        Route::post('/', [SupplierController::class, 'store'])->name('store');
+        Route::get('/{supplier}', [SupplierController::class, 'show'])->name('show');
+        Route::get('/{supplier}/edit', [SupplierController::class, 'edit'])->name('edit');
+        Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+        Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+        
+        // Routes legacy pour compatibilité (temporaires)
+        Route::get('/list', [SupplierController::class, 'index'])->name('list');
+        Route::post('/store', [SupplierController::class, 'store'])->name('storeSuppliers');
+        Route::put('/update/{id}', [SupplierController::class, 'update'])->name('updateSuppliers');
+        Route::delete('/delete/{id}', [SupplierController::class, 'destroy'])->name('deleteSuppliers');
     });
 
     // Route supprimée - utilise admin.products.subcategories.byCategory dans le ProductController

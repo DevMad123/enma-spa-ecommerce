@@ -11,78 +11,86 @@ use Inertia\Inertia;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SupplierController extends Controller
 {
     /**
      * Display a listing of the suppliers.
      */
-    public function listSuppliers(Request $request)
+    public function index(Request $request)
     {
         $query = Supplier::query()->whereNull('deleted_at');
 
         // Ajouter le comptage des produits
         $query->withCount('products');
 
-        // Filtres
+        // Recherche globale
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('supplier_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('company_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('supplier_email', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('supplier_name', 'like', '%' . $search . '%')
+                  ->orWhere('company_name', 'like', '%' . $search . '%')
+                  ->orWhere('supplier_email', 'like', '%' . $search . '%')
+                  ->orWhere('company_email', 'like', '%' . $search . '%')
+                  ->orWhere('supplier_phone_one', 'like', '%' . $search . '%');
             });
         }
+
+        // Filtres par statut
         if ($request->filled('status') && $request->status !== '') {
             $query->where('status', $request->status);
         }
 
+        // Tri
         $sort = $request->get('sort', 'id');
         $direction = $request->get('direction', 'desc');
         $query->orderBy($sort, $direction);
 
-        $perPage = $request->get('perPage', 10);
-        $suppliers = $query->paginate($perPage)->appends($request->all());
+        // Pagination
+        $perPage = $request->get('per_page', 15);
+        $supplierList = $query->paginate($perPage)->appends($request->all());
 
-        // Mapper les données pour correspondre aux attentes du frontend
-        $suppliers->getCollection()->transform(function ($supplier) {
-            return [
-                'id' => $supplier->id,
-                'company_name' => $supplier->company_name ?? $supplier->supplier_name,
-                'contact_person' => $supplier->supplier_name,
-                'email' => $supplier->supplier_email,
-                'phone' => $supplier->supplier_phone_one,
-                'address' => $supplier->supplier_address ?? $supplier->company_address,
-                'city' => null, // Pas dans la base actuelle
-                'country' => null, // Pas dans la base actuelle
-                'logo' => $supplier->image,
-                'status' => $supplier->status,
-                'products_count' => $supplier->products_count,
-                'created_at' => $supplier->created_at,
-                'updated_at' => $supplier->updated_at,
-            ];
-        });
+        // Calcul des statistiques
+        $stats = [
+            'total_suppliers' => Supplier::whereNull('deleted_at')->count(),
+            'active_suppliers' => Supplier::whereNull('deleted_at')->where('status', true)->count(),
+            'inactive_suppliers' => Supplier::whereNull('deleted_at')->where('status', false)->count(),
+            'suppliers_with_products' => Supplier::whereNull('deleted_at')->has('products')->count(),
+        ];
 
         return Inertia::render('Admin/Suppliers/Index', [
-            'title' => 'Supplier List',
-            'suppliers' => $suppliers,
+            'title' => 'Liste des fournisseurs',
+            'supplierList' => $supplierList,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
-                'perPage' => $perPage,
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
             ],
             'flash' => [
-                'success' => session('flash.success'),
-                'error' => session('flash.error'),
+                'success' => session('success'),
+                'error' => session('error'),
             ],
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new supplier.
+     */
+    public function create()
+    {
+        return Inertia::render('Admin/Suppliers/Create', [
+            'title' => 'Créer un fournisseur',
         ]);
     }
 
     /**
      * Store a newly created supplier in storage.
      */
-    public function storeSuppliers(Request $request)
+    public function store(Request $request)
     {
         DB::beginTransaction();
         try {
@@ -98,7 +106,7 @@ class SupplierController extends Controller
                 'company_phone' => 'nullable|string|max:255',
                 'supplier_email' => 'nullable|email|max:255',
                 'previous_due' => 'nullable|numeric|min:0',
-                'status' => 'required|boolean',
+                'status' => 'nullable',
             ]);
 
             $imagePath = null;
@@ -106,46 +114,72 @@ class SupplierController extends Controller
                 $imagePath = $this->supplierImageSave($request->file('image'));
             }
 
-            $supplier = new Supplier();
-            $supplier->supplier_name = $validated['supplier_name'];
-            $supplier->image = $imagePath;
-            $supplier->supplier_phone_one = $validated['supplier_phone_one'];
-            $supplier->supplier_phone_two = $validated['supplier_phone_two'];
-            $supplier->company_name = $validated['company_name'];
-            $supplier->company_address = $validated['company_address'];
-            $supplier->supplier_address = $validated['supplier_address'];
-            $supplier->company_email = $validated['company_email'];
-            $supplier->company_phone = $validated['company_phone'];
-            $supplier->supplier_email = $validated['supplier_email'];
-            $supplier->previous_due = $validated['previous_due'] ?? 0;
-            $supplier->status = $validated['status'];
-            $supplier->created_at = now();
-            $supplier->created_by = auth()->id();
-            $supplier->save();
+            $supplier = Supplier::create([
+                'supplier_name' => $validated['supplier_name'],
+                'image' => $imagePath,
+                'supplier_phone_one' => $validated['supplier_phone_one'],
+                'supplier_phone_two' => $validated['supplier_phone_two'],
+                'company_name' => $validated['company_name'],
+                'company_address' => $validated['company_address'],
+                'supplier_address' => $validated['supplier_address'],
+                'company_email' => $validated['company_email'],
+                'company_phone' => $validated['company_phone'],
+                'supplier_email' => $validated['supplier_email'],
+                'previous_due' => $validated['previous_due'] ?? 0,
+                'status' => $request->boolean('status'), // Utiliser la méthode boolean() de Laravel
+                'created_by' => auth()->id(),
+            ]);
 
             DB::commit();
 
-            return redirect()->route('admin.suppliers.list')->with([
-                'flash' => [
-                    'success' => 'Supplier created successfully!'
-                ]
+            return redirect()->route('admin.suppliers.index')->with([
+                'success' => 'Fournisseur créé avec succès!'
             ]);
         } catch (ValidationException $e) {
             DB::rollBack();
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'An error occurred while creating the supplier'])->withInput();
+            Log::error('Erreur lors de la création du fournisseur: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la création du fournisseur'])->withInput();
         }
+    }
+
+    /**
+     * Display the specified supplier.
+     */
+    public function show(Supplier $supplier)
+    {
+        $supplier->loadCount('products');
+        $supplier->load(['products' => function($query) {
+            $query->with(['category', 'brand'])->take(10);
+        }]);
+
+        return Inertia::render('Admin/Suppliers/Show', [
+            'title' => 'Détails du fournisseur - ' . $supplier->supplier_name,
+            'supplier' => $supplier,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified supplier.
+     */
+    public function edit(Supplier $supplier)
+    {
+        return Inertia::render('Admin/Suppliers/Edit', [
+            'title' => 'Modifier le fournisseur - ' . $supplier->supplier_name,
+            'supplier' => $supplier,
+        ]);
     }
 
     /**
      * Update the specified supplier in storage.
      */
-    public function updateSuppliers(Request $request, $id)
+    public function update(Request $request, Supplier $supplier)
     {
         DB::beginTransaction();
         try {
+            \Log::info('Supplier update request data: ', $request->all());
             $validated = $request->validate([
                 'supplier_name' => 'required|string|max:255',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -158,10 +192,8 @@ class SupplierController extends Controller
                 'company_phone' => 'nullable|string|max:255',
                 'supplier_email' => 'nullable|email|max:255',
                 'previous_due' => 'nullable|numeric|min:0',
-                'status' => 'required|boolean',
+                'status' => 'nullable',
             ]);
-
-            $supplier = Supplier::findOrFail($id);
 
             // Gérer l'image
             $imagePath = $supplier->image;
@@ -176,60 +208,63 @@ class SupplierController extends Controller
                 $imagePath = $this->supplierImageSave($request->file('image'));
             }
 
-            $supplier->supplier_name = $validated['supplier_name'];
-            $supplier->image = $imagePath;
-            $supplier->supplier_phone_one = $validated['supplier_phone_one'];
-            $supplier->supplier_phone_two = $validated['supplier_phone_two'];
-            $supplier->company_name = $validated['company_name'];
-            $supplier->company_address = $validated['company_address'];
-            $supplier->supplier_address = $validated['supplier_address'];
-            $supplier->company_email = $validated['company_email'];
-            $supplier->company_phone = $validated['company_phone'];
-            $supplier->supplier_email = $validated['supplier_email'];
-            $supplier->previous_due = $validated['previous_due'] ?? 0;
-            $supplier->status = $validated['status'];
-            $supplier->updated_at = now();
-            $supplier->updated_by = auth()->id();
-            $supplier->save();
+            $supplier->update([
+                'supplier_name' => $validated['supplier_name'],
+                'image' => $imagePath,
+                'supplier_phone_one' => $validated['supplier_phone_one'],
+                'supplier_phone_two' => $validated['supplier_phone_two'],
+                'company_name' => $validated['company_name'],
+                'company_address' => $validated['company_address'],
+                'supplier_address' => $validated['supplier_address'],
+                'company_email' => $validated['company_email'],
+                'company_phone' => $validated['company_phone'],
+                'supplier_email' => $validated['supplier_email'],
+                'previous_due' => $validated['previous_due'] ?? 0,
+                'status' => $request->boolean('status'), // Utiliser la méthode boolean() de Laravel
+                'updated_by' => auth()->id(),
+            ]);
 
             DB::commit();
 
-            return redirect()->route('admin.suppliers.list')->with([
-                'flash' => [
-                    'success' => 'Supplier updated successfully!'
-                ]
+            return redirect()->route('admin.suppliers.index')->with([
+                'success' => 'Fournisseur modifié avec succès!'
             ]);
         } catch (ValidationException $e) {
             DB::rollBack();
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'An error occurred while updating the supplier'])->withInput();
+            Log::error('Erreur lors de la modification du fournisseur: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la modification du fournisseur'])->withInput();
         }
     }
 
     /**
      * Remove the specified supplier from storage (soft delete).
      */
-    public function deleteSuppliers($id)
+    public function destroy(Supplier $supplier)
     {
         DB::beginTransaction();
         try {
-            $supplier = Supplier::findOrFail($id);
-            $supplier->deleted_at = now();
-            $supplier->deleted_by = auth()->id();
-            $supplier->save();
+            // Vérifier si le fournisseur a des produits
+            if ($supplier->products()->count() > 0) {
+                return back()->withErrors(['error' => 'Impossible de supprimer ce fournisseur car il est associé à ' . $supplier->products()->count() . ' produit(s).']);
+            }
+
+            $supplier->update([
+                'deleted_at' => now(),
+                'deleted_by' => auth()->id(),
+            ]);
 
             DB::commit();
 
-            return redirect()->route('admin.suppliers.list')->with([
-                'flash' => [
-                    'success' => 'Supplier deleted successfully!'
-                ]
+            return redirect()->route('admin.suppliers.index')->with([
+                'success' => 'Fournisseur supprimé avec succès!'
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'An error occurred while deleting the supplier']);
+            Log::error('Erreur lors de la suppression du fournisseur: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression du fournisseur']);
         }
     }
 

@@ -57,8 +57,8 @@ const navigationLinks = [
     icon: HiOutlineOfficeBuilding,
     color: "text-orange-600",
     submenu: [
-      { route: "admin.suppliers.list", label: "Fournisseurs", icon: HiOutlineOfficeBuilding },
-      { route: "admin.brands.list", label: "Marques", icon: HiOutlineCollection },
+      { route: "admin.suppliers.index", label: "Fournisseurs", icon: HiOutlineOfficeBuilding },
+      { route: "admin.brands.index", label: "Marques", icon: HiOutlineCollection },
     ]
   },
   {

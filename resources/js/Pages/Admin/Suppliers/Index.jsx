@@ -1,375 +1,427 @@
 import React, { useState } from 'react';
-import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { 
+import DataTable from '@/Components/DataTable';
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
     PencilIcon,
     TrashIcon,
-    BuildingOffice2Icon,
-    EnvelopeIcon,
-    PhoneIcon,
-    MapPinIcon,
+    BuildingOfficeIcon,
     CheckCircleIcon,
     XCircleIcon,
     ArrowDownTrayIcon,
     FunnelIcon,
     ArchiveBoxIcon,
-    ClockIcon,
-    ArrowsUpDownIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon
+    UserIcon,
+    EnvelopeIcon,
+    PhoneIcon
 } from '@heroicons/react/24/outline';
-import SupplierModal from "./SupplierModal";
 
 export default function SuppliersList() {
-    const { suppliers, filters, flash } = usePage().props;
-    const { get, post, delete: destroy, processing } = useForm();
+    const { supplierList, filters, stats, flash } = usePage().props;
     
-    const [showSupplierModal, setShowSupplierModal] = useState(false);
-    const [editingSupplier, setEditingSupplier] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
-        status: filters.status || '',
+        status: filters.status !== null ? filters.status : '',
         per_page: filters.per_page || 15,
     });
     const [showFilters, setShowFilters] = useState(false);
-    const [selectedSuppliers, setSelectedSuppliers] = useState([]);
-    const [sortBy, setSortBy] = useState({
-        column: filters.sort_by || '',
-        direction: filters.sort_direction || 'asc'
-    });
 
-    // Fonction pour gérer les actions en lot
-    const handleBulkAction = (action) => {
-        if (selectedSuppliers.length === 0) {
-            alert('Veuillez sélectionner au moins un fournisseur');
-            return;
-        }
+    // Appliquer les filtres
+    const applyFilters = (newFilters = {}) => {
+        const updatedFilters = { ...activeFilters, ...newFilters };
+        setActiveFilters(updatedFilters);
 
-        if (window.confirm(`Êtes-vous sûr de vouloir ${action === 'delete' ? 'supprimer' : action === 'activate' ? 'activer' : 'désactiver'} les fournisseurs sélectionnés ?`)) {
-            post(route('admin.suppliers.bulk'), {
-                ids: selectedSuppliers,
-                action: action
-            }, {
-                onSuccess: () => {
-                    setSelectedSuppliers([]);
-                }
-            });
-        }
-    };
-
-    // Fonction pour gérer la suppression
-    const handleDelete = (id) => {
-        destroy(route('admin.suppliers.destroy', id));
-    };
-
-    // Fonction pour gérer le tri
-    const handleSort = (column) => {
-        const newDirection = sortBy.column === column && sortBy.direction === 'asc' ? 'desc' : 'asc';
-        setSortBy({ column, direction: newDirection });
-        
-        applyFilters({
-            ...activeFilters,
-            sort_by: column,
-            sort_direction: newDirection
-        });
-    };
-
-    // Fonction pour gérer la pagination
-    const handlePagination = (page) => {
-        get(route('admin.suppliers.list', {
-            ...activeFilters,
+        router.get(route('admin.suppliers.index'), {
             search: searchTerm,
-            page: page
-        }), {
+            ...updatedFilters,
+        }, {
             preserveState: true,
-            preserveScroll: true
+            preserveScroll: true,
         });
     };
 
-    // Fonction pour l'export
-    const handleExport = () => {
-        window.open(route('admin.suppliers.export', {
-            ...activeFilters,
-            search: searchTerm
-        }));
-    };
-
-    // Fonction pour effacer les filtres
-    const clearFilters = () => {
-        setActiveFilters({
-            status: '',
-            per_page: 15
-        });
-        setSearchTerm('');
-        setSortBy({ column: '', direction: 'asc' });
-        setShowFilters(false);
-        
-        get(route('admin.suppliers.list'), {
-            preserveState: true,
-            preserveScroll: true
-        });
-    };
-
-    // Fonction pour appliquer les filtres
-    const applyFilters = (customFilters = null) => {
-        const filters = customFilters || activeFilters;
-        get(route('admin.suppliers.list', {
-            ...filters,
-            search: searchTerm,
-            sort_by: sortBy.column,
-            sort_direction: sortBy.direction
-        }), {
-            preserveState: true,
-            preserveScroll: true
-        });
-    };
-
-    // Fonction pour gérer la recherche
+    // Recherche
     const handleSearch = (e) => {
         e.preventDefault();
         applyFilters();
     };
 
+    // Effacer les filtres
+    const clearFilters = () => {
+        setSearchTerm('');
+        setActiveFilters({
+            status: '',
+            per_page: 15,
+        });
+        router.get(route('admin.suppliers.index'));
+    };
+
+    const handleBulkAction = (action, selectedIds) => {
+        if (selectedIds.length === 0) {
+            alert('Veuillez sélectionner au moins un fournisseur.');
+            return;
+        }
+
+        if (action === 'delete') {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedIds.length} fournisseur(s) ?`)) {
+                router.post(route('admin.suppliers.bulk-delete'), {
+                    ids: selectedIds
+                });
+            }
+        }
+    };
+
+    const handleDelete = (supplierId) => {
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?')) {
+            router.delete(route('admin.suppliers.destroy', supplierId));
+        }
+    };
+
+    const handleEdit = (supplier) => {
+        router.visit(route('admin.suppliers.edit', supplier.id));
+    };
+
+    const handleView = (supplierId) => {
+        router.visit(route('admin.suppliers.show', supplierId));
+    };
+
+    // Configuration des colonnes
+    const columns = [
+        {
+            key: 'image',
+            label: 'Logo',
+            render: (supplier) => (
+                <div className="flex-shrink-0 h-12 w-12">
+                    {supplier.image ? (
+                        <img 
+                            className="h-12 w-12 rounded-lg object-cover" 
+                            src={supplier.image?.startsWith('http') ? supplier.image : `/${supplier.image}`} 
+                            alt={supplier.supplier_name}
+                        />
+                    ) : (
+                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <BuildingOfficeIcon className="h-6 w-6 text-gray-400" />
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'supplier_info',
+            label: 'Fournisseur',
+            render: (supplier) => (
+                <div>
+                    <div className="text-sm font-medium text-gray-900 flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {supplier.supplier_name}
+                    </div>
+                    {supplier.company_name && (
+                        <div className="text-sm text-gray-500">
+                            {supplier.company_name}
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'contact',
+            label: 'Contact',
+            render: (supplier) => (
+                <div>
+                    {supplier.supplier_email && (
+                        <div className="text-sm text-gray-900 flex items-center mb-1">
+                            <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                            {supplier.supplier_email}
+                        </div>
+                    )}
+                    <div className="text-sm text-gray-500 flex items-center">
+                        <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {supplier.supplier_phone_one}
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'status',
+            label: 'Statut',
+            render: (supplier) => {
+                // Gérer les booléens et les entiers
+                const isActive = supplier.status === 1 || supplier.status === true || supplier.status === '1';
+                return (
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                    }`}>
+                        {isActive ? (
+                            <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Actif
+                            </>
+                        ) : (
+                            <>
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                                Inactif
+                            </>
+                        )}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'products_count',
+            label: 'Produits',
+            render: (supplier) => (
+                <span className="text-sm text-gray-500">
+                    {supplier.products_count || 0} produit{(supplier.products_count || 0) > 1 ? 's' : ''}
+                </span>
+            )
+        },
+        {
+            key: 'created_at',
+            label: 'Date création',
+            render: (supplier) => (
+                <span className="text-sm text-gray-500">
+                    {supplier.created_at ? new Date(supplier.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                </span>
+            )
+        }
+    ];
+
+    const actions = [
+        {
+            type: 'button',
+            onClick: (supplier) => handleView(supplier.id),
+            icon: EyeIcon,
+            label: 'Voir les détails',
+            className: 'text-blue-600 hover:text-blue-900'
+        },
+        {
+            type: 'button',
+            onClick: (supplier) => handleEdit(supplier),
+            icon: PencilIcon,
+            label: 'Modifier',
+            className: 'text-indigo-600 hover:text-indigo-900'
+        },
+        {
+            type: 'button',
+            onClick: (supplier) => handleDelete(supplier.id),
+            icon: TrashIcon,
+            label: 'Supprimer',
+            className: 'text-red-600 hover:text-red-900'
+        }
+    ];
+
+    // Configuration des actions groupées
+    const bulkActions = [
+        {
+            label: 'Supprimer',
+            value: 'delete',
+            icon: TrashIcon,
+            className: 'bg-red-600 text-white hover:bg-red-700'
+        }
+    ];
+
+    const searchableFields = ['supplier_name', 'company_name', 'supplier_email'];
+
     return (
         <AdminLayout>
-            <Head title="Fournisseurs" />
+            <Head title="Gestion des Fournisseurs" />
 
+            {/* En-tête avec statistiques */}
             <div className="mb-6">
-                <div className="sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Gestion des Fournisseurs</h1>
-                        <p className="mt-1 text-sm text-gray-600">
-                            Gérez vos fournisseurs et leurs informations de contact
-                        </p>
-                    </div>
-                    <div className="mt-4 sm:mt-0 sm:flex-none">
-                        <button
-                            onClick={() => setShowSupplierModal(true)}
-                            className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
-                        >
-                            <PlusIcon className="h-4 w-4 mr-2" />
-                            Nouveau fournisseur
-                        </button>
-                    </div>
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold text-gray-900">Fournisseurs</h1>
+                    <Link
+                        href={route('admin.suppliers.create')}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
+                    >
+                        <PlusIcon className="w-4 h-4 mr-2" />
+                        Nouveau Fournisseur
+                    </Link>
                 </div>
 
-                {/* Flash messages */}
-                {flash?.success && (
-                    <div className="mt-4 rounded-md bg-green-50 p-4">
-                        <div className="flex">
-                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-green-800">
-                                    {flash.success}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {flash?.error && (
-                    <div className="mt-4 rounded-md bg-red-50 p-4">
-                        <div className="flex">
-                            <XCircleIcon className="h-5 w-5 text-red-400" />
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-red-800">
-                                    {flash.error}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Tableau de bord statistiques */}
-            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                                    <BuildingOffice2Icon className="h-5 w-5 text-white" />
+                {/* Statistiques */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white overflow-hidden shadow rounded-lg">
+                        <div className="p-5">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <BuildingOfficeIcon className="h-6 w-6 text-gray-400" />
+                                </div>
+                                <div className="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">
+                                            Total Fournisseurs
+                                        </dt>
+                                        <dd className="text-lg font-medium text-gray-900">
+                                            {stats?.total_suppliers || 0}
+                                        </dd>
+                                    </dl>
                                 </div>
                             </div>
-                            <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt className="text-sm font-medium text-gray-500 truncate">Total Fournisseurs</dt>
-                                    <dd className="text-lg font-medium text-gray-900">{suppliers?.total || 0}</dd>
-                                </dl>
+                        </div>
+                    </div>
+
+                    <div className="bg-white overflow-hidden shadow rounded-lg">
+                        <div className="p-5">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                                </div>
+                                <div className="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">
+                                            Fournisseurs Actifs
+                                        </dt>
+                                        <dd className="text-lg font-medium text-gray-900">
+                                            {stats?.active_suppliers || 0}
+                                        </dd>
+                                    </dl>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                                    <CheckCircleIcon className="h-5 w-5 text-white" />
+                    <div className="bg-white overflow-hidden shadow rounded-lg">
+                        <div className="p-5">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <XCircleIcon className="h-6 w-6 text-red-400" />
                                 </div>
-                            </div>
-                            <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt className="text-sm font-medium text-gray-500 truncate">Fournisseurs Actifs</dt>
-                                    <dd className="text-lg font-medium text-gray-900">
-                                        {suppliers?.data ? suppliers.data.filter(s => s.status === 1).length : 0}
-                                    </dd>
-                                </dl>
+                                <div className="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">
+                                            Fournisseurs Inactifs
+                                        </dt>
+                                        <dd className="text-lg font-medium text-gray-900">
+                                            {stats?.inactive_suppliers || 0}
+                                        </dd>
+                                    </dl>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                                    <ArchiveBoxIcon className="h-5 w-5 text-white" />
+                    <div className="bg-white overflow-hidden shadow rounded-lg">
+                        <div className="p-5">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <ArchiveBoxIcon className="h-6 w-6 text-blue-400" />
                                 </div>
-                            </div>
-                            <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt className="text-sm font-medium text-gray-500 truncate">Avec Produits</dt>
-                                    <dd className="text-lg font-medium text-gray-900">
-                                        {suppliers?.data ? suppliers.data.filter(s => (s.products_count || 0) > 0).length : 0}
-                                    </dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
-                                    <ClockIcon className="h-5 w-5 text-white" />
+                                <div className="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">
+                                            Avec Produits
+                                        </dt>
+                                        <dd className="text-lg font-medium text-gray-900">
+                                            {stats?.suppliers_with_products || 0}
+                                        </dd>
+                                    </dl>
                                 </div>
-                            </div>
-                            <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt className="text-sm font-medium text-gray-500 truncate">Cette Semaine</dt>
-                                    <dd className="text-lg font-medium text-gray-900">
-                                        {suppliers?.data ? suppliers.data.filter(s => {
-                                            if (!s.created_at) return false;
-                                            const weekAgo = new Date();
-                                            weekAgo.setDate(weekAgo.getDate() - 7);
-                                            return new Date(s.created_at) >= weekAgo;
-                                        }).length : 0}
-                                    </dd>
-                                </dl>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Barre de recherche et filtres */}
+            {/* Messages Flash */}
+            {flash?.success && (
+                <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                    {flash.success}
+                </div>
+            )}
+            {flash?.error && (
+                <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {flash.error}
+                </div>
+            )}
+
+            {/* Filtres et recherche */}
             <div className="bg-white shadow rounded-lg mb-6">
-                <div className="px-4 py-5 sm:p-6">
+                <div className="p-6">
                     <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        {/* Recherche principale */}
+                        <div className="flex items-center space-x-4">
                             <div className="flex-1">
                                 <div className="relative">
                                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                     <input
                                         type="text"
-                                        placeholder="Rechercher par nom d'entreprise, contact ou email..."
-                                        className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Rechercher par nom, entreprise, email..."
+                                        className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                     />
                                 </div>
                             </div>
-                            
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    <FunnelIcon className="h-4 w-4 mr-2" />
-                                    Filtres
-                                    {Object.values(activeFilters).some(value => value && value !== 15) && (
-                                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                            Actifs
-                                        </span>
-                                    )}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleExport}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-                                    Export
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-                                >
-                                    Rechercher
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                            >
+                                Rechercher
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+                            >
+                                <FunnelIcon className="w-4 h-4 mr-2" />
+                                Filtres
+                            </button>
                         </div>
 
+                        {/* Filtres avancés */}
                         {showFilters && (
-                            <div className="border-t border-gray-200 pt-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Statut
-                                        </label>
-                                        <select
-                                            value={activeFilters.status}
-                                            onChange={(e) => setActiveFilters(prev => ({ ...prev, status: e.target.value }))}
-                                            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                        >
-                                            <option value="">Tous les statuts</option>
-                                            <option value="1">Actif</option>
-                                            <option value="0">Inactif</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Éléments par page
-                                        </label>
-                                        <select
-                                            value={activeFilters.per_page}
-                                            onChange={(e) => setActiveFilters(prev => ({ ...prev, per_page: e.target.value }))}
-                                            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                        >
-                                            <option value="15">15 par page</option>
-                                            <option value="25">25 par page</option>
-                                            <option value="50">50 par page</option>
-                                            <option value="100">100 par page</option>
-                                        </select>
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Statut
+                                    </label>
+                                    <select
+                                        value={activeFilters.status}
+                                        onChange={(e) => setActiveFilters({...activeFilters, status: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    >
+                                        <option value="">Tous les statuts</option>
+                                        <option value="1">Actif</option>
+                                        <option value="0">Inactif</option>
+                                    </select>
                                 </div>
 
-                                <div className="mt-4 flex justify-between">
-                                    <button
-                                        type="button"
-                                        onClick={clearFilters}
-                                        className="text-sm text-gray-500 hover:text-gray-700"
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Éléments par page
+                                    </label>
+                                    <select
+                                        value={activeFilters.per_page}
+                                        onChange={(e) => setActiveFilters({...activeFilters, per_page: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                     >
-                                        Effacer tous les filtres
-                                    </button>
+                                        <option value={15}>15</option>
+                                        <option value={25}>25</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-end space-x-2">
                                     <button
                                         type="button"
                                         onClick={() => applyFilters()}
-                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                                     >
-                                        Appliquer les filtres
+                                        Appliquer
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={clearFilters}
+                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                                    >
+                                        Effacer
                                     </button>
                                 </div>
                             </div>
@@ -379,339 +431,21 @@ export default function SuppliersList() {
             </div>
 
             {/* DataTable */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                {/* Actions en lot */}
-                {selectedSuppliers.length > 0 && (
-                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <span className="text-sm text-gray-700">
-                                    {selectedSuppliers.length} fournisseur(s) sélectionné(s)
-                                </span>
-                            </div>
-                            <div className="flex space-x-2">
-                                <button
-                                    onClick={() => handleBulkAction('activate')}
-                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
-                                >
-                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                                    Activer
-                                </button>
-                                <button
-                                    onClick={() => handleBulkAction('deactivate')}
-                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
-                                >
-                                    <XCircleIcon className="h-4 w-4 mr-1" />
-                                    Désactiver
-                                </button>
-                                <button
-                                    onClick={() => handleBulkAction('delete')}
-                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
-                                >
-                                    <TrashIcon className="h-4 w-4 mr-1" />
-                                    Supprimer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Tableau */}
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left">
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        checked={suppliers?.data?.length > 0 && selectedSuppliers.length === suppliers.data.length}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setSelectedSuppliers(suppliers.data.map(supplier => supplier.id));
-                                            } else {
-                                                setSelectedSuppliers([]);
-                                            }
-                                        }}
-                                    />
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <button
-                                        onClick={() => handleSort('company_name')}
-                                        className="group inline-flex items-center"
-                                    >
-                                        Entreprise
-                                        <ArrowsUpDownIcon className="ml-1 h-4 w-4 text-gray-400 group-hover:text-gray-700" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Contact
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <button
-                                        onClick={() => handleSort('email')}
-                                        className="group inline-flex items-center"
-                                    >
-                                        Email
-                                        <ArrowsUpDownIcon className="ml-1 h-4 w-4 text-gray-400 group-hover:text-gray-700" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Téléphone
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <button
-                                        onClick={() => handleSort('status')}
-                                        className="group inline-flex items-center"
-                                    >
-                                        Statut
-                                        <ArrowsUpDownIcon className="ml-1 h-4 w-4 text-gray-400 group-hover:text-gray-700" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <button
-                                        onClick={() => handleSort('products_count')}
-                                        className="group inline-flex items-center"
-                                    >
-                                        Nb Produits
-                                        <ArrowsUpDownIcon className="ml-1 h-4 w-4 text-gray-400 group-hover:text-gray-700" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {suppliers?.data?.length > 0 ? (
-                                suppliers.data.map((supplier) => (
-                                    <tr key={supplier.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <input
-                                                type="checkbox"
-                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                                checked={selectedSuppliers.includes(supplier.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedSuppliers([...selectedSuppliers, supplier.id]);
-                                                    } else {
-                                                        setSelectedSuppliers(selectedSuppliers.filter(id => id !== supplier.id));
-                                                    }
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                {supplier.logo ? (
-                                                    <img
-                                                        src={supplier.logo}
-                                                        alt={supplier.company_name}
-                                                        className="h-8 w-8 object-cover rounded mr-3"
-                                                    />
-                                                ) : (
-                                                    <div className="h-8 w-8 bg-gray-200 rounded flex items-center justify-center mr-3">
-                                                        <BuildingOffice2Icon className="h-4 w-4 text-gray-400" />
-                                                    </div>
-                                                )}
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {supplier.company_name}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">
-                                                {supplier.contact_person || '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-500">
-                                                {supplier.email ? (
-                                                    <div className="flex items-center">
-                                                        <EnvelopeIcon className="h-3 w-3 mr-1" />
-                                                        {supplier.email}
-                                                    </div>
-                                                ) : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-500">
-                                                {supplier.phone ? (
-                                                    <div className="flex items-center">
-                                                        <PhoneIcon className="h-3 w-3 mr-1" />
-                                                        {supplier.phone}
-                                                    </div>
-                                                ) : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                supplier.status === 1
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {supplier.status === 1 ? 'Actif' : 'Inactif'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {supplier.products_count || 0}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end space-x-2">
-                                                <button
-                                                    onClick={() => router.visit(route('admin.suppliers.show', supplier.id))}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                    title="Voir"
-                                                >
-                                                    <EyeIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingSupplier(supplier);
-                                                        setShowSupplierModal(true);
-                                                    }}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                    title="Modifier"
-                                                >
-                                                    <PencilIcon className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?')) {
-                                                            handleDelete(supplier.id);
-                                                        }
-                                                    }}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Supprimer"
-                                                >
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="8" className="px-6 py-12 text-center text-sm text-gray-500">
-                                        <BuildingOffice2Icon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                                        <p className="text-lg font-medium text-gray-900 mb-2">Aucun fournisseur trouvé</p>
-                                        <p>Commencez par ajouter votre premier fournisseur.</p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {suppliers?.total > 0 && (
-                    <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex-1 flex justify-between sm:hidden">
-                                <button
-                                    onClick={() => handlePagination(suppliers.current_page - 1)}
-                                    disabled={suppliers.current_page <= 1}
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Précédent
-                                </button>
-                                <button
-                                    onClick={() => handlePagination(suppliers.current_page + 1)}
-                                    disabled={suppliers.current_page >= suppliers.last_page}
-                                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Suivant
-                                </button>
-                            </div>
-                            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-700">
-                                        Affichage de{' '}
-                                        <span className="font-medium">{suppliers.from || 0}</span>
-                                        {' '}à{' '}
-                                        <span className="font-medium">{suppliers.to || 0}</span>
-                                        {' '}sur{' '}
-                                        <span className="font-medium">{suppliers.total}</span>
-                                        {' '}résultats
-                                    </p>
-                                </div>
-                                <div>
-                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                        <button
-                                            onClick={() => handlePagination(suppliers.current_page - 1)}
-                                            disabled={suppliers.current_page <= 1}
-                                            className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <ChevronLeftIcon className="h-5 w-5" />
-                                        </button>
-                                        
-                                        {[...Array(suppliers.last_page)].map((_, index) => {
-                                            const pageNumber = index + 1;
-                                            const isCurrentPage = pageNumber === suppliers.current_page;
-                                            
-                                            // Affiche seulement quelques pages autour de la page actuelle
-                                            if (
-                                                pageNumber === 1 ||
-                                                pageNumber === suppliers.last_page ||
-                                                (pageNumber >= suppliers.current_page - 2 && pageNumber <= suppliers.current_page + 2)
-                                            ) {
-                                                return (
-                                                    <button
-                                                        key={pageNumber}
-                                                        onClick={() => handlePagination(pageNumber)}
-                                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                                            isCurrentPage
-                                                                ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                        }`}
-                                                    >
-                                                        {pageNumber}
-                                                    </button>
-                                                );
-                                            } else if (
-                                                pageNumber === suppliers.current_page - 3 ||
-                                                pageNumber === suppliers.current_page + 3
-                                            ) {
-                                                return (
-                                                    <span
-                                                        key={pageNumber}
-                                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                                                    >
-                                                        ...
-                                                    </span>
-                                                );
-                                            }
-                                            return null;
-                                        })}
-                                        
-                                        <button
-                                            onClick={() => handlePagination(suppliers.current_page + 1)}
-                                            disabled={suppliers.current_page >= suppliers.last_page}
-                                            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <ChevronRightIcon className="h-5 w-5" />
-                                        </button>
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Modal SupplierModal */}
-            {showSupplierModal && (
-                <SupplierModal
-                    open={showSupplierModal}
-                    onClose={() => {
-                        setShowSupplierModal(false);
-                        setEditingSupplier(null);
-                    }}
-                    mode={editingSupplier ? "edit" : "create"}
-                    supplier={editingSupplier}
-                />
-            )}
+            <DataTable
+                data={Array.isArray(supplierList) ? supplierList : (supplierList?.data || [])}
+                columns={columns}
+                actions={actions}
+                bulkActions={bulkActions}
+                searchableFields={searchableFields}
+                onBulkAction={handleBulkAction}
+                searchPlaceholder="Rechercher par nom, entreprise ou email..."
+                pagination={supplierList?.links ? {
+                    from: supplierList.from,
+                    to: supplierList.to,
+                    total: supplierList.total,
+                    links: supplierList.links
+                } : null}
+            />
         </AdminLayout>
     );
 }
