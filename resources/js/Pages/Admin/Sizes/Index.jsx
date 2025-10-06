@@ -18,12 +18,9 @@ import {
     ClockIcon,
     ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
-import SizeModal from "./SizeModal";
 
 export default function SizesList() {
-    const { sizes, filters, stats, flash } = usePage().props;
-    const [showSizeModal, setShowSizeModal] = useState(false);
-    const [editingSize, setEditingSize] = useState(null);
+    const { sizeList, filters, stats, flash } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
         per_page: filters.per_page || 15,
@@ -82,13 +79,12 @@ export default function SizesList() {
 
     const handleDelete = (sizeId) => {
         if (confirm('Êtes-vous sûr de vouloir supprimer cette taille ?')) {
-            router.delete(route('admin.sizes.deleteSizes', sizeId));
+            router.delete(route('admin.sizes.destroy', sizeId));
         }
     };
 
     const handleEdit = (size) => {
-        setEditingSize(size);
-        setShowSizeModal(true);
+        router.visit(route('admin.sizes.edit', size.id));
     };
 
     const handleView = (sizeId) => {
@@ -158,6 +154,13 @@ export default function SizesList() {
     const actions = [
         {
             type: 'button',
+            onClick: (size) => handleView(size.id),
+            icon: EyeIcon,
+            label: 'Voir les détails',
+            className: 'text-blue-600 hover:text-blue-900'
+        },
+        {
+            type: 'button',
             onClick: (size) => handleEdit(size),
             icon: PencilIcon,
             label: 'Modifier',
@@ -198,13 +201,13 @@ export default function SizesList() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Tailles</h1>
-                    <button
-                        onClick={() => setShowSizeModal(true)}
+                    <Link
+                        href={route('admin.sizes.create')}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
                     >
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Nouvelle Taille
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Statistiques */}
@@ -221,7 +224,7 @@ export default function SizesList() {
                                             Total Tailles
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {Array.isArray(sizes) ? sizes.length : 0}
+                                            {stats?.total_sizes || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -241,7 +244,7 @@ export default function SizesList() {
                                             Avec Produits
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {Array.isArray(sizes) ? sizes.filter(s => (s.products_count || 0) > 0).length : 0}
+                                            {stats?.sizes_with_products || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -261,7 +264,7 @@ export default function SizesList() {
                                             Populaires
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {Array.isArray(sizes) ? sizes.filter(s => (s.products_count || 0) > 5).length : 0}
+                                            {sizeList?.data ? sizeList.data.filter(s => (s.products_count || 0) > 5).length : 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -281,7 +284,7 @@ export default function SizesList() {
                                             Cette Semaine
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {Array.isArray(sizes) ? sizes.filter(s => {
+                                            {sizeList?.data ? sizeList.data.filter(s => {
                                                 const weekAgo = new Date();
                                                 weekAgo.setDate(weekAgo.getDate() - 7);
                                                 return new Date(s.created_at) >= weekAgo;
@@ -346,28 +349,15 @@ export default function SizesList() {
 
             {/* DataTable */}
             <DataTable
-                data={Array.isArray(sizes) ? sizes : []}
+                data={sizeList?.data || []}
                 columns={columns}
                 actions={actions}
                 bulkActions={bulkActions}
                 searchableFields={searchableFields}
                 onBulkAction={handleBulkAction}
                 searchPlaceholder="Rechercher par taille..."
-                pagination={null}
+                pagination={sizeList}
             />
-
-            {/* Modal SizeModal */}
-            {showSizeModal && (
-                <SizeModal
-                    open={showSizeModal}
-                    onClose={() => {
-                        setShowSizeModal(false);
-                        setEditingSize(null);
-                    }}
-                    mode={editingSize ? "edit" : "create"}
-                    size={editingSize}
-                />
-            )}
         </AdminLayout>
     );
 }
