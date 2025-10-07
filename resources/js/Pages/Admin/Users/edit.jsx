@@ -20,7 +20,8 @@ export default function EditUser({ user, roles }) {
         email: user.email || '',
         password: '',
         password_confirmation: '',
-        status: user.status === 1 || user.status === true || user.status === '1',
+        status: user.status === 1 || user.status === '1' ? 1 : 0,
+        avatar: null,
         roles: user.roles ? user.roles.map(role => role.id) : [],
         _method: 'PUT',
     });
@@ -36,24 +37,27 @@ export default function EditUser({ user, roles }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // Préparer FormData pour la cohérence avec les autres entités
+        // Créer un FormData pour gérer les fichiers
         const formData = new FormData();
         
-        // Ajouter tous les champs du formulaire
+        // Ajouter tous les champs
         Object.keys(data).forEach(key => {
             if (key === 'roles') {
-                // Ajouter chaque rôle individuellement
                 data[key].forEach(roleId => {
                     formData.append('roles[]', roleId);
                 });
-            } else {
+            } else if (key === 'avatar' && data[key]) {
+                formData.append('avatar', data[key]);
+            } else if (key !== 'avatar') {
                 formData.append(key, data[key]);
             }
         });
+        
+        formData.append('status', data.status === 1 ? 1 : 0);
 
         console.log('📦 Données envoyées:', Object.fromEntries(formData));
 
-        // Envoyer via router.post pour la cohérence
+        // Utiliser router.post avec _method pour gérer l'upload de fichier
         router.post(route('admin.users.update', user.id), formData, {
             onStart: () => {
                 console.log('🚀 Début de la requête PUT');
@@ -168,6 +172,66 @@ export default function EditUser({ user, roles }) {
                                 </div>
                             </div>
 
+                            {/* Image de profil */}
+                            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center">
+                                        <UserIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                        <h3 className="text-lg font-medium text-gray-900">Image de profil</h3>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-6 space-y-6">
+                                    {/* Avatar actuel */}
+                                    {user.avatar && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Avatar actuel
+                                            </label>
+                                            <div className="flex items-center space-x-4">
+                                                <img 
+                                                    src={user.avatar_url || user.default_avatar_url} 
+                                                    alt={user.name}
+                                                    className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (confirm('Êtes-vous sûr de vouloir supprimer cet avatar ?')) {
+                                                            router.delete(route('admin.users.deleteAvatar', user.id));
+                                                        }
+                                                    }}
+                                                    className="text-sm text-red-600 hover:text-red-800"
+                                                >
+                                                    Supprimer l'avatar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Upload nouvel avatar */}
+                                    <div>
+                                        <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-2">
+                                            {user.avatar ? 'Changer l\'avatar' : 'Ajouter un avatar'}
+                                        </label>
+                                        <input
+                                            type="file"
+                                            id="avatar"
+                                            accept="image/*"
+                                            onChange={(e) => setData('avatar', e.target.files[0])}
+                                            className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 ${
+                                                errors.avatar ? 'border-red-300' : 'border-gray-300'
+                                            }`}
+                                        />
+                                        {errors.avatar && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.avatar}</p>
+                                        )}
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            PNG, JPG, GIF jusqu'à 2MB
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Mot de passe */}
                             <div className="bg-white shadow-sm rounded-lg border border-gray-200">
                                 <div className="px-6 py-4 border-b border-gray-200">
@@ -261,8 +325,8 @@ export default function EditUser({ user, roles }) {
                                         <input
                                             type="checkbox"
                                             id="status"
-                                            checked={data.status}
-                                            onChange={(e) => setData('status', e.target.checked)}
+                                            checked={data.status === 1}
+                                            onChange={(e) => setData('status', e.target.checked ? 1 : 0)}
                                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                         />
                                         <label htmlFor="status" className="ml-2 block text-sm text-gray-900">
@@ -342,8 +406,24 @@ export default function EditUser({ user, roles }) {
                             <div className="px-6 py-6 space-y-6">
                                 {/* Avatar utilisateur */}
                                 <div className="text-center">
-                                    <div className="mx-auto h-20 w-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-semibold">
-                                        {data.name ? data.name.charAt(0).toUpperCase() : user.name.charAt(0).toUpperCase()}
+                                    <div className="mx-auto h-20 w-20 rounded-full overflow-hidden bg-blue-500 flex items-center justify-center">
+                                        {data.avatar ? (
+                                            <img 
+                                                src={URL.createObjectURL(data.avatar)} 
+                                                alt="Aperçu avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : user.avatar_url ? (
+                                            <img 
+                                                src={user.avatar_url} 
+                                                alt={user.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-white text-2xl font-semibold">
+                                                {data.name ? data.name.charAt(0).toUpperCase() : user.name.charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                     </div>
                                     <h4 className="mt-2 text-lg font-medium text-gray-900">
                                         {data.name || 'Non défini'}
@@ -359,11 +439,11 @@ export default function EditUser({ user, roles }) {
                                         <h4 className="text-sm font-medium text-gray-700">Statut</h4>
                                         <div className="mt-1">
                                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                                data.status 
+                                                data.status === 1 
                                                     ? 'bg-green-100 text-green-800' 
                                                     : 'bg-red-100 text-red-800'
                                             }`}>
-                                                {data.status ? 'Actif' : 'Inactif'}
+                                                {data.status === 1 ? 'Actif' : 'Inactif'}
                                             </span>
                                         </div>
                                     </div>

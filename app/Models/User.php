@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'email_verified_at',
         'status',
+        'avatar',
         'last_login_at'
     ];
 
@@ -37,6 +38,17 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * The attributes that should be appended to the model's array form.
+     *
+     * @var array<string>
+     */
+    protected $appends = [
+        'avatar_url',
+        'default_avatar_url',
+        'formatted_last_login'
     ];
 
     /**
@@ -52,6 +64,66 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'status' => 'integer',
         ];
+    }
+
+    /**
+     * Get the full URL for the user's avatar
+     *
+     * @return string
+     */
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar && \Storage::disk('public')->exists($this->avatar)) {
+            return \Storage::url($this->avatar);
+        }
+        
+        // Image par défaut avec initiales
+        return $this->default_avatar_url;
+    }
+
+    /**
+     * Get default avatar URL with user initials
+     *
+     * @return string
+     */
+    public function getDefaultAvatarUrlAttribute()
+    {
+        return $this->getDefaultAvatarUrl();
+    }
+
+    /**
+     * Get default avatar URL with user initials
+     *
+     * @return string
+     */
+    public function getDefaultAvatarUrl()
+    {
+        $initials = strtoupper(substr($this->name, 0, 1));
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&color=7F9CF5&background=EBF4FF&size=200";
+    }
+
+    /**
+     * Get formatted last login date
+     *
+     * @return string|null
+     */
+    public function getFormattedLastLoginAttribute()
+    {
+        if (!$this->last_login_at) {
+            return 'Jamais connecté';
+        }
+
+        return $this->last_login_at->format('d F Y à H\hi');
+    }
+
+    /**
+     * Update last login timestamp
+     *
+     * @return void
+     */
+    public function updateLastLogin()
+    {
+        $this->update(['last_login_at' => now()]);
     }
 
     public function ecommerceCustomer()

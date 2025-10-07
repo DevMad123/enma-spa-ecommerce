@@ -48,6 +48,7 @@ class UserController extends Controller
             'users' => $users,
             'roles' => $roles,
             'filters' => $request->only(['search', 'role', 'status']),
+            'currentUserId' => auth()->id(),
         ]);
     }
 
@@ -64,6 +65,12 @@ class UserController extends Controller
     {
         $validated = $request->validated();
         $validated['password'] = Hash::make($validated['password']);
+        
+        // Gérer l'upload de l'avatar
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        }
         
         $user = User::create($validated);
 
@@ -100,6 +107,18 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         $validated = $request->validated();
+        
+        // Gérer l'upload de l'avatar
+        if ($request->hasFile('avatar')) {
+            // Supprimer l'ancien avatar s'il existe
+            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                \Storage::disk('public')->delete($user->avatar);
+            }
+            
+            // Stocker le nouvel avatar
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        }
         
         // Only hash password if provided
         if ($request->filled('password')) {
@@ -233,5 +252,20 @@ class UserController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Delete user avatar
+     */
+    public function deleteAvatar(User $user)
+    {
+        if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+            \Storage::disk('public')->delete($user->avatar);
+            $user->update(['avatar' => null]);
+            
+            return back()->with('success', 'Avatar supprimé avec succès.');
+        }
+        
+        return back()->with('error', 'Aucun avatar à supprimer.');
     }
 }

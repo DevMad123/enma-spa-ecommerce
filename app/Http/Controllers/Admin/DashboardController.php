@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Sell;
+use App\Models\Notification;
+use App\Models\Setting;
 
 class DashboardController extends Controller
 {

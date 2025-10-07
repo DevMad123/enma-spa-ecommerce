@@ -18,12 +18,33 @@ export default function Create({ roles }) {
         password: '',
         password_confirmation: '',
         status: 1,
+        avatar: null,
         roles: [],
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.users.store'));
+        
+        // Créer un FormData pour gérer les fichiers
+        const formData = new FormData();
+        
+        // Ajouter tous les champs
+        Object.keys(data).forEach(key => {
+            if (key === 'roles') {
+                data[key].forEach(roleId => {
+                    formData.append('roles[]', roleId);
+                });
+            } else if (key === 'avatar' && data[key]) {
+                formData.append('avatar', data[key]);
+            } else if (key !== 'avatar') {
+                formData.append(key, data[key]);
+            }
+        });
+
+        post(route('admin.users.store'), {
+            data: formData,
+            forceFormData: true,
+        });
     };
 
     const handleRoleChange = (roleId) => {

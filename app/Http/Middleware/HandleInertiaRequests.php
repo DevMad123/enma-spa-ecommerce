@@ -37,6 +37,14 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
             'wishlistItems' => $user ? $user->wishlistItems()->with(['product.category', 'product.brand'])->get() : [],
+            'flash' => [
+                'upload_success' => $request->session()->get('upload_success'),
+                'upload_error' => $request->session()->get('upload_error'),
+                'delete_success' => $request->session()->get('delete_success'),
+                'delete_error' => $request->session()->get('delete_error'),
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
         ];
     }
 }

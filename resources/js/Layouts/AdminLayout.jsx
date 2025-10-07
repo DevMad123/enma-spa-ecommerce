@@ -107,7 +107,7 @@ export default function AdminLayout({ title, children }) {
             user={{
               name: auth?.user?.name || 'Admin',
               email: auth?.user?.email || 'admin@example.com',
-              avatar: auth?.user?.avatar || null,
+              avatar: auth?.user?.avatar_url || auth?.user?.default_avatar_url,
               role: 'Administrateur'
             }}
             title={pageTitle}

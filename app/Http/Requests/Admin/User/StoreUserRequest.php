@@ -27,6 +27,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'status' => ['required', Rule::in([1, 0, '1', '0'])],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'roles' => ['array'],
             'roles.*' => ['exists:roles,id'],
         ];
@@ -48,6 +49,9 @@ class StoreUserRequest extends FormRequest
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut doit être actif ou inactif.',
+            'avatar.image' => 'Le fichier doit être une image.',
+            'avatar.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
+            'avatar.max' => 'L\'image ne doit pas dépasser 2 Mo.',
             'roles.array' => 'Les rôles doivent être un tableau.',
             'roles.*.exists' => 'L\'un des rôles sélectionnés n\'existe pas.',
         ];

@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'id' => 3,
+            'id' => 1,
             'name' => 'Zura',
             'email' => 'zura@example.com',
             'password' => bcrypt('123.321A'),
@@ -36,16 +36,16 @@ class DatabaseSeeder extends Seeder
         //     ->hasTasks(30)
         //     ->create();
         $this->call([
-            RoleSeeder::class,
-            UserRoleSeeder::class,
-            BannerSeeder::class,
+            // RoleSeeder::class,
+            // UserRoleSeeder::class,
+            // BannerSeeder::class,
             // ProductCategorySeeder::class,
-            ProductSubCategorySeeder::class,
-            ProductColorSeeder::class,
-            ProductSizeSeeder::class,
+            // ProductSubCategorySeeder::class,
+            // ProductColorSeeder::class,
+            // ProductSizeSeeder::class,
             // SupplierSeeder::class,
             // ProductSeeder::class,
-            ProductImageSeeder::class,
+            // ProductImageSeeder::class,
             // CustomerSeeder::class,
         ]);
     }

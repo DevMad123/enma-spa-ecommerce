@@ -8,15 +8,23 @@ import {
   HiOutlineSearch,
   HiOutlineMoon,
   HiOutlineSun,
-  HiOutlineMenu
+  HiOutlineMenu,
+  HiOutlineMail,
+  HiOutlineShoppingCart,
+  HiOutlineUser
 } from "react-icons/hi";
 import { FiChevronDown } from "react-icons/fi";
 import defaultUser from "../../assets/front/imgs/default-user.png";
 
+const NOTIFICATION_ICONS = {
+  contact_message: HiOutlineMail,
+  new_order: HiOutlineShoppingCart,
+  new_user: HiOutlineUser,
+};
+
 export default function DashboardHeader({ 
   user = { name: "Admin", avatar: null },
   title = "Dashboard",
-  notifications = [],
   onSidebarToggle,
   showSearch = false
 }) {
@@ -25,10 +33,67 @@ export default function DashboardHeader({
   const [searchOpen, setSearchOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   
   const dropdownRef = useRef();
   const notificationRef = useRef();
   const searchRef = useRef();
+
+  // Charger les notifications
+  const loadNotifications = async () => {
+    if (notificationsLoading) return;
+    
+    setNotificationsLoading(true);
+    try {
+      const response = await fetch(route('admin.notifications.header'));
+      const data = await response.json();
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unread_count || 0);
+    } catch (error) {
+      console.error('Erreur lors du chargement des notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Charger les notifications au montage du composant
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  // Marquer une notification comme lue
+  const markAsRead = async (notificationId) => {
+    try {
+      await fetch(route('admin.notifications.read', notificationId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+      });
+      loadNotifications();
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error);
+    }
+  };
+
+  // Marquer toutes les notifications comme lues
+  const markAllAsRead = async () => {
+    try {
+      await fetch(route('admin.notifications.mark-all-read'), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+      });
+      loadNotifications();
+    } catch (error) {
+      console.error('Erreur lors du marquage de toutes comme lues:', error);
+    }
+  };
 
   // Ferme les dropdowns si on clique dehors
   useEffect(() => {
@@ -48,7 +113,10 @@ export default function DashboardHeader({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const getNotificationIcon = (type) => {
+    const IconComponent = NOTIFICATION_ICONS[type] || HiOutlineBell;
+    return IconComponent;
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
@@ -135,68 +203,118 @@ export default function DashboardHeader({
           {/* Notifications */}
           <div className="relative" ref={notificationRef}>
             <button
-              onClick={() => setNotificationOpen(!notificationOpen)}
+              onClick={() => {
+                setNotificationOpen(!notificationOpen);
+                if (!notificationOpen) {
+                  loadNotifications();
+                }
+              }}
               className="relative p-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               aria-label="Notifications"
             >
               <HiOutlineBell className="h-5 w-5" />
-              {unreadNotifications > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
 
             {/* Notifications dropdown */}
             {notificationOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in">
+              <div className="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  {unreadNotifications > 0 && (
-                    <span className="text-xs text-blue-600 font-medium">
-                      {unreadNotifications} non lue(s)
-                    </span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-blue-600 font-medium hover:text-blue-700"
+                    >
+                      Tout marquer comme lu
+                    </button>
                   )}
                 </div>
                 
                 <div className="max-h-96 overflow-y-auto">
-                  {notifications.length === 0 ? (
+                  {notificationsLoading ? (
+                    <div className="px-4 py-8 text-center text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
+                      <p className="mt-2">Chargement...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
                     <div className="px-4 py-8 text-center text-gray-500">
                       <HiOutlineBell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                       <p>Aucune notification</p>
                     </div>
                   ) : (
-                    notifications.slice(0, 5).map((notification, index) => (
-                      <div
-                        key={index}
-                        className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${
-                          !notification.read ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-blue-600' : 'bg-transparent'}`} />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {notification.time}
-                            </p>
+                    notifications.map((notification) => {
+                      const IconComponent = getNotificationIcon(notification.type);
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${
+                            !notification.is_read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              notification.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                              notification.color === 'green' ? 'bg-green-100 text-green-600' :
+                              notification.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              <IconComponent className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
+                                  {notification.title}
+                                </p>
+                                <div className="flex items-center space-x-2">
+                                  {!notification.is_read && (
+                                    <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                                  )}
+                                  <span className="text-xs text-gray-500">
+                                    {notification.time_ago}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="mt-1 text-sm text-gray-600">
+                                {notification.message}
+                              </p>
+                              <div className="mt-2 flex items-center space-x-2">
+                                {notification.action_url && (
+                                  <Link
+                                    href={notification.action_url}
+                                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                    onClick={() => setNotificationOpen(false)}
+                                  >
+                                    Voir
+                                  </Link>
+                                )}
+                                {!notification.is_read && (
+                                  <button
+                                    onClick={() => markAsRead(notification.id)}
+                                    className="text-xs text-gray-500 hover:text-gray-700"
+                                  >
+                                    Marquer comme lu
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
                 
-                {notifications.length > 5 && (
+                {notifications.length > 0 && (
                   <div className="px-4 py-3 border-t border-gray-100">
                     <Link
-                      href="/admin/notifications"
+                      href={route('admin.notifications.index')}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      onClick={() => setNotificationOpen(false)}
                     >
                       Voir toutes les notifications
                     </Link>
@@ -208,7 +326,7 @@ export default function DashboardHeader({
 
           {/* Settings */}
           <Link
-            href="/admin/settings"
+            href={route('admin.settings.index')}
             className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             aria-label="Paramètres"
           >
@@ -266,7 +384,7 @@ export default function DashboardHeader({
                   </Link>
                   
                   <Link
-                    href="/admin/settings"
+                    href={route('admin.settings.index')}
                     className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <HiOutlineCog className="h-5 w-5 text-gray-400" />

@@ -32,6 +32,8 @@ use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\NotificationController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
@@ -39,6 +41,47 @@ use App\Http\Controllers\ProfileController;
 // -------------------
 // Routes publiques
 // -------------------
+
+// Route de test pour les paramètres
+Route::get('/test-settings', function () {
+    return view('test-settings');
+})->name('test-settings');
+
+// Route de test pour l'API des paramètres
+Route::get('/test-settings-api', function () {
+    return view('test-settings-api');
+})->name('test-settings-api');
+
+// Route de debug pour les paramètres
+Route::get('/test-settings-debug', function () {
+    return view('test-settings-debug');
+})->name('test-settings-debug');
+
+// Route de test final pour les paramètres
+Route::get('/test-settings-final', function () {
+    return view('test-settings-final');
+})->name('test-settings-final');
+
+// Route de test pour simuler un upload réussi
+Route::get('/simulate-upload-success', function () {
+    return redirect()->route('admin.settings.test-messages')->with('upload_success', [
+        'message' => 'Test de fichier uploadé avec succès !',
+        'path' => 'settings/test.jpg',
+        'url' => '/storage/settings/test.jpg',
+        'filename' => 'test.jpg'
+    ]);
+})->name('simulate-upload-success');
+
+// Route pour simuler un upload vers la page principale
+Route::get('/simulate-upload-to-settings', function () {
+    return redirect()->route('admin.settings.index')->with('upload_success', [
+        'message' => 'Test de fichier uploadé avec succès !',
+        'path' => 'settings/test.jpg',
+        'url' => '/storage/settings/test.jpg',
+        'filename' => 'test.jpg'
+    ]);
+})->name('simulate-upload-to-settings');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home-2', [HomeController::class, 'index2'])->name('home-2');
 Route::get('/home-3', [HomeController::class, 'index3'])->name('home-3');
@@ -127,6 +170,33 @@ Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->na
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard admin
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Routes de test (à supprimer en production)
+    Route::get('/test-notifications', function () {
+        // Créer une notification de test
+        $notification = \App\Models\Notification::createContactMessage([
+            'sender_name' => 'Test Utilisateur',
+            'message' => 'Ceci est une notification de test créée via l\'URL /test-notifications'
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification de test créée avec succès !',
+            'notification' => $notification,
+            'total_notifications' => \App\Models\Notification::count(),
+            'unread_count' => \App\Models\Notification::unread()->count(),
+        ]);
+    });
+    
+    Route::get('/test-api', function () {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'API fonctionnelle !',
+            'timestamp' => now(),
+            'notifications_count' => \App\Models\Notification::count(),
+            'settings_count' => \App\Models\Setting::count(),
+        ]);
+    });
 
     // CRUD Produits (personnalisé)
     Route::prefix('products')->name('products.')->group(function () {
@@ -315,6 +385,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->middleware(['hasRole:admin'])->name('destroy');
         Route::patch('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware(['hasRole:admin'])->name('toggleStatus');
+        Route::delete('/{user}/avatar', [UserController::class, 'deleteAvatar'])->name('deleteAvatar');
     });
 
     // Routes Messages de Contact
@@ -333,6 +404,27 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::post('/bulk-delete', [AdminNewsletterController::class, 'bulkDelete'])->name('bulk-delete');
         Route::get('/export', [AdminNewsletterController::class, 'export'])->name('export');
         Route::get('/statistics', [AdminNewsletterController::class, 'statistics'])->name('statistics');
+    });
+
+    // Routes Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/header', [NotificationController::class, 'getForHeader'])->name('header');
+        Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
+        Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
+        Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [NotificationController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    // Routes Paramètres
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])->name('index');
+        Route::put('/', [SettingController::class, 'update'])->name('update');
+        Route::get('/get/{key}', [SettingController::class, 'getSetting'])->name('get');
+        Route::post('/upload-file', [SettingController::class, 'uploadFile'])->name('upload-file');
+        Route::delete('/delete-file', [SettingController::class, 'deleteFile'])->name('delete-file');
+        Route::get('/test-messages', [SettingController::class, 'testMessages'])->name('test-messages');
     });
 });
 

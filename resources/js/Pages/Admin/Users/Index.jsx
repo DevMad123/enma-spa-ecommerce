@@ -14,7 +14,7 @@ import {
     AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 
-export default function List({ users, roles, filters }) {
+export default function List({ users, roles, filters, currentUserId }) {
     const { flash } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [selectedRole, setSelectedRole] = useState(filters.role || '');
@@ -113,9 +113,11 @@ export default function List({ users, roles, filters }) {
             render: (user) => (
                 <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <UserIcon className="h-5 w-5 text-gray-500" />
-                        </div>
+                        <img 
+                            src={user.avatar_url || user.default_avatar_url} 
+                            alt={user.name}
+                            className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center"
+                        />
                     </div>
                     <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
@@ -159,7 +161,14 @@ export default function List({ users, roles, filters }) {
             label: 'Dernière connexion',
             render: (user) => (
                 <span className="text-sm text-gray-500">
-                    {user.last_login_at ? formatDate(user.last_login_at) : 'Jamais connecté'}
+                    {user.id === currentUserId 
+                        ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Utilisateur actuel
+                            </span>
+                        )
+                        : (user.last_login_at ? formatDate(user.last_login_at) : 'Jamais connecté')
+                    }
                 </span>
             )
         },
