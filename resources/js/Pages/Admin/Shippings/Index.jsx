@@ -21,7 +21,6 @@ import {
 
 export default function ShippingsList() {
     const { shippings, stats, filters, flash } = usePage().props;
-    const [showShippingModal, setShowShippingModal] = useState(false);
     const [editingShipping, setEditingShipping] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -98,7 +97,6 @@ export default function ShippingsList() {
 
     const handleEdit = (shipping) => {
         setEditingShipping(shipping);
-        setShowShippingModal(true);
     };
 
     const handleView = (shippingId) => {

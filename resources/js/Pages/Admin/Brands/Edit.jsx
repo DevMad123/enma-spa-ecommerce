@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
     ArrowLeftIcon,
@@ -10,12 +10,17 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function EditBrand({ brand }) {
-    const [imagePreview, setImagePreview] = useState(
-        brand.image ? (brand.image.startsWith('http') ? brand.image : `/${brand.image}`) : null
-    );
-    const [errors, setErrors] = useState({});
+    // Normaliser l'URL de l'image existante
+    const normalizeImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+        if (imagePath.startsWith('http')) return imagePath;
+        return imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    };
 
-    const { data, setData, post, processing } = useForm({
+    const [imagePreview, setImagePreview] = useState(normalizeImageUrl(brand.image));
+    const [imageDeleted, setImageDeleted] = useState(false);
+
+    const { data, setData, processing, errors } = useForm({
         name: brand.name || '',
         description: brand.description || '',
         image: null,
@@ -27,40 +32,57 @@ export default function EditBrand({ brand }) {
         const file = e.target.files[0];
         if (file) {
             setData('image', file);
-            
-            // Créer un aperçu
+            setImageDeleted(false);
             const reader = new FileReader();
-            reader.onload = (e) => {
-                setImagePreview(e.target.result);
-            };
+            reader.onload = (e) => setImagePreview(e.target.result);
             reader.readAsDataURL(file);
         }
     };
 
     const removeImage = () => {
         setData('image', null);
-        setImagePreview(brand.image ? (brand.image.startsWith('http') ? brand.image : `/${brand.image}`) : null);
-        document.getElementById('image').value = '';
+        setImagePreview(null);
+        setImageDeleted(true);
+        // Reset file input
+        const fileInput = document.getElementById('image');
+        if (fileInput) fileInput.value = '';
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setErrors({});
-
-        const formData = new FormData();
-        formData.append('name', data.name);
-        formData.append('description', data.description);
-        formData.append('status', data.status ? '1' : '0');
-        formData.append('_method', 'PUT');
         
-        if (data.image) {
-            formData.append('image', data.image);
+        // Préparer FormData pour l'upload de fichiers
+        const formData = new FormData();
+        
+        // Ajouter tous les champs du formulaire
+        Object.keys(data).forEach(key => {
+            if (key === 'image' && data[key]) {
+                formData.append(key, data[key]);
+            } else if (key !== 'image') {
+                formData.append(key, data[key]);
+            }
+        });
+
+        // Ajouter le flag de suppression d'image si nécessaire
+        if (imageDeleted) {
+            formData.append('image_deleted', '1');
         }
 
-        post(route('admin.brands.update', brand.id), {
-            data: formData,
+        console.log('📦 Données envoyées:', Object.fromEntries(formData));
+
+        // Envoyer via router.post pour supporter l'upload de fichiers
+        router.post(route('admin.brands.update', brand.id), formData, {
+            onStart: () => {
+                console.log('🚀 Début de la requête PUT');
+            },
+            onSuccess: (data) => {
+                console.log('✅ Succès:', data);
+            },
             onError: (errors) => {
-                setErrors(errors);
+                console.error('❌ Erreurs:', errors);
+            },
+            onFinish: () => {
+                console.log('🏁 Requête terminée');
             }
         });
     };
@@ -209,14 +231,7 @@ export default function EditBrand({ brand }) {
                                                                 htmlFor="image"
                                                                 className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
                                                             >
-                                                                <span>Télécharger un nouveau logo</span>
-                                                                <input
-                                                                    id="image"
-                                                                    type="file"
-                                                                    className="sr-only"
-                                                                    accept="image/*"
-                                                                    onChange={handleImageChange}
-                                                                />
+                                                                <span>Télécharger un logo</span>
                                                             </label>
                                                             <p className="pl-1">ou glisser-déposer</p>
                                                         </div>
@@ -224,6 +239,16 @@ export default function EditBrand({ brand }) {
                                                     </div>
                                                 </div>
                                             )}
+                                            
+                                            {/* Input file toujours présent */}
+                                            <input
+                                                id="image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                            
                                             {errors.image && (
                                                 <p className="text-sm text-red-600">{errors.image}</p>
                                             )}

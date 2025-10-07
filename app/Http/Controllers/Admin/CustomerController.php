@@ -10,6 +10,8 @@ use App\Models\Sell;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
@@ -22,15 +24,25 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Ecommerce_customer::query()->with(['sells']);
+        $query = Ecommerce_customer::query()->whereNull('deleted_at');
 
-        // Filtres
+        // Ajouter le comptage des commandes
+        $query->withCount('sells');
+
+        // Recherche globale
         if ($request->filled('search')) {
-            $query->search($request->search);
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', '%' . $search . '%')
+                  ->orWhere('last_name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('phone_one', 'like', '%' . $search . '%');
+            });
         }
 
+        // Filtres par statut
         if ($request->filled('status') && $request->status !== '') {
-            $query->where('status', $request->status);
+            $query->where('status', $request->boolean('status'));
         }
 
         // Tri
@@ -39,7 +51,7 @@ class CustomerController extends Controller
         $query->orderBy($sort, $direction);
 
         // Pagination
-        $perPage = $request->get('perPage', 15);
+        $perPage = $request->get('per_page', 15);
         $customerList = $query->paginate($perPage)->appends($request->all());
 
         // Enrichir les données avec les statistiques
@@ -47,203 +59,234 @@ class CustomerController extends Controller
             $customer->total_orders = $customer->getTotalOrdersCount();
             $customer->total_amount = $customer->getTotalOrdersAmount();
             $customer->last_order_date = $customer->getLastOrderDate();
+            $customer->full_name = $customer->first_name . ' ' . $customer->last_name;
             return $customer;
         });
 
+        // Calcul des statistiques
+        $stats = [
+            'total_customers' => Ecommerce_customer::whereNull('deleted_at')->count(),
+            'active_customers' => Ecommerce_customer::whereNull('deleted_at')->where('status', true)->count(),
+            'inactive_customers' => Ecommerce_customer::whereNull('deleted_at')->where('status', false)->count(),
+            'customers_with_orders' => Ecommerce_customer::whereNull('deleted_at')->has('sells')->count(),
+        ];
+
         return Inertia::render('Admin/Customers/Index', [
-            'title' => 'Customer Management',
-            'customers' => $customerList,
+            'title' => 'Gestion des clients',
+            'customerList' => $customerList,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->search,
                 'status' => $request->status,
-                'perPage' => $perPage,
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
             ],
             'flash' => [
-                'success' => session('flash.success'),
-                'error' => session('flash.error'),
+                'success' => session('success'),
+                'error' => session('error'),
             ],
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new customer.
+     */
+    public function create()
+    {
+        return Inertia::render('Admin/Customers/Create', [
+            'title' => 'Nouveau client',
         ]);
     }
 
     /**
      * Store a newly created customer in storage.
      */
-    public function store(StoreCustomerRequest $request)
+    public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:ecommerce_customers,email',
+                'phone_one' => 'required|string|max:20',
+                'phone_two' => 'nullable|string|max:20',
+                'present_address' => 'required|string',
+                'permanent_address' => 'nullable|string',
+                'password' => 'required|string|min:8|confirmed',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'status' => 'nullable',
+            ]);
 
-            $validatedData = $request->validated();
-
-            // Hash du mot de passe
-            $validatedData['password'] = Hash::make($validatedData['password']);
-
-            // Gestion de l'image
+            $imagePath = null;
             if ($request->hasFile('image')) {
-                $validatedData['image'] = $this->handleImageUpload($request->file('image'));
+                $imagePath = $this->customerImageSave($request->file('image'));
             }
 
-            // Audit trail
-            $validatedData['created_by'] = auth()->id();
-            $validatedData['updated_by'] = auth()->id();
-
-            $customer = Ecommerce_customer::create($validatedData);
+            $customer = Ecommerce_customer::create([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'phone_one' => $validated['phone_one'],
+                'phone_two' => $validated['phone_two'] ?? null,
+                'present_address' => $validated['present_address'],
+                'permanent_address' => $validated['permanent_address'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'image' => $imagePath,
+                'status' => $request->boolean('status'),
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
 
             DB::commit();
 
-            return redirect()->back()->with('flash.success', 'Customer created successfully!');
-
+            return redirect()->route('admin.customers.index')->with([
+                'success' => 'Client créé avec succès!'
+            ]);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error creating customer: ' . $e->getMessage());
-            return redirect()->back()->with('flash.error', 'Failed to create customer. Please try again.');
+            Log::error('Erreur lors de la création du client: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la création du client'])->withInput();
         }
+    }
+
+    /**
+     * Show the form for editing the specified customer.
+     */
+    public function edit(Ecommerce_customer $customer)
+    {
+        return Inertia::render('Admin/Customers/Edit', [
+            'title' => 'Modifier le client - ' . $customer->first_name . ' ' . $customer->last_name,
+            'customer' => $customer,
+        ]);
     }
 
     /**
      * Display the specified customer.
      */
-    public function show(Request $request, $id)
+    public function show(Ecommerce_customer $customer)
     {
-        $customer = Ecommerce_customer::with([
-            'sells' => function($query) {
-                $query->with(['sellDetails.product', 'paymentInfo'])
-                      ->orderBy('created_at', 'desc');
-            }
-        ])->findOrFail($id);
-
-        // Statistiques du client
-        $stats = [
-            'total_orders' => $customer->getTotalOrdersCount(),
-            'total_amount' => $customer->getTotalOrdersAmount(),
-            'last_order_date' => $customer->getLastOrderDate(),
-            'average_order_value' => $customer->total_orders > 0 
-                ? $customer->getTotalOrdersAmount() / $customer->total_orders 
-                : 0,
-        ];
-
-        // Filtres pour l'historique des commandes
-        $ordersQuery = $customer->sells();
-
-        if ($request->filled('order_search')) {
-            $ordersQuery->where('invoice_no', 'like', '%' . $request->order_search . '%');
-        }
-
-        if ($request->filled('order_status')) {
-            $ordersQuery->where('status', $request->order_status);
-        }
-
-        $orders = $ordersQuery->with(['sellDetails.product', 'paymentInfo'])
-                             ->orderBy('created_at', 'desc')
-                             ->paginate(10)
-                             ->appends($request->all());
-
-        return Inertia::render('Admin/Customers/show', [
-            'title' => 'Customer Details',
+        return Inertia::render('Admin/Customers/Show', [
+            'title' => 'Client - ' . $customer->first_name . ' ' . $customer->last_name,
             'customer' => $customer,
-            'stats' => $stats,
-            'orders' => $orders,
-            'filters' => [
-                'order_search' => $request->order_search,
-                'order_status' => $request->order_status,
-            ],
         ]);
     }
 
     /**
      * Update the specified customer in storage.
      */
-    public function update(UpdateCustomerRequest $request, $id)
+    public function update(Request $request, Ecommerce_customer $customer)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:ecommerce_customers,email,' . $customer->id,
+                'phone_one' => 'required|string|max:20',
+                'phone_two' => 'nullable|string|max:20',
+                'present_address' => 'required|string',
+                'permanent_address' => 'nullable|string',
+                'password' => 'nullable|string|min:8|confirmed',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'status' => 'nullable',
+            ]);
 
-            $customer = Ecommerce_customer::findOrFail($id);
-            $validatedData = $request->validated();
-
-            // Gestion du mot de passe
-            if (!empty($validatedData['password'])) {
-                $validatedData['password'] = Hash::make($validatedData['password']);
-            } else {
-                unset($validatedData['password']);
-            }
-
-            // Gestion de l'image
+            // Gérer l'image
+            $imagePath = $customer->image;
             if ($request->hasFile('image')) {
                 // Supprimer l'ancienne image
-                if ($customer->image && Storage::exists('public/' . $customer->image)) {
-                    Storage::delete('public/' . $customer->image);
+                if ($customer->image && Storage::disk('public')->exists(str_replace('storage/', '', $customer->image))) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $customer->image));
                 }
-                $validatedData['image'] = $this->handleImageUpload($request->file('image'));
-            } elseif ($request->boolean('remove_image')) {
-                // Supprimer l'image si demandé
-                if ($customer->image && Storage::exists('public/' . $customer->image)) {
-                    Storage::delete('public/' . $customer->image);
-                }
-                $validatedData['image'] = null;
+                $imagePath = $this->customerImageSave($request->file('image'));
             }
 
-            // Audit trail
-            $validatedData['updated_by'] = auth()->id();
+            $updateData = [
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'phone_one' => $validated['phone_one'],
+                'phone_two' => $validated['phone_two'] ?? null,
+                'present_address' => $validated['present_address'],
+                'permanent_address' => $validated['permanent_address'] ?? null,
+                'image' => $imagePath,
+                'status' => $request->boolean('status'),
+                'updated_by' => auth()->id(),
+            ];
 
-            // Nettoyer les données avant la mise à jour
-            unset($validatedData['remove_image']);
-            unset($validatedData['password_confirmation']);
+            // Gestion du mot de passe
+            if (!empty($validated['password'])) {
+                $updateData['password'] = Hash::make($validated['password']);
+            }
 
-            $customer->update($validatedData);
+            $customer->update($updateData);
 
             DB::commit();
 
-            return redirect()->back()->with('flash.success', 'Customer updated successfully!');
-
+            return redirect()->route('admin.customers.index')->with([
+                'success' => 'Client modifié avec succès!'
+            ]);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error updating customer: ' . $e->getMessage());
-            return redirect()->back()->with('flash.error', 'Failed to update customer. Please try again.');
+            Log::error('Erreur lors de la modification du client: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la modification du client'])->withInput();
         }
     }
 
     /**
-     * Remove the specified customer from storage.
+     * Remove the specified customer from storage (soft delete).
      */
-    public function destroy($id)
+    public function destroy(Ecommerce_customer $customer)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $customer = Ecommerce_customer::findOrFail($id);
-
-            // Vérifier s'il y a des commandes liées
-            $hasOrders = $customer->sells()->exists();
-            
-            if ($hasOrders) {
-                // Soft delete si il y a des commandes
-                $customer->update([
-                    'deleted_by' => auth()->id(),
-                ]);
-                $customer->delete();
-                $message = 'Customer deactivated successfully (has order history).';
-            } else {
-                // Supprimer l'image
-                if ($customer->image && Storage::exists('public/' . $customer->image)) {
-                    Storage::delete('public/' . $customer->image);
-                }
-                // Hard delete si pas de commandes
-                $customer->forceDelete();
-                $message = 'Customer deleted permanently.';
+            // Vérifier si le client a des commandes
+            if ($customer->sells()->count() > 0) {
+                return back()->withErrors(['error' => 'Impossible de supprimer ce client car il a ' . $customer->sells()->count() . ' commande(s) associée(s).']);
             }
+
+            // Utiliser la méthode delete() du trait SoftDeletes
+            $customer->delete();
 
             DB::commit();
 
-            return redirect()->back()->with('flash.success', $message);
-
+            return redirect()->route('admin.customers.index')->with([
+                'success' => 'Client supprimé avec succès!'
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error deleting customer: ' . $e->getMessage());
-            return redirect()->back()->with('flash.error', 'Failed to delete customer. Please try again.');
+            Log::error('Erreur lors de la suppression du client: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression du client']);
         }
+    }
+
+    /**
+     * Save and optimize the customer image.
+     */
+    protected function customerImageSave($image)
+    {
+        if ($image) {
+            $fileName = "customer-" . time() . rand(1000, 9999) . '.webp';
+            $filePath = 'customer_images/' . $fileName;
+
+            $imageManager = new ImageManager(new GdDriver());
+            $img = $imageManager->read($image);
+            $img->resize(300, 300);
+            $encodedImageContent = $img->toWebp(70);
+
+            Storage::disk('public')->put($filePath, $encodedImageContent);
+
+            return 'storage/' . $filePath;
+        }
+        return null;
     }
 
     /**

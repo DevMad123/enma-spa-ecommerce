@@ -1,30 +1,29 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { 
-    UserIcon, 
     ArrowLeftIcon,
+    UserIcon,
     EyeIcon,
-    EyeSlashIcon
+    EyeSlashIcon,
+    ShieldCheckIcon,
+    UserCircleIcon,
+    BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 
-export default function Edit({ user, roles }) {
+export default function EditUser({ user, roles }) {
     const [showPassword, setShowPassword] = useState(false);
-    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
+    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, processing, errors } = useForm({
         name: user.name || '',
         email: user.email || '',
         password: '',
         password_confirmation: '',
-        status: user.status || 1,
+        status: user.status === 1 || user.status === true || user.status === '1',
         roles: user.roles ? user.roles.map(role => role.id) : [],
+        _method: 'PUT',
     });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        put(route('admin.users.update', user.id));
-    };
 
     const handleRoleChange = (roleId) => {
         const newRoles = data.roles.includes(roleId)
@@ -32,6 +31,43 @@ export default function Edit({ user, roles }) {
             : [...data.roles, roleId];
         
         setData('roles', newRoles);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        
+        // Préparer FormData pour la cohérence avec les autres entités
+        const formData = new FormData();
+        
+        // Ajouter tous les champs du formulaire
+        Object.keys(data).forEach(key => {
+            if (key === 'roles') {
+                // Ajouter chaque rôle individuellement
+                data[key].forEach(roleId => {
+                    formData.append('roles[]', roleId);
+                });
+            } else {
+                formData.append(key, data[key]);
+            }
+        });
+
+        console.log('📦 Données envoyées:', Object.fromEntries(formData));
+
+        // Envoyer via router.post pour la cohérence
+        router.post(route('admin.users.update', user.id), formData, {
+            onStart: () => {
+                console.log('🚀 Début de la requête PUT');
+            },
+            onSuccess: (data) => {
+                console.log('✅ Succès:', data);
+            },
+            onError: (errors) => {
+                console.error('❌ Erreurs:', errors);
+            },
+            onFinish: () => {
+                console.log('🏁 Requête terminée');
+            }
+        });
     };
 
     const formatDate = (dateString) => {
@@ -46,72 +82,53 @@ export default function Edit({ user, roles }) {
 
     return (
         <AdminLayout>
-            <Head title={`Modifier ${user.name}`} />
-
-            <div className="py-6">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    {/* Header */}
-                    <div className="bg-white shadow rounded-lg">
-                        <div className="px-4 py-5 sm:p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <UserIcon className="h-6 w-6 text-gray-400 mr-3" />
-                                    <div>
-                                        <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                            Modifier l'utilisateur
-                                        </h3>
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            Modifiez les informations de {user.name}.
-                                        </p>
-                                    </div>
-                                </div>
-                                <Link
-                                    href={route('admin.users.index')}
-                                    className="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                                    Retour
-                                </Link>
-                            </div>
-
-                            {/* User Info Card */}
-                            <div className="mt-6 bg-gray-50 rounded-lg p-4">
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex-shrink-0 h-12 w-12">
-                                        <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-lg">
-                                            {user.name.charAt(0).toUpperCase()}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-medium text-gray-900">
-                                            Utilisateur #{user.id}
-                                        </h4>
-                                        <p className="text-sm text-gray-500">
-                                            Créé le {formatDate(user.created_at)}
-                                        </p>
-                                        {user.email_verified_at && (
-                                            <p className="text-sm text-green-600">
-                                                ✓ Email vérifié le {formatDate(user.email_verified_at)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+            <Head title={`Modifier: ${user.name}`} />
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <Link
+                                href={route('admin.users.index')}
+                                className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
+                            >
+                                <ArrowLeftIcon className="h-5 w-5 mr-2" />
+                                Retour aux utilisateurs
+                            </Link>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <Link
+                                href={route('admin.users.show', user.id)}
+                                className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                            >
+                                <EyeIcon className="h-4 w-4 mr-2" />
+                                Voir
+                            </Link>
                         </div>
                     </div>
+                    <div className="mt-4">
+                        <h1 className="text-3xl font-bold text-gray-900">Modifier l'utilisateur</h1>
+                        <p className="mt-2 text-gray-600">{user.name}</p>
+                    </div>
+                </div>
 
-                    {/* Form */}
-                    <div className="mt-6 bg-white shadow rounded-lg">
-                        <form onSubmit={handleSubmit} className="px-4 py-5 sm:p-6 space-y-6">
-                            {/* Basic Information */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h4 className="text-base font-medium text-gray-900 mb-4">
-                                    Informations de base
-                                </h4>
-                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                    {/* Name */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Formulaire principal */}
+                    <div className="lg:col-span-2">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Informations de base */}
+                            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center">
+                                        <UserCircleIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                        <h3 className="text-lg font-medium text-gray-900">Informations de base</h3>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-6 space-y-6">
+                                    {/* Nom complet */}
                                     <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                                             Nom complet *
                                         </label>
                                         <input
@@ -119,7 +136,7 @@ export default function Edit({ user, roles }) {
                                             id="name"
                                             value={data.name}
                                             onChange={(e) => setData('name', e.target.value)}
-                                            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                                            className={`block w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                                                 errors.name ? 'border-red-300' : 'border-gray-300'
                                             }`}
                                             placeholder="Ex: Jean Dupont"
@@ -131,7 +148,7 @@ export default function Edit({ user, roles }) {
 
                                     {/* Email */}
                                     <div>
-                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                                             Adresse email *
                                         </label>
                                         <input
@@ -139,7 +156,7 @@ export default function Edit({ user, roles }) {
                                             id="email"
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
-                                            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                                            className={`block w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                                                 errors.email ? 'border-red-300' : 'border-gray-300'
                                             }`}
                                             placeholder="Ex: jean.dupont@example.com"
@@ -151,27 +168,30 @@ export default function Edit({ user, roles }) {
                                 </div>
                             </div>
 
-                            {/* Password Section */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h4 className="text-base font-medium text-gray-900 mb-4">
-                                    Changer le mot de passe
-                                </h4>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    Laissez vide si vous ne souhaitez pas changer le mot de passe.
-                                </p>
-                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                    {/* New Password */}
+                            {/* Mot de passe */}
+                            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center">
+                                        <ShieldCheckIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                        <h3 className="text-lg font-medium text-gray-900">Changer le mot de passe</h3>
+                                    </div>
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Laissez vide si vous ne souhaitez pas changer le mot de passe.
+                                    </p>
+                                </div>
+                                <div className="px-6 py-6 space-y-6">
+                                    {/* Nouveau mot de passe */}
                                     <div>
-                                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                                             Nouveau mot de passe
                                         </label>
-                                        <div className="mt-1 relative">
+                                        <div className="relative">
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
                                                 id="password"
                                                 value={data.password}
                                                 onChange={(e) => setData('password', e.target.value)}
-                                                className={`block w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                                                className={`block w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                                                     errors.password ? 'border-red-300' : 'border-gray-300'
                                                 }`}
                                                 placeholder="••••••••"
@@ -193,18 +213,18 @@ export default function Edit({ user, roles }) {
                                         )}
                                     </div>
 
-                                    {/* Password Confirmation */}
+                                    {/* Confirmation mot de passe */}
                                     <div>
-                                        <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700 mb-2">
                                             Confirmer le nouveau mot de passe
                                         </label>
-                                        <div className="mt-1 relative">
+                                        <div className="relative">
                                             <input
-                                                type={showPasswordConfirmation ? 'text' : 'password'}
+                                                type={showPasswordConfirm ? 'text' : 'password'}
                                                 id="password_confirmation"
                                                 value={data.password_confirmation}
                                                 onChange={(e) => setData('password_confirmation', e.target.value)}
-                                                className={`block w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                                                className={`block w-full px-3 py-2 pr-10 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                                                     errors.password_confirmation ? 'border-red-300' : 'border-gray-300'
                                                 }`}
                                                 placeholder="••••••••"
@@ -212,9 +232,9 @@ export default function Edit({ user, roles }) {
                                             <button
                                                 type="button"
                                                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                                onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
+                                                onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                                             >
-                                                {showPasswordConfirmation ? (
+                                                {showPasswordConfirm ? (
                                                     <EyeSlashIcon className="h-4 w-4 text-gray-400" />
                                                 ) : (
                                                     <EyeIcon className="h-4 w-4 text-gray-400" />
@@ -228,84 +248,180 @@ export default function Edit({ user, roles }) {
                                 </div>
                             </div>
 
-                            {/* Status */}
-                            <div className="border-b border-gray-200 pb-6">
-                                <h4 className="text-base font-medium text-gray-900 mb-4">
-                                    Configuration
-                                </h4>
-                                <div>
-                                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                                        Statut *
-                                    </label>
-                                    <select
-                                        id="status"
-                                        value={data.status}
-                                        onChange={(e) => setData('status', e.target.value)}
-                                        className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                                            errors.status ? 'border-red-300' : 'border-gray-300'
-                                        }`}
-                                    >
-                                        <option value={1}>Actif</option>
-                                        <option value={0}>Inactif</option>
-                                    </select>
-                                    {errors.status && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.status}</p>
+                            {/* Statut */}
+                            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center">
+                                        <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                        <h3 className="text-lg font-medium text-gray-900">Configuration</h3>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-6">
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            id="status"
+                                            checked={data.status}
+                                            onChange={(e) => setData('status', e.target.checked)}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                        <label htmlFor="status" className="ml-2 block text-sm text-gray-900">
+                                            Utilisateur actif
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Rôles et permissions */}
+                            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center">
+                                        <ShieldCheckIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                        <h3 className="text-lg font-medium text-gray-900">Rôles et Permissions</h3>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-6">
+                                    <div className="space-y-3">
+                                        {roles && roles.length > 0 ? (
+                                            roles.map((role) => (
+                                                <div key={role.id} className="flex items-start">
+                                                    <input
+                                                        id={`role_${role.id}`}
+                                                        type="checkbox"
+                                                        checked={data.roles.includes(role.id)}
+                                                        onChange={() => handleRoleChange(role.id)}
+                                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+                                                    />
+                                                    <div className="ml-3">
+                                                        <label htmlFor={`role_${role.id}`} className="block text-sm font-medium text-gray-900">
+                                                            {role.name}
+                                                        </label>
+                                                        {role.description && (
+                                                            <p className="text-sm text-gray-500">
+                                                                {role.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-gray-500">Aucun rôle disponible.</p>
+                                        )}
+                                    </div>
+                                    {errors.roles && (
+                                        <p className="mt-2 text-sm text-red-600">{errors.roles}</p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Roles */}
-                            <div>
-                                <h4 className="text-base font-medium text-gray-900 mb-4">
-                                    Rôles et Permissions
-                                </h4>
-                                <div className="space-y-3">
-                                    {roles && roles.length > 0 ? (
-                                        roles.map((role) => (
-                                            <div key={role.id} className="flex items-center">
-                                                <input
-                                                    id={`role_${role.id}`}
-                                                    type="checkbox"
-                                                    checked={data.roles.includes(role.id)}
-                                                    onChange={() => handleRoleChange(role.id)}
-                                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                                />
-                                                <label htmlFor={`role_${role.id}`} className="ml-3 block text-sm font-medium text-gray-700">
-                                                    {role.name}
-                                                    {role.description && (
-                                                        <span className="text-gray-500 font-normal ml-2">
-                                                            - {role.description}
-                                                        </span>
-                                                    )}
-                                                </label>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-gray-500">Aucun rôle disponible.</p>
-                                    )}
-                                </div>
-                                {errors.roles && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.roles}</p>
-                                )}
-                            </div>
-
-                            {/* Submit Buttons */}
-                            <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                            {/* Actions */}
+                            <div className="flex items-center justify-end space-x-4 bg-gray-50 px-6 py-4 rounded-lg border">
                                 <Link
                                     href={route('admin.users.index')}
-                                    className="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                                 >
                                     Annuler
                                 </Link>
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                                 >
                                     {processing ? 'Modification...' : 'Modifier l\'utilisateur'}
                                 </button>
                             </div>
                         </form>
+                    </div>
+
+                    {/* Panneau d'aperçu */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-white shadow-sm rounded-lg border border-gray-200 sticky top-8">
+                            <div className="px-6 py-4 border-b border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-900">Aperçu</h3>
+                            </div>
+                            <div className="px-6 py-6 space-y-6">
+                                {/* Avatar utilisateur */}
+                                <div className="text-center">
+                                    <div className="mx-auto h-20 w-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-semibold">
+                                        {data.name ? data.name.charAt(0).toUpperCase() : user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <h4 className="mt-2 text-lg font-medium text-gray-900">
+                                        {data.name || 'Non défini'}
+                                    </h4>
+                                    <p className="text-sm text-gray-500">
+                                        {data.email || 'Non défini'}
+                                    </p>
+                                </div>
+
+                                {/* Informations */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="text-sm font-medium text-gray-700">Statut</h4>
+                                        <div className="mt-1">
+                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                data.status 
+                                                    ? 'bg-green-100 text-green-800' 
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {data.status ? 'Actif' : 'Inactif'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-medium text-gray-700">Rôles assignés</h4>
+                                        <div className="mt-1 space-y-1">
+                                            {data.roles.length > 0 ? (
+                                                data.roles.map(roleId => {
+                                                    const role = roles?.find(r => r.id === roleId);
+                                                    return role ? (
+                                                        <span key={roleId} className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 mr-1">
+                                                            {role.name}
+                                                        </span>
+                                                    ) : null;
+                                                })
+                                            ) : (
+                                                <span className="text-sm text-gray-500">Aucun rôle assigné</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-medium text-gray-700">Mot de passe</h4>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {data.password ? 'Sera modifié lors de la sauvegarde' : 'Inchangé'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Informations existantes */}
+                                <div className="pt-4 border-t border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-2">Informations système</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">ID:</span>
+                                            <span className="text-gray-900">#{user.id}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Créé le:</span>
+                                            <span className="text-gray-900 text-xs">{formatDate(user.created_at)}</span>
+                                        </div>
+                                        {user.email_verified_at && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Email vérifié:</span>
+                                                <span className="text-green-600 text-xs">✓ {formatDate(user.email_verified_at)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Rôles actuels:</span>
+                                            <span className="text-gray-900 text-xs">
+                                                {user.roles?.length || 0}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -240,11 +240,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Routes pour les clients
     Route::prefix('customers')->name('customers.')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::get('/create', [CustomerController::class, 'create'])->name('create');
         Route::get('/export/csv', [CustomerController::class, 'export'])->name('export');
         Route::post('/', [CustomerController::class, 'store'])->name('store');
-        Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
-        Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
-        Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
+        Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
 
         // Actions groupées
         Route::post('/bulk-delete', [CustomerController::class, 'bulkDelete'])->name('bulk-delete');

@@ -6,14 +6,11 @@ import {
     PhotoIcon,
     XMarkIcon,
     EyeIcon,
-    BuildingOfficeIcon,
     UserIcon,
-    EnvelopeIcon,
-    PhoneIcon,
-    MapPinIcon
+    EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
-export default function EditSupplier({ supplier }) {
+export default function EditCustomer({ customer }) {
     // Normaliser l'URL de l'image existante
     const normalizeImageUrl = (imagePath) => {
         if (!imagePath) return null;
@@ -21,22 +18,23 @@ export default function EditSupplier({ supplier }) {
         return imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     };
 
-    const [imagePreview, setImagePreview] = useState(normalizeImageUrl(supplier.image));
+    const [imagePreview, setImagePreview] = useState(normalizeImageUrl(customer.image));
     const [imageDeleted, setImageDeleted] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
     const { data, setData, processing, errors } = useForm({
-        supplier_name: supplier.supplier_name || '',
-        company_name: supplier.company_name || '',
-        supplier_email: supplier.supplier_email || '',
-        company_email: supplier.company_email || '',
-        supplier_phone_one: supplier.supplier_phone_one || '',
-        supplier_phone_two: supplier.supplier_phone_two || '',
-        company_phone: supplier.company_phone || '',
-        supplier_address: supplier.supplier_address || '',
-        company_address: supplier.company_address || '',
-        previous_due: supplier.previous_due || '',
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
+        email: customer.email || '',
+        phone_one: customer.phone_one || '',
+        phone_two: customer.phone_two || '',
+        present_address: customer.present_address || '',
+        permanent_address: customer.permanent_address || '',
+        password: '',
+        password_confirmation: '',
         image: null,
-        status: supplier.status === 1 || supplier.status === true || supplier.status === '1',
+        status: customer.status === 1 || customer.status === true || customer.status === '1',
         _method: 'PUT',
     });
 
@@ -83,7 +81,7 @@ export default function EditSupplier({ supplier }) {
         console.log('📦 Données envoyées:', Object.fromEntries(formData));
 
         // Envoyer via router.post pour supporter l'upload de fichiers
-        router.post(route('admin.suppliers.update', supplier.id), formData, {
+        router.post(route('admin.customers.update', customer.id), formData, {
             onStart: () => {
                 console.log('🚀 Début de la requête PUT');
             },
@@ -101,14 +99,14 @@ export default function EditSupplier({ supplier }) {
 
     return (
         <AdminLayout>
-            <Head title={`Modifier ${supplier.supplier_name}`} />
+            <Head title={`Modifier ${customer.first_name} ${customer.last_name}`} />
             
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <Link
-                            href={route('admin.suppliers.index')}
+                            href={route('admin.customers.index')}
                             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             <ArrowLeftIcon className="h-4 w-4 mr-2" />
@@ -116,16 +114,16 @@ export default function EditSupplier({ supplier }) {
                         </Link>
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">
-                                Modifier {supplier.supplier_name}
+                                Modifier {customer.first_name} {customer.last_name}
                             </h1>
                             <p className="mt-2 text-gray-600">
-                                Modifiez les informations du fournisseur
+                                Modifiez les informations du client
                             </p>
                         </div>
                     </div>
-                    {supplier?.id && (
+                    {customer?.id && (
                         <Link
-                            href={route('admin.suppliers.show', supplier.id)}
+                            href={route('admin.customers.show', customer.id)}
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             <EyeIcon className="h-4 w-4 mr-2" />
@@ -138,111 +136,111 @@ export default function EditSupplier({ supplier }) {
                     {/* Formulaire principal */}
                     <div className="lg:col-span-2">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Informations du contact */}
+                            {/* Informations personnelles */}
                             <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
                                 <div className="md:grid md:grid-cols-3 md:gap-6">
                                     <div className="md:col-span-1">
                                         <h3 className="text-lg font-medium leading-6 text-gray-900">
-                                            Informations du contact
+                                            Informations personnelles
                                         </h3>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            Les informations de la personne de contact chez le fournisseur.
+                                            Les informations de base du client.
                                         </p>
                                     </div>
                                     <div className="mt-5 md:mt-0 md:col-span-2">
                                         <div className="grid grid-cols-6 gap-6">
-                                            <div className="col-span-6">
-                                                <label htmlFor="supplier_name" className="block text-sm font-medium text-gray-700">
-                                                    Nom du contact *
+                                            <div className="col-span-6 sm:col-span-3">
+                                                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+                                                    Prénom *
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    id="supplier_name"
-                                                    value={data.supplier_name}
-                                                    onChange={(e) => setData('supplier_name', e.target.value)}
+                                                    id="first_name"
+                                                    value={data.first_name}
+                                                    onChange={(e) => setData('first_name', e.target.value)}
                                                     className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.supplier_name ? 'border-red-300' : ''
+                                                        errors.first_name ? 'border-red-300' : ''
                                                     }`}
-                                                    placeholder="Jean Dupont"
+                                                    placeholder="Jean"
                                                 />
-                                                {errors.supplier_name && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.supplier_name}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-6">
-                                                <label htmlFor="supplier_email" className="block text-sm font-medium text-gray-700">
-                                                    Email du contact *
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    id="supplier_email"
-                                                    value={data.supplier_email}
-                                                    onChange={(e) => setData('supplier_email', e.target.value)}
-                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.supplier_email ? 'border-red-300' : ''
-                                                    }`}
-                                                    placeholder="jean.dupont@entreprise.com"
-                                                />
-                                                {errors.supplier_email && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.supplier_email}</p>
+                                                {errors.first_name && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.first_name}</p>
                                                 )}
                                             </div>
 
                                             <div className="col-span-6 sm:col-span-3">
-                                                <label htmlFor="supplier_phone_one" className="block text-sm font-medium text-gray-700">
+                                                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
+                                                    Nom *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    id="last_name"
+                                                    value={data.last_name}
+                                                    onChange={(e) => setData('last_name', e.target.value)}
+                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                                                        errors.last_name ? 'border-red-300' : ''
+                                                    }`}
+                                                    placeholder="Dupont"
+                                                />
+                                                {errors.last_name && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.last_name}</p>
+                                                )}
+                                            </div>
+
+                                            <div className="col-span-6">
+                                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                                    Email *
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    id="email"
+                                                    value={data.email}
+                                                    onChange={(e) => setData('email', e.target.value)}
+                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                                                        errors.email ? 'border-red-300' : ''
+                                                    }`}
+                                                    placeholder="jean.dupont@example.com"
+                                                />
+                                                {errors.email && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                                                )}
+                                            </div>
+
+                                            <div className="col-span-6 sm:col-span-3">
+                                                <label htmlFor="phone_one" className="block text-sm font-medium text-gray-700">
                                                     Téléphone principal *
                                                 </label>
                                                 <input
                                                     type="tel"
-                                                    id="supplier_phone_one"
-                                                    value={data.supplier_phone_one}
-                                                    onChange={(e) => setData('supplier_phone_one', e.target.value)}
+                                                    id="phone_one"
+                                                    value={data.phone_one}
+                                                    onChange={(e) => setData('phone_one', e.target.value)}
                                                     className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.supplier_phone_one ? 'border-red-300' : ''
+                                                        errors.phone_one ? 'border-red-300' : ''
                                                     }`}
                                                     placeholder="06 12 34 56 78"
                                                 />
-                                                {errors.supplier_phone_one && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.supplier_phone_one}</p>
+                                                {errors.phone_one && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.phone_one}</p>
                                                 )}
                                             </div>
 
                                             <div className="col-span-6 sm:col-span-3">
-                                                <label htmlFor="supplier_phone_two" className="block text-sm font-medium text-gray-700">
+                                                <label htmlFor="phone_two" className="block text-sm font-medium text-gray-700">
                                                     Téléphone secondaire
                                                 </label>
                                                 <input
                                                     type="tel"
-                                                    id="supplier_phone_two"
-                                                    value={data.supplier_phone_two}
-                                                    onChange={(e) => setData('supplier_phone_two', e.target.value)}
+                                                    id="phone_two"
+                                                    value={data.phone_two}
+                                                    onChange={(e) => setData('phone_two', e.target.value)}
                                                     className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.supplier_phone_two ? 'border-red-300' : ''
+                                                        errors.phone_two ? 'border-red-300' : ''
                                                     }`}
                                                     placeholder="01 23 45 67 89"
                                                 />
-                                                {errors.supplier_phone_two && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.supplier_phone_two}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-6">
-                                                <label htmlFor="supplier_address" className="block text-sm font-medium text-gray-700">
-                                                    Adresse du contact
-                                                </label>
-                                                <textarea
-                                                    id="supplier_address"
-                                                    rows="3"
-                                                    value={data.supplier_address}
-                                                    onChange={(e) => setData('supplier_address', e.target.value)}
-                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.supplier_address ? 'border-red-300' : ''
-                                                    }`}
-                                                    placeholder="123 Rue de la Paix, 75001 Paris"
-                                                />
-                                                {errors.supplier_address && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.supplier_address}</p>
+                                                {errors.phone_two && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.phone_two}</p>
                                                 )}
                                             </div>
 
@@ -256,11 +254,11 @@ export default function EditSupplier({ supplier }) {
                                                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                                     />
                                                     <label htmlFor="status" className="ml-2 block text-sm text-gray-900">
-                                                        Fournisseur actif
+                                                        Client actif
                                                     </label>
                                                 </div>
                                                 <p className="mt-1 text-sm text-gray-500">
-                                                    Les fournisseurs inactifs ne peuvent pas être utilisés pour les commandes.
+                                                    Les clients inactifs ne peuvent pas se connecter.
                                                 </p>
                                             </div>
                                         </div>
@@ -268,112 +266,54 @@ export default function EditSupplier({ supplier }) {
                                 </div>
                             </div>
 
-                            {/* Informations de l'entreprise */}
+                            {/* Adresses */}
                             <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
                                 <div className="md:grid md:grid-cols-3 md:gap-6">
                                     <div className="md:col-span-1">
                                         <h3 className="text-lg font-medium leading-6 text-gray-900">
-                                            Informations de l'entreprise
+                                            Adresses
                                         </h3>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            Les informations officielles de l'entreprise fournisseur.
+                                            Les adresses de livraison et facturation.
                                         </p>
                                     </div>
                                     <div className="mt-5 md:mt-0 md:col-span-2">
                                         <div className="grid grid-cols-6 gap-6">
                                             <div className="col-span-6">
-                                                <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">
-                                                    Nom de l'entreprise
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    id="company_name"
-                                                    value={data.company_name}
-                                                    onChange={(e) => setData('company_name', e.target.value)}
-                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.company_name ? 'border-red-300' : ''
-                                                    }`}
-                                                    placeholder="Entreprise SARL"
-                                                />
-                                                {errors.company_name && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.company_name}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-6">
-                                                <label htmlFor="company_email" className="block text-sm font-medium text-gray-700">
-                                                    Email de l'entreprise
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    id="company_email"
-                                                    value={data.company_email}
-                                                    onChange={(e) => setData('company_email', e.target.value)}
-                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.company_email ? 'border-red-300' : ''
-                                                    }`}
-                                                    placeholder="contact@entreprise.com"
-                                                />
-                                                {errors.company_email && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.company_email}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-6">
-                                                <label htmlFor="company_phone" className="block text-sm font-medium text-gray-700">
-                                                    Téléphone de l'entreprise
-                                                </label>
-                                                <input
-                                                    type="tel"
-                                                    id="company_phone"
-                                                    value={data.company_phone}
-                                                    onChange={(e) => setData('company_phone', e.target.value)}
-                                                    className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.company_phone ? 'border-red-300' : ''
-                                                    }`}
-                                                    placeholder="01 23 45 67 89"
-                                                />
-                                                {errors.company_phone && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.company_phone}</p>
-                                                )}
-                                            </div>
-
-                                            <div className="col-span-6">
-                                                <label htmlFor="company_address" className="block text-sm font-medium text-gray-700">
-                                                    Adresse de l'entreprise
+                                                <label htmlFor="present_address" className="block text-sm font-medium text-gray-700">
+                                                    Adresse actuelle *
                                                 </label>
                                                 <textarea
-                                                    id="company_address"
+                                                    id="present_address"
                                                     rows="3"
-                                                    value={data.company_address}
-                                                    onChange={(e) => setData('company_address', e.target.value)}
+                                                    value={data.present_address}
+                                                    onChange={(e) => setData('present_address', e.target.value)}
                                                     className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.company_address ? 'border-red-300' : ''
+                                                        errors.present_address ? 'border-red-300' : ''
                                                     }`}
-                                                    placeholder="Adresse du siège social"
+                                                    placeholder="123 Rue de la Paix, 75001 Paris"
                                                 />
-                                                {errors.company_address && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.company_address}</p>
+                                                {errors.present_address && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.present_address}</p>
                                                 )}
                                             </div>
 
                                             <div className="col-span-6">
-                                                <label htmlFor="previous_due" className="block text-sm font-medium text-gray-700">
-                                                    Solde antérieur
+                                                <label htmlFor="permanent_address" className="block text-sm font-medium text-gray-700">
+                                                    Adresse permanente
                                                 </label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    id="previous_due"
-                                                    value={data.previous_due}
-                                                    onChange={(e) => setData('previous_due', e.target.value)}
+                                                <textarea
+                                                    id="permanent_address"
+                                                    rows="3"
+                                                    value={data.permanent_address}
+                                                    onChange={(e) => setData('permanent_address', e.target.value)}
                                                     className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
-                                                        errors.previous_due ? 'border-red-300' : ''
+                                                        errors.permanent_address ? 'border-red-300' : ''
                                                     }`}
-                                                    placeholder="0.00"
+                                                    placeholder="Si différente de l'adresse actuelle"
                                                 />
-                                                {errors.previous_due && (
-                                                    <p className="mt-2 text-sm text-red-600">{errors.previous_due}</p>
+                                                {errors.permanent_address && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.permanent_address}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -381,15 +321,96 @@ export default function EditSupplier({ supplier }) {
                                 </div>
                             </div>
 
-                            {/* Logo du fournisseur */}
+                            {/* Mot de passe */}
                             <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
                                 <div className="md:grid md:grid-cols-3 md:gap-6">
                                     <div className="md:col-span-1">
                                         <h3 className="text-lg font-medium leading-6 text-gray-900">
-                                            Logo du fournisseur
+                                            Mot de passe
                                         </h3>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            Changez le logo du fournisseur.
+                                            Laissez vide pour conserver le mot de passe actuel.
+                                        </p>
+                                    </div>
+                                    <div className="mt-5 md:mt-0 md:col-span-2">
+                                        <div className="grid grid-cols-6 gap-6">
+                                            <div className="col-span-6 sm:col-span-3">
+                                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                                    Nouveau mot de passe
+                                                </label>
+                                                <div className="mt-1 relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        id="password"
+                                                        value={data.password}
+                                                        onChange={(e) => setData('password', e.target.value)}
+                                                        className={`focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-10 shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                                                            errors.password ? 'border-red-300' : ''
+                                                        }`}
+                                                        placeholder="Minimum 8 caractères"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                                                        ) : (
+                                                            <EyeIcon className="h-5 w-5 text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                {errors.password && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                                                )}
+                                            </div>
+
+                                            <div className="col-span-6 sm:col-span-3">
+                                                <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
+                                                    Confirmer le nouveau mot de passe
+                                                </label>
+                                                <div className="mt-1 relative">
+                                                    <input
+                                                        type={showPasswordConfirm ? "text" : "password"}
+                                                        id="password_confirmation"
+                                                        value={data.password_confirmation}
+                                                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                                                        className={`focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-10 shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                                                            errors.password_confirmation ? 'border-red-300' : ''
+                                                        }`}
+                                                        placeholder="Répéter le nouveau mot de passe"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                                                    >
+                                                        {showPasswordConfirm ? (
+                                                            <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                                                        ) : (
+                                                            <EyeIcon className="h-5 w-5 text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                {errors.password_confirmation && (
+                                                    <p className="mt-2 text-sm text-red-600">{errors.password_confirmation}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Photo du client */}
+                            <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+                                <div className="md:grid md:grid-cols-3 md:gap-6">
+                                    <div className="md:col-span-1">
+                                        <h3 className="text-lg font-medium leading-6 text-gray-900">
+                                            Photo de profil
+                                        </h3>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            Changez la photo du client.
                                         </p>
                                     </div>
                                     <div className="mt-5 md:mt-0 md:col-span-2">
@@ -399,7 +420,7 @@ export default function EditSupplier({ supplier }) {
                                                     <img
                                                         src={imagePreview}
                                                         alt="Aperçu"
-                                                        className="h-32 w-32 object-cover rounded-lg border-2 border-gray-300"
+                                                        className="h-32 w-32 object-cover rounded-full border-2 border-gray-300"
                                                     />
                                                     <button
                                                         type="button"
@@ -418,7 +439,7 @@ export default function EditSupplier({ supplier }) {
                                                                 htmlFor="image"
                                                                 className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
                                                             >
-                                                                <span>Télécharger un logo</span>
+                                                                <span>Télécharger une photo</span>
                                                             </label>
                                                             <p className="pl-1">ou glisser-déposer</p>
                                                         </div>
@@ -447,7 +468,7 @@ export default function EditSupplier({ supplier }) {
                             {/* Actions */}
                             <div className="flex justify-end space-x-3">
                                 <Link
-                                    href={route('admin.suppliers.index')}
+                                    href={route('admin.customers.index')}
                                     className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                 >
                                     Annuler
@@ -472,37 +493,35 @@ export default function EditSupplier({ supplier }) {
                                     <div className="text-center">
                                         <img
                                             src={imagePreview}
-                                            alt="Logo"
-                                            className="h-20 w-20 object-cover rounded-lg mx-auto border"
+                                            alt="Photo"
+                                            className="h-20 w-20 object-cover rounded-full mx-auto border"
                                         />
                                     </div>
                                 )}
                                 
                                 {!imagePreview && (
                                     <div className="text-center">
-                                        <div className="h-20 w-20 bg-gray-100 rounded-lg mx-auto flex items-center justify-center">
-                                            <BuildingOfficeIcon className="h-8 w-8 text-gray-400" />
+                                        <div className="h-20 w-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center">
+                                            <UserIcon className="h-8 w-8 text-gray-400" />
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="text-center">
                                     <h4 className="font-semibold text-gray-900">
-                                        {data.supplier_name || 'Nom du fournisseur'}
+                                        {data.first_name || data.last_name ? 
+                                            `${data.first_name} ${data.last_name}`.trim() : 
+                                            'Nom du client'
+                                        }
                                     </h4>
-                                    {data.company_name && (
+                                    {data.email && (
                                         <p className="text-sm text-gray-500 mt-1">
-                                            {data.company_name}
+                                            {data.email}
                                         </p>
                                     )}
-                                    {data.supplier_email && (
+                                    {data.phone_one && (
                                         <p className="text-sm text-gray-500 mt-1">
-                                            {data.supplier_email}
-                                        </p>
-                                    )}
-                                    {data.supplier_phone_one && (
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            {data.supplier_phone_one}
+                                            {data.phone_one}
                                         </p>
                                     )}
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${
@@ -516,9 +535,9 @@ export default function EditSupplier({ supplier }) {
 
                                 <div className="border-t pt-4">
                                     <div className="text-center text-xs text-gray-500">
-                                        <p>Fournisseur depuis</p>
+                                        <p>Client depuis</p>
                                         <p className="font-medium text-gray-900">
-                                            {new Date(supplier.created_at).toLocaleDateString('fr-FR')}
+                                            {new Date(customer.created_at).toLocaleDateString('fr-FR')}
                                         </p>
                                     </div>
                                 </div>

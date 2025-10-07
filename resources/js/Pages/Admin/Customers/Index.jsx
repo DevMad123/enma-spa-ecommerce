@@ -1,601 +1,473 @@
-import React, { useState, useMemo } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { 
+import DataTable from '@/Components/DataTable';
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
     PencilIcon,
     TrashIcon,
-    UserIcon,
-    EnvelopeIcon,
-    PhoneIcon,
-    MapPinIcon,
+    BuildingOfficeIcon,
     CheckCircleIcon,
     XCircleIcon,
+    ArrowDownTrayIcon,
     FunnelIcon,
-    DocumentArrowDownIcon,
-    UsersIcon
+    ArchiveBoxIcon,
+    UserIcon,
+    EnvelopeIcon,
+    PhoneIcon
 } from '@heroicons/react/24/outline';
-import CustomerModal from "./CustomerModal";
 
-export default function Index({ customers, filters, flash }) {
-    const [showCustomerModal, setShowCustomerModal] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState(null);
+export default function CustomersList() {
+    const { customerList, filters, stats, flash } = usePage().props;
+    
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
-    const [statusFilter, setStatusFilter] = useState(filters?.status || '');
-    const [selectedItems, setSelectedItems] = useState([]);
-    const [sortField, setSortField] = useState(filters?.sort || 'created_at');
-    const [sortDirection, setSortDirection] = useState(filters?.direction || 'desc');
+    const [activeFilters, setActiveFilters] = useState({
+        status: filters?.status !== null ? filters?.status : '',
+        per_page: filters?.per_page || 15,
+    });
+    const [showFilters, setShowFilters] = useState(false);
 
-    // Stats calculées
-    const stats = useMemo(() => {
-        const customerList = Array.isArray(customers?.data) ? customers.data : customers || [];
-        
-        return {
-            total: customerList.length,
-            active: customerList.filter(c => c.status === 1 || c.status === 'active').length,
-            inactive: customerList.filter(c => c.status === 0 || c.status === 'inactive').length,
-            totalOrders: customerList.reduce((sum, c) => sum + (c.orders_count || 0), 0)
-        };
-    }, [customers]);
+    // Appliquer les filtres
+    const applyFilters = (newFilters = {}) => {
+        const updatedFilters = { ...activeFilters, ...newFilters };
+        setActiveFilters(updatedFilters);
 
-    // Gestion des filtres
+        router.get(route('admin.customers.index'), {
+            search: searchTerm,
+            ...updatedFilters,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    // Recherche
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.customers.index'), {
-            ...filters,
-            search: searchTerm,
-            page: 1
-        }, {
-            preserveState: true,
-            replace: true
+        applyFilters();
+    };
+
+    // Effacer les filtres
+    const clearFilters = () => {
+        setSearchTerm('');
+        setActiveFilters({
+            status: '',
+            per_page: 15,
         });
+        router.get(route('admin.customers.index'));
     };
 
-    const handleStatusFilter = (status) => {
-        setStatusFilter(status);
-        router.get(route('admin.customers.index'), {
-            ...filters,
-            status: status,
-            page: 1
-        }, {
-            preserveState: true,
-            replace: true
-        });
-    };
-
-    const handleSort = (field) => {
-        const direction = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
-        setSortField(field);
-        setSortDirection(direction);
-        
-        router.get(route('admin.customers.index'), {
-            ...filters,
-            sort: field,
-            direction: direction,
-            page: 1
-        }, {
-            preserveState: true,
-            replace: true
-        });
-    };
-
-    // Sélection des éléments
-    const handleSelectAll = (e) => {
-        const customerList = Array.isArray(customers?.data) ? customers.data : customers || [];
-        if (e.target.checked) {
-            setSelectedItems(customerList.map(item => item.id));
-        } else {
-            setSelectedItems([]);
-        }
-    };
-
-    const handleSelectItem = (id) => {
-        setSelectedItems(prev => 
-            prev.includes(id) 
-                ? prev.filter(item => item !== id)
-                : [...prev, id]
-        );
-    };
-
-    const handleBulkAction = (action) => {
-        if (selectedItems.length === 0) {
+    const handleBulkAction = (action, selectedIds) => {
+        if (selectedIds.length === 0) {
             alert('Veuillez sélectionner au moins un client.');
             return;
         }
 
         if (action === 'delete') {
-            if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.length} client(s) ?`)) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedIds.length} client(s) ?`)) {
                 router.post(route('admin.customers.bulk-delete'), {
-                    ids: selectedItems
+                    ids: selectedIds
                 });
             }
-        } else if (action === 'export') {
-            window.location.href = route('admin.customers.export', { ids: selectedItems.join(',') });
-        } else if (action === 'activate') {
-            router.post(route('admin.customers.bulk-activate'), {
-                ids: selectedItems
-            });
-        } else if (action === 'deactivate') {
-            router.post(route('admin.customers.bulk-deactivate'), {
-                ids: selectedItems
-            });
         }
     };
 
     const handleDelete = (customerId) => {
+        if (!customerId) {
+            return;
+        }
         if (confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
             router.delete(route('admin.customers.destroy', customerId));
         }
     };
 
     const handleEdit = (customer) => {
-        setEditingCustomer(customer);
-        setShowCustomerModal(true);
+        if (!customer || !customer.id) {
+            return;
+        }
+        router.visit(route('admin.customers.edit', customer.id));
     };
 
     const handleView = (customerId) => {
+        if (!customerId) {
+            return;
+        }
         router.visit(route('admin.customers.show', customerId));
     };
 
-    const customerList = Array.isArray(customers?.data) ? customers.data : customers || [];
-    const isAllSelected = customerList.length > 0 && selectedItems.length === customerList.length;
-    const isPartiallySelected = selectedItems.length > 0 && selectedItems.length < customerList.length;
+    // Configuration des colonnes
+    const columns = [
+        {
+            key: 'image',
+            label: 'Photo',
+            render: (customer) => (
+                <div className="flex-shrink-0 h-12 w-12">
+                    {customer.image ? (
+                        <img 
+                            className="h-12 w-12 rounded-full object-cover" 
+                            src={customer.image?.startsWith('http') ? customer.image : `/${customer.image}`} 
+                            alt={`${customer.first_name} ${customer.last_name}`}
+                        />
+                    ) : (
+                        <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                            <UserIcon className="h-6 w-6 text-gray-400" />
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'customer_info',
+            label: 'Client',
+            render: (customer) => (
+                <div>
+                    <div className="text-sm font-medium text-gray-900 flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        {customer.first_name} {customer.last_name}
+                    </div>
+                    <div className="text-sm text-gray-500 flex items-center mt-1">
+                        <EnvelopeIcon className="h-3 w-3 mr-1" />
+                        {customer.email}
+                    </div>
+                    {customer.phone_one && (
+                        <div className="text-sm text-gray-500 flex items-center mt-1">
+                            <PhoneIcon className="h-3 w-3 mr-1" />
+                            {customer.phone_one}
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'status',
+            label: 'Statut',
+            render: (customer) => {
+                const isActive = customer.status === 1 || customer.status === true || customer.status === '1';
+                return (
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                    }`}>
+                        {isActive ? (
+                            <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Actif
+                            </>
+                        ) : (
+                            <>
+                                <XCircleIcon className="h-3 w-3 mr-1" />
+                                Inactif
+                            </>
+                        )}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'orders_info',
+            label: 'Commandes',
+            render: (customer) => (
+                <div className="text-sm">
+                    <div className="text-gray-900 font-medium">
+                        {customer.total_orders || 0} commande{(customer.total_orders || 0) > 1 ? 's' : ''}
+                    </div>
+                    {customer.total_amount && (
+                        <div className="text-gray-500">
+                            {parseFloat(customer.total_amount).toFixed(2)}€
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'address',
+            label: 'Adresse',
+            render: (customer) => (
+                <span className="text-sm text-gray-500">
+                    {customer.present_address ? 
+                        (customer.present_address.length > 40 
+                            ? customer.present_address.substring(0, 40) + '...' 
+                            : customer.present_address
+                        ) : 'Non renseignée'
+                    }
+                </span>
+            )
+        },
+        {
+            key: 'created_at',
+            label: 'Date création',
+            render: (customer) => (
+                <span className="text-sm text-gray-500">
+                    {customer.created_at ? new Date(customer.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                </span>
+            )
+        }
+    ];
+
+    const actions = [
+        {
+            type: 'button',
+            onClick: (customer) => handleView(customer?.id),
+            icon: EyeIcon,
+            label: 'Voir les détails',
+            className: 'text-blue-600 hover:text-blue-900'
+        },
+        {
+            type: 'button',
+            onClick: (customer) => handleEdit(customer),
+            icon: PencilIcon,
+            label: 'Modifier',
+            className: 'text-indigo-600 hover:text-indigo-900'
+        },
+        {
+            type: 'button',
+            onClick: (customer) => handleDelete(customer?.id),
+            icon: TrashIcon,
+            label: 'Supprimer',
+            className: 'text-red-600 hover:text-red-900'
+        }
+    ];
+
+    const bulkActions = [
+        {
+            label: 'Supprimer',
+            value: 'delete',
+            icon: TrashIcon,
+            className: 'bg-red-600 text-white hover:bg-red-700'
+        }
+    ];
+
+    const searchableFields = ['first_name', 'last_name', 'email', 'phone_one'];
 
     return (
         <AdminLayout>
-            <Head title="Clients" />
-
+            <Head title="Gestion des clients" />
+            
             <div className="space-y-6">
                 {/* Header */}
-                <div className="sm:flex sm:items-center sm:justify-between">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Gestion des Clients</h1>
-                        <p className="mt-1 text-sm text-gray-600">
-                            Gérez vos clients e-commerce
+                        <h1 className="text-3xl font-bold text-gray-900">Gestion des clients</h1>
+                        <p className="mt-2 text-gray-600">
+                            Gérez vos clients et leur historique de commandes
                         </p>
                     </div>
-                    <div className="mt-4 sm:mt-0 sm:flex-none">
-                        <button
-                            onClick={() => setShowCustomerModal(true)}
-                            className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
-                        >
-                            <PlusIcon className="h-4 w-4 mr-2" />
-                            Nouveau client
-                        </button>
-                    </div>
+                    <Link
+                        href={route('admin.customers.create')}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
+                    >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Nouveau client
+                    </Link>
                 </div>
 
-                {/* Flash messages */}
+                {/* Statistics */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0">
+                                        <UserIcon className="h-6 w-6 text-gray-400" />
+                                    </div>
+                                    <div className="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt className="text-sm font-medium text-gray-500 truncate">
+                                                Total clients
+                                            </dt>
+                                            <dd className="text-lg font-medium text-gray-900">
+                                                {stats.total_customers || 0}
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0">
+                                        <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                                    </div>
+                                    <div className="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt className="text-sm font-medium text-gray-500 truncate">
+                                                Clients actifs
+                                            </dt>
+                                            <dd className="text-lg font-medium text-gray-900">
+                                                {stats.active_customers || 0}
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0">
+                                        <XCircleIcon className="h-6 w-6 text-red-400" />
+                                    </div>
+                                    <div className="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt className="text-sm font-medium text-gray-500 truncate">
+                                                Clients inactifs
+                                            </dt>
+                                            <dd className="text-lg font-medium text-gray-900">
+                                                {stats.inactive_customers || 0}
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white overflow-hidden shadow rounded-lg">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0">
+                                        <ArchiveBoxIcon className="h-6 w-6 text-blue-400" />
+                                    </div>
+                                    <div className="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt className="text-sm font-medium text-gray-500 truncate">
+                                                Avec commandes
+                                            </dt>
+                                            <dd className="text-lg font-medium text-gray-900">
+                                                {stats.customers_with_orders || 0}
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Messages Flash */}
                 {flash?.success && (
-                    <div className="rounded-md bg-green-50 p-4">
-                        <div className="text-sm text-green-700">{flash.success}</div>
+                    <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        {flash.success}
                     </div>
                 )}
-                
                 {flash?.error && (
-                    <div className="rounded-md bg-red-50 p-4">
-                        <div className="text-sm text-red-700">{flash.error}</div>
+                    <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {flash.error}
                     </div>
                 )}
-
-                {/* Statistiques */}
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <UsersIcon className="h-6 w-6 text-gray-400" />
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.total}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Clients Actifs</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.active}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <XCircleIcon className="h-6 w-6 text-red-400" />
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Clients Inactifs</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.inactive}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <DocumentArrowDownIcon className="h-6 w-6 text-blue-400" />
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Total Commandes</dt>
-                                        <dd className="text-lg font-medium text-gray-900">{stats.totalOrders}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Filtres et recherche */}
-                <div className="bg-white shadow rounded-lg">
+                <div className="bg-white shadow rounded-lg mb-6">
                     <div className="p-6">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                            {/* Recherche */}
-                            <div className="sm:col-span-2">
-                                <form onSubmit={handleSearch}>
+                        <form onSubmit={handleSearch} className="space-y-4">
+                            {/* Recherche principale */}
+                            <div className="flex items-center space-x-4">
+                                <div className="flex-1">
                                     <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                                        </div>
+                                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                         <input
                                             type="text"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            placeholder="Rechercher par nom, email ou téléphone..."
+                                            placeholder="Rechercher par nom, prénom, email, téléphone..."
+                                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                         />
                                     </div>
-                                </form>
-                            </div>
-
-                            {/* Filtre statut */}
-                            <div>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => handleStatusFilter(e.target.value)}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                                 >
-                                    <option value="">Tous les statuts</option>
-                                    <option value="1">Actif</option>
-                                    <option value="0">Inactif</option>
-                                </select>
+                                    Rechercher
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+                                >
+                                    <FunnelIcon className="w-4 h-4 mr-2" />
+                                    Filtres
+                                </button>
                             </div>
 
-                            {/* Actions groupées */}
-                            <div>
-                                {selectedItems.length > 0 && (
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={() => handleBulkAction('activate')}
-                                            className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
-                                            title="Activer"
+                            {/* Filtres avancés */}
+                            {showFilters && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Statut
+                                        </label>
+                                        <select
+                                            value={activeFilters.status}
+                                            onChange={(e) => setActiveFilters({...activeFilters, status: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                         >
-                                            <CheckCircleIcon className="h-4 w-4" />
+                                            <option value="">Tous les statuts</option>
+                                            <option value="1">Actif</option>
+                                            <option value="0">Inactif</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Éléments par page
+                                        </label>
+                                        <select
+                                            value={activeFilters.per_page}
+                                            onChange={(e) => setActiveFilters({...activeFilters, per_page: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                            <option value={15}>15</option>
+                                            <option value={25}>25</option>
+                                            <option value={50}>50</option>
+                                            <option value={100}>100</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="flex items-end space-x-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => applyFilters()}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                        >
+                                            Appliquer
                                         </button>
                                         <button
-                                            onClick={() => handleBulkAction('deactivate')}
-                                            className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-orange-600 hover:bg-orange-700"
-                                            title="Désactiver"
+                                            type="button"
+                                            onClick={clearFilters}
+                                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                                         >
-                                            <XCircleIcon className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleBulkAction('export')}
-                                            className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
-                                            title="Exporter"
-                                        >
-                                            <DocumentArrowDownIcon className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleBulkAction('delete')}
-                                            className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700"
-                                            title="Supprimer"
-                                        >
-                                            <TrashIcon className="h-4 w-4" />
+                                            Effacer
                                         </button>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                </div>
+                            )}
+                        </form>
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left">
-                                        <input
-                                            type="checkbox"
-                                            checked={isAllSelected}
-                                            ref={input => {
-                                                if (input) input.indeterminate = isPartiallySelected;
-                                            }}
-                                            onChange={handleSelectAll}
-                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        />
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Avatar
-                                    </th>
-                                    <th 
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                        onClick={() => handleSort('first_name')}
-                                    >
-                                        <div className="flex items-center space-x-1">
-                                            <span>Nom</span>
-                                            {sortField === 'first_name' && (
-                                                <span className="text-indigo-600">
-                                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Téléphone
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Adresse
-                                    </th>
-                                    <th 
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                        onClick={() => handleSort('status')}
-                                    >
-                                        <div className="flex items-center space-x-1">
-                                            <span>Statut</span>
-                                            {sortField === 'status' && (
-                                                <span className="text-indigo-600">
-                                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Commandes
-                                    </th>
-                                    <th 
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                        onClick={() => handleSort('created_at')}
-                                    >
-                                        <div className="flex items-center space-x-1">
-                                            <span>Inscription</span>
-                                            {sortField === 'created_at' && (
-                                                <span className="text-indigo-600">
-                                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {customerList.length > 0 ? (
-                                    customerList.map((customer) => (
-                                        <tr key={customer.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedItems.includes(customer.id)}
-                                                    onChange={() => handleSelectItem(customer.id)}
-                                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                                />
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    {customer.image || customer.avatar ? (
-                                                        <img
-                                                            src={customer.image_url || customer.image || customer.avatar}
-                                                            alt={`${customer.first_name} ${customer.last_name}`}
-                                                            className="h-10 w-10 rounded-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                            <UserIcon className="h-5 w-5 text-gray-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {customer.first_name} {customer.last_name}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500 flex items-center">
-                                                        <EnvelopeIcon className="h-3 w-3 mr-1" />
-                                                        {customer.email}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">
-                                                    {customer.phone_one || customer.phone ? (
-                                                        <div className="flex items-center">
-                                                            <PhoneIcon className="h-3 w-3 mr-1" />
-                                                            {customer.phone_one || customer.phone}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="italic">Non renseigné</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500 max-w-xs">
-                                                    {customer.present_address || customer.address ? (
-                                                        <div className="flex items-start">
-                                                            <MapPinIcon className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
-                                                            <span>
-                                                                {(customer.present_address || customer.address).length > 40 ? 
-                                                                `${(customer.present_address || customer.address).substring(0, 40)}...` : 
-                                                                (customer.present_address || customer.address)}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="italic">Non renseigné</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                    customer.status === 1 || customer.status === 'active'
-                                                        ? 'bg-green-100 text-green-800' 
-                                                        : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {customer.status === 1 || customer.status === 'active' ? (
-                                                        <>
-                                                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                                            Actif
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <XCircleIcon className="h-3 w-3 mr-1" />
-                                                            Inactif
-                                                        </>
-                                                    )}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-500">
-                                                    {customer.orders_count || customer.total_orders || 0} commande{(customer.orders_count || customer.total_orders || 0) > 1 ? 's' : ''}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-500">
-                                                    {customer.created_at ? new Date(customer.created_at).toLocaleDateString('fr-FR', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        year: 'numeric'
-                                                    }) : "N/A"}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-                                                        onClick={() => handleView(customer.id)}
-                                                        className="text-blue-600 hover:text-blue-900"
-                                                        title="Voir les détails"
-                                                    >
-                                                        <EyeIcon className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleEdit(customer)}
-                                                        className="text-indigo-600 hover:text-indigo-900"
-                                                        title="Modifier"
-                                                    >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(customer.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                        title="Supprimer"
-                                                    >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="9" className="px-6 py-12 text-center">
-                                            <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-                                            <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun client</h3>
-                                            <p className="mt-1 text-sm text-gray-500">Commencez par créer votre premier client.</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    {customers?.links && customers.links.length > 3 && (
-                        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                            <div className="flex-1 flex justify-between sm:hidden">
-                                {customers.prev_page_url && (
-                                    <Link
-                                        href={customers.prev_page_url}
-                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                    >
-                                        Précédent
-                                    </Link>
-                                )}
-                                {customers.next_page_url && (
-                                    <Link
-                                        href={customers.next_page_url}
-                                        className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                    >
-                                        Suivant
-                                    </Link>
-                                )}
-                            </div>
-                            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-700">
-                                        Affichage de {customers.from || 0} à {customers.to || 0} sur {customers.total || 0} résultats
-                                    </p>
-                                </div>
-                                <div>
-                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                        {customers.links.map((link, index) => (
-                                            <Link
-                                                key={index}
-                                                href={link.url || '#'}
-                                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                                    link.active
-                                                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
-                                                preserveState
-                                                preserveScroll
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                            />
-                                        ))}
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Modal CustomerModal */}
-            {showCustomerModal && (
-                <CustomerModal
-                    open={showCustomerModal}
-                    onClose={() => {
-                        setShowCustomerModal(false);
-                        setEditingCustomer(null);
-                    }}
-                    mode={editingCustomer ? "edit" : "create"}
-                    customer={editingCustomer}
+                {/* DataTable */}
+                <DataTable
+                    data={Array.isArray(customerList) ? customerList : (customerList?.data || [])}
+                    columns={columns}
+                    actions={actions}
+                    bulkActions={bulkActions}
+                    searchableFields={searchableFields}
+                    onBulkAction={handleBulkAction}
+                    searchPlaceholder="Rechercher par nom, prénom, email ou téléphone..."
+                    pagination={customerList?.links ? {
+                        from: customerList.from,
+                        to: customerList.to,
+                        total: customerList.total,
+                        links: customerList.links
+                    } : null}
                 />
-            )}
+            </div>
         </AdminLayout>
     );
 }

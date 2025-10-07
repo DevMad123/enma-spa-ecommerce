@@ -24,7 +24,6 @@ import {
 
 export default function PaymentsList() {
     const { payments, stats, sells, filters, paymentMethods, paymentStatuses, flash } = usePage().props;
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [editingPayment, setEditingPayment] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -105,7 +104,6 @@ export default function PaymentsList() {
 
     const handleEdit = (payment) => {
         setEditingPayment(payment);
-        setShowPaymentModal(true);
     };
 
     const handleView = (paymentId) => {

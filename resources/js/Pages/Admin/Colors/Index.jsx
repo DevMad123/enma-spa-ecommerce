@@ -18,11 +18,9 @@ import {
     ClockIcon,
     ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
-import ColorModal from "./ColorModal";
 
 export default function ColorsList() {
     const { colorList, filters, stats, flash } = usePage().props;
-    const [showColorModal, setShowColorModal] = useState(false);
     const [editingColor, setEditingColor] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -223,13 +221,6 @@ export default function ColorsList() {
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Nouvelle Couleur
                         </Link>
-                        {/* <button
-                            onClick={() => setShowColorModal(true)}
-                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Modal (Legacy)
-                        </button> */}
                     </div>
                 </div>
 
@@ -386,19 +377,6 @@ export default function ColorsList() {
                     links: colorList.links
                 } : null}
             />
-
-            {/* Modal ColorModal */}
-            {showColorModal && (
-                <ColorModal
-                    open={showColorModal}
-                    onClose={() => {
-                        setShowColorModal(false);
-                        setEditingColor(null);
-                    }}
-                    mode={editingColor ? "edit" : "create"}
-                    color={editingColor}
-                />
-            )}
         </AdminLayout>
     );
 }

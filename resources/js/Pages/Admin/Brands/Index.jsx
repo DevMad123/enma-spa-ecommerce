@@ -58,8 +58,13 @@ export default function BrandsList() {
     };
 
     const handleBulkAction = (action, selectedIds) => {
+        if (selectedIds.length === 0) {
+            alert('Veuillez sélectionner au moins une marque.');
+            return;
+        }
+
         if (action === 'delete') {
-            if (confirm('Êtes-vous sûr de vouloir supprimer les marques sélectionnées ?')) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedIds.length} marque(s) ?`)) {
                 router.post(route('admin.brands.bulk-delete'), {
                     ids: selectedIds
                 });
@@ -310,28 +315,123 @@ export default function BrandsList() {
                     </div>
                 )}
 
+                {/* Messages Flash */}
+                {flash?.success && (
+                    <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        {flash.success}
+                    </div>
+                )}
+                {flash?.error && (
+                    <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {flash.error}
+                    </div>
+                )}
+
+                {/* Filtres et recherche */}
+                <div className="bg-white shadow rounded-lg mb-6">
+                    <div className="p-6">
+                        <form onSubmit={handleSearch} className="space-y-4">
+                            {/* Recherche principale */}
+                            <div className="flex items-center space-x-4">
+                                <div className="flex-1">
+                                    <div className="relative">
+                                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Rechercher par nom, description..."
+                                            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                >
+                                    Rechercher
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+                                >
+                                    <FunnelIcon className="w-4 h-4 mr-2" />
+                                    Filtres
+                                </button>
+                            </div>
+
+                            {/* Filtres avancés */}
+                            {showFilters && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Statut
+                                        </label>
+                                        <select
+                                            value={activeFilters.status}
+                                            onChange={(e) => setActiveFilters({...activeFilters, status: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                            <option value="">Tous les statuts</option>
+                                            <option value="1">Actif</option>
+                                            <option value="0">Inactif</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Éléments par page
+                                        </label>
+                                        <select
+                                            value={activeFilters.per_page}
+                                            onChange={(e) => setActiveFilters({...activeFilters, per_page: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                            <option value={15}>15</option>
+                                            <option value={25}>25</option>
+                                            <option value={50}>50</option>
+                                            <option value={100}>100</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="flex items-end space-x-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => applyFilters()}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                        >
+                                            Appliquer
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={clearFilters}
+                                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                                        >
+                                            Effacer
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                </div>
+
                 {/* DataTable */}
                 <DataTable
-                    data={brandList?.data || []}
+                    data={Array.isArray(brandList) ? brandList : (brandList?.data || [])}
                     columns={columns}
                     actions={actions}
                     bulkActions={bulkActions}
-                    onBulkAction={handleBulkAction}
                     searchableFields={searchableFields}
-                    filters={{
-                        searchTerm,
-                        setSearchTerm,
-                        activeFilters,
-                        setActiveFilters,
-                        handleSearch,
-                        clearFilters,
-                        applyFilters,
-                        showFilters,
-                        setShowFilters
-                    }}
-                    pagination={brandList}
-                    emptyMessage="Aucune marque trouvée"
-                    emptyIcon={TagIcon}
+                    onBulkAction={handleBulkAction}
+                    searchPlaceholder="Rechercher par nom ou description..."
+                    pagination={brandList?.links ? {
+                        from: brandList.from,
+                        to: brandList.to,
+                        total: brandList.total,
+                        links: brandList.links
+                    } : null}
                 />
             </div>
         </AdminLayout>

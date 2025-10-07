@@ -28,7 +28,6 @@ export default function SubcategoriesList() {
     const { subcategoryList, categoryList, stats, filters, flash, auth } = usePage().props;
     const [editingSubcategory, setEditingSubcategory] = useState(null);
     const [selectedSubcategories, setSelectedSubcategories] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
