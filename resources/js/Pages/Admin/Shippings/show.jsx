@@ -1,6 +1,7 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     ArrowLeftIcon, 
     TruckIcon, 
@@ -13,6 +14,21 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ShippingShow({ shipping }) {
+    const { localeConfig } = usePage().props;
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
     const getStatusBadge = (isActive) => {
         return (
             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -78,7 +94,7 @@ export default function ShippingShow({ shipping }) {
                                     {shipping.price == 0 ? (
                                         <span className="text-green-600 font-semibold">Gratuit</span>
                                     ) : (
-                                        `${new Intl.NumberFormat('fr-FR').format(shipping.price)} XOF`
+                                        formatCurrency(shipping.price)
                                     )}
                                 </div>
                             </div>
@@ -108,13 +124,7 @@ export default function ShippingShow({ shipping }) {
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Date de création</label>
                                 <div className="mt-1 text-sm text-gray-900">
-                                    {new Date(shipping.created_at).toLocaleDateString('fr-FR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    {formatDate(shipping.created_at)}
                                 </div>
                             </div>
                         </div>
@@ -149,7 +159,7 @@ export default function ShippingShow({ shipping }) {
                                         {shipping.price == 0 ? (
                                             <span className="text-green-600">Gratuit</span>
                                         ) : (
-                                            <span>{new Intl.NumberFormat('fr-FR').format(shipping.price)} XOF</span>
+                                            <span>{formatCurrency(shipping.price)}</span>
                                         )}
                                     </div>
                                     {shipping.estimated_days && (
@@ -176,9 +186,9 @@ export default function ShippingShow({ shipping }) {
 
                             <div className="text-center p-4 bg-green-50 rounded-lg">
                                 <div className="text-3xl font-bold text-green-600">
-                                    {shipping.price == 0 ? '0' : new Intl.NumberFormat('fr-FR').format(shipping.price)}
+                                    {shipping.price == 0 ? '0' : formatCurrency(shipping.price, false)}
                                 </div>
-                                <div className="text-sm text-gray-600">Prix (XOF)</div>
+                                <div className="text-sm text-gray-600">Prix ({getCurrentCurrencySymbol()})</div>
                             </div>
 
                             <div className="text-center p-4 bg-orange-50 rounded-lg">
@@ -221,11 +231,11 @@ export default function ShippingShow({ shipping }) {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Créé le:</span>
-                                <span>{new Date(shipping.created_at).toLocaleDateString('fr-FR')}</span>
+                                <span>{formatDate(shipping.created_at)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Modifié le:</span>
-                                <span>{new Date(shipping.updated_at).toLocaleDateString('fr-FR')}</span>
+                                <span>{formatDate(shipping.updated_at)}</span>
                             </div>
                         </div>
                     </div>

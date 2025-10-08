@@ -1,6 +1,7 @@
-import React from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     ArrowLeftIcon, 
     TruckIcon, 
@@ -11,6 +12,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ShippingEdit({ shipping }) {
+    const { localeConfig } = usePage().props;
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
+    
     const { data, setData, put, processing, errors } = useForm({
         name: shipping.name || '',
         price: shipping.price || '',
@@ -19,6 +23,19 @@ export default function ShippingEdit({ shipping }) {
         sort_order: shipping.sort_order || '',
         is_active: shipping.is_active ?? true,
     });
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -78,7 +95,7 @@ export default function ShippingEdit({ shipping }) {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Prix (XOF) *
+                                    Prix ({getCurrentCurrencySymbol()}) *
                                 </label>
                                 <div className="relative">
                                     <CurrencyDollarIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -209,7 +226,7 @@ export default function ShippingEdit({ shipping }) {
                         </div>
                         <div className="text-center p-4 bg-gray-50 rounded-lg">
                             <div className="text-2xl font-bold text-green-600">
-                                {shipping.price == 0 ? 'Gratuit' : `${new Intl.NumberFormat('fr-FR').format(shipping.price)} XOF`}
+                                {shipping.price == 0 ? 'Gratuit' : formatCurrency(shipping.price)}
                             </div>
                             <div className="text-sm text-gray-600">Prix actuel</div>
                         </div>
@@ -251,7 +268,7 @@ export default function ShippingEdit({ shipping }) {
                                         {data.price == 0 || !data.price ? (
                                             <span className="text-green-600">Gratuit</span>
                                         ) : (
-                                            <span>{new Intl.NumberFormat('fr-FR').format(data.price)} XOF</span>
+                                            <span>{formatCurrency(data.price)}</span>
                                         )}
                                     </div>
                                     {data.estimated_days && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale } from '@/Utils/LocaleUtils';
 import {
     HiOutlineCog,
     HiOutlineGlobe,
@@ -11,7 +12,7 @@ import {
     HiOutlineUpload
 } from 'react-icons/hi';
 
-export default function SettingsIndex({ settings, currencies = {}, flash: pageFlash = {} }) {
+export default function SettingsIndex({ settings, currencies = {}, languages = {}, localeConfig = {}, flash: pageFlash = {} }) {
     const [activeTab, setActiveTab] = useState('general');
     const [imageUploading, setImageUploading] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
@@ -20,6 +21,13 @@ export default function SettingsIndex({ settings, currencies = {}, flash: pageFl
     // Accéder aux props flash globales via usePage
     const { props } = usePage();
     const flash = props.flash || {};
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+        }
+    }, [localeConfig]);
 
     // Gérer les messages venant du contrôleur
     useEffect(() => {
@@ -57,7 +65,18 @@ export default function SettingsIndex({ settings, currencies = {}, flash: pageFl
         'TND': 'Dinar Tunisien (TND)'
     };
     
+    // Définir les langues par défaut si elles ne sont pas fournies
+    const defaultLanguages = {
+        'fr-FR': 'Français (France)',
+        'fr-SN': 'Français (Sénégal)',
+        'en-US': 'English (United States)',
+        'en-GB': 'English (United Kingdom)',
+        'ar-MA': 'العربية (المغرب)',
+        'es-ES': 'Español (España)'
+    };
+    
     const availableCurrencies = Object.keys(currencies).length > 0 ? currencies : defaultCurrencies;
+    const availableLanguages = Object.keys(languages).length > 0 ? languages : defaultLanguages;
 
     // Fonction utilitaire pour récupérer une valeur de setting
     const getSetting = (key, group = null) => {
@@ -78,7 +97,8 @@ export default function SettingsIndex({ settings, currencies = {}, flash: pageFl
 
     const { data, setData, post, processing, errors } = useForm({
         general: {
-            currency: getSetting('default_currency') || 'XOF',
+            currency: getSetting('currency') || getSetting('default_currency') || 'XOF',
+            language: getSetting('language') || getSetting('locale') || 'fr-FR',
             site_name: getSetting('site_name') || '',
             site_description: getSetting('site_description') || '',
             contact_email: getSetting('site_email') || getSetting('contact_email') || '',
@@ -399,7 +419,7 @@ export default function SettingsIndex({ settings, currencies = {}, flash: pageFl
                                         </p>
                                     </div>
                                     <div className="px-6 py-6 space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Nom du site *
@@ -436,6 +456,29 @@ export default function SettingsIndex({ settings, currencies = {}, flash: pageFl
                                                 {errors['general.currency'] && (
                                                     <p className="mt-1 text-sm text-red-600">{errors['general.currency']}</p>
                                                 )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Langue / Locale *
+                                                </label>
+                                                <select
+                                                    value={data.general.language}
+                                                    onChange={(e) => setData('general', { ...data.general, language: e.target.value })}
+                                                    className={`block w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                        errors['general.language'] ? 'border-red-300' : 'border-gray-300'
+                                                    }`}
+                                                >
+                                                    {Object.entries(availableLanguages).map(([code, name]) => (
+                                                        <option key={code} value={code}>{name}</option>
+                                                    ))}
+                                                </select>
+                                                {errors['general.language'] && (
+                                                    <p className="mt-1 text-sm text-red-600">{errors['general.language']}</p>
+                                                )}
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    Format utilisé pour Intl.NumberFormat et les dates
+                                                </p>
                                             </div>
                                         </div>
 

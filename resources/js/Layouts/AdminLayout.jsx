@@ -105,6 +105,7 @@ export default function AdminLayout({ title, children }) {
           {/* Header */}
           <DashboardHeader 
             user={{
+              id: auth?.user?.id || 0,
               name: auth?.user?.name || 'Admin',
               email: auth?.user?.email || 'admin@example.com',
               avatar: auth?.user?.avatar_url || auth?.user?.default_avatar_url,

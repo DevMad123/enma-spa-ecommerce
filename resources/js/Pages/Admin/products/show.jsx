@@ -1,14 +1,15 @@
-import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { normalizeImageUrl } from '@/Utils/imageUtils.jsx';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     ArrowLeftIcon,
     PencilIcon,
     TrashIcon,
     CubeIcon,
     TagIcon,
-    CurrencyEuroIcon,
+    BanknotesIcon,
     BuildingStorefrontIcon,
     SwatchIcon,
     PhotoIcon,
@@ -17,6 +18,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ShowProduct({ product, flash }) {
+    const { localeConfig } = usePage().props;
+    
+    // État pour gérer l'initialisation de la locale
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
+    
+    // Initialiser la configuration de locale DE SUITE et forcer un re-render
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true); // Force un re-render
+        }
+    }, [localeConfig]);
+
+    // Ne pas rendre tant que la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
+
     const handleDelete = (productId) => {
         if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
             router.delete(route('admin.products.destroy', productId));
@@ -177,24 +196,24 @@ export default function ShowProduct({ product, flash }) {
                     {/* Prix et stock */}
                     <div className="bg-white shadow rounded-lg p-6">
                         <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                            <CurrencyEuroIcon className="h-5 w-5 mr-2" />
+                            <BanknotesIcon className="h-5 w-5 mr-2" />
                             Prix et stock
                         </h2>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Prix d'achat</label>
-                                <p className="mt-1 text-sm text-gray-900">{product.current_purchase_cost}€</p>
+                                <p className="mt-1 text-sm text-gray-900">{formatCurrency(product.current_purchase_cost)}</p>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Prix de vente</label>
-                                <p className="mt-1 text-sm text-gray-900 font-medium">{product.current_sale_price}€</p>
+                                <p className="mt-1 text-sm text-gray-900 font-medium">{formatCurrency(product.current_sale_price)}</p>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Prix de gros</label>
-                                <p className="mt-1 text-sm text-gray-900">{product.wholesale_price || 0}€</p>
+                                <p className="mt-1 text-sm text-gray-900">{formatCurrency(product.wholesale_price || 0)}</p>
                             </div>
                             
                             <div>
@@ -210,7 +229,7 @@ export default function ShowProduct({ product, flash }) {
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Remise</label>
                                 <p className="mt-1 text-sm text-gray-900">
-                                    {product.discount || 0}{product.discount_type === 1 ? '%' : '€'}
+                                    {product.discount || 0}{product.discount_type === 1 ? '%' : getCurrentCurrencySymbol()}
                                 </p>
                             </div>
                         </div>
@@ -252,7 +271,7 @@ export default function ShowProduct({ product, flash }) {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-sm font-medium">{variant.sale_price}€</div>
+                                                    <div className="text-sm font-medium">{formatCurrency(variant.sale_price)}</div>
                                                     <div className="text-xs text-gray-500">Stock: {variant.available_quantity}</div>
                                                 </div>
                                             </div>
@@ -339,8 +358,8 @@ export default function ShowProduct({ product, flash }) {
                             
                             <div className="pt-3 border-t">
                                 <div className="text-xs text-gray-500">
-                                    <div>Créé le: {new Date(product.created_at).toLocaleDateString('fr-FR')}</div>
-                                    <div>Modifié le: {new Date(product.updated_at).toLocaleDateString('fr-FR')}</div>
+                                    <div>Créé le: {formatDate(new Date(product.created_at))}</div>
+                                    <div>Modifié le: {formatDate(new Date(product.updated_at))}</div>
                                 </div>
                             </div>
                         </div>

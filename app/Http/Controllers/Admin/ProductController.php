@@ -131,6 +131,7 @@ class ProductController extends Controller
             'color' => $color,
             'size' => $size,
             'stats' => $stats,
+            'localeConfig' => get_js_locale_config(),
             'filters' => [
                 'search' => $request->search ?? '',
                 'category_id' => $request->category_id ?? '',
@@ -518,6 +519,7 @@ class ProductController extends Controller
             'suppliers' => $suppliers,
             'colors' => $colors,
             'sizes' => $sizes,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -544,6 +546,7 @@ class ProductController extends Controller
                 'success' => session('flash.success'),
                 'error' => session('flash.error'),
             ],
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -579,6 +582,7 @@ class ProductController extends Controller
             'suppliers' => $suppliers,
             'colors' => $colors,
             'sizes' => $sizes,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 

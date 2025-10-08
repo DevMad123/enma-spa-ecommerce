@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     PlusIcon, 
     XMarkIcon, 
@@ -15,9 +16,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function CreateProduct() {
-    const { categories = [], suppliers = [], brands = [], colors = [], sizes = [], subcategories: initialSubcategories = [] } = usePage().props;
-    console.log('Props reçues:', { categories, suppliers, brands, colors, sizes });
+    const { categories = [], suppliers = [], brands = [], colors = [], sizes = [], subcategories: initialSubcategories = [], localeConfig } = usePage().props;
     
+    // État pour gérer l'initialisation de la locale
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [subcategories, setSubcategories] = useState(initialSubcategories);
     const [selectedColors, setSelectedColors] = useState([]);
     const [selectedSizes, setSelectedSizes] = useState([]);
@@ -51,6 +53,14 @@ export default function CreateProduct() {
         variants: [],
         attributes: []
     });
+
+    // Initialiser la configuration de locale DE SUITE et forcer un re-render
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true); // Force un re-render
+        }
+    }, [localeConfig]);
 
     // Charger sous-catégories quand category change
     useEffect(() => {
@@ -220,8 +230,6 @@ export default function CreateProduct() {
     // Soumission du formulaire
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        console.log('🎯 HandleSubmit appelé !');
 
         if (!data.name.trim()) {
             alert('Veuillez saisir le nom du produit');
@@ -298,6 +306,11 @@ export default function CreateProduct() {
             }
         });
     };
+
+    // Ne pas rendre tant que la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     return (
         <AdminLayout>
@@ -430,7 +443,7 @@ export default function CreateProduct() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Coût d'achat
+                                        Coût d'achat ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -445,7 +458,7 @@ export default function CreateProduct() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix de vente *
+                                        Prix de vente ({getCurrentCurrencySymbol()}) *
                                     </label>
                                     <input
                                         type="number"
@@ -461,7 +474,7 @@ export default function CreateProduct() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix de gros
+                                        Prix de gros ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -698,7 +711,7 @@ export default function CreateProduct() {
 
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Prix d'achat
+                                                            Prix d'achat ({getCurrentCurrencySymbol()})
                                                         </label>
                                                         <input
                                                             type="number"
@@ -712,7 +725,7 @@ export default function CreateProduct() {
 
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Prix de vente
+                                                            Prix de vente ({getCurrentCurrencySymbol()})
                                                         </label>
                                                         <input
                                                             type="number"

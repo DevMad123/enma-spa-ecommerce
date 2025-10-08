@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     PlusIcon, 
     XMarkIcon, 
@@ -11,9 +12,11 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function CreateOrder() {
-    console.log('🔄 Composant CreateOrder chargé');
     
-    const { customers, products } = usePage().props;
+    const { customers, products, localeConfig } = usePage().props;
+    
+    // État pour gérer l'initialisation de la locale
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [customerSearch, setCustomerSearch] = useState('');
     const [productSearch, setProductSearch] = useState('');
@@ -34,6 +37,14 @@ export default function CreateOrder() {
         total_paid: 0,
         items: []
     });
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
 
     // Recherche de produits
     const searchProducts = async (query) => {
@@ -147,8 +158,6 @@ export default function CreateOrder() {
     // Soumettre la commande
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        console.log('🎯 HandleSubmit appelé !');
 
         if (!selectedCustomer) {
             alert('Veuillez sélectionner un client');
@@ -194,11 +203,6 @@ export default function CreateOrder() {
             }))
         };
 
-        console.log('📦 Données envoyées:', formDataToSend);
-        console.log('👤 Client sélectionné:', selectedCustomer);
-        console.log('🛒 Articles du panier:', cartItems);
-        console.log('🔗 Route utilisée:', route('admin.orders.store'));
-
         // Utiliser la méthode post du hook useForm
         router.post(route('admin.orders.store'), formDataToSend, {
             onStart: () => {
@@ -218,6 +222,11 @@ export default function CreateOrder() {
     };
 
     const totals = calculateTotals();
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     return (
         <AdminLayout>
@@ -352,7 +361,7 @@ export default function CreateOrder() {
                                                                     {product.name}
                                                                 </div>
                                                                 <div className="text-sm text-gray-500">
-                                                                    Stock: {product.available_quantity} | Prix: {product.current_sale_price}€
+                                                                    Stock: {product.available_quantity} | Prix: {formatCurrency(product.current_sale_price)}
                                                                 </div>
                                                             </div>
                                                             <button
@@ -371,7 +380,7 @@ export default function CreateOrder() {
                                                                 {product.variants.map(variant => (
                                                                     <div key={variant.id} className="flex items-center justify-between py-1">
                                                                         <div className="text-sm">
-                                                                            {variant.sku} - Stock: {variant.available_quantity} | {variant.sale_price}€
+                                                                            {variant.sku} - Stock: {variant.available_quantity} | {formatCurrency(variant.sale_price)}
                                                                         </div>
                                                                         <button
                                                                             type="button"
@@ -408,7 +417,7 @@ export default function CreateOrder() {
                                                     {item.product_name}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    Prix unitaire: {item.unit_price}€ | Stock: {item.stock_available}
+                                                    Prix unitaire: {formatCurrency(item.unit_price)} | Stock: {item.stock_available}
                                                 </div>
                                             </div>
 
@@ -426,7 +435,7 @@ export default function CreateOrder() {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-xs text-gray-500">Remise (€)</label>
+                                                    <label className="block text-xs text-gray-500">Remise ({getCurrentCurrencySymbol()})</label>
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -440,7 +449,7 @@ export default function CreateOrder() {
                                                 <div>
                                                     <label className="block text-xs text-gray-500">Sous-total</label>
                                                     <div className="text-sm font-medium">
-                                                        {((item.quantity * item.unit_price) - (item.discount || 0)).toFixed(2)}€
+                                                        {formatCurrency((item.quantity * item.unit_price) - (item.discount || 0))}
                                                     </div>
                                                 </div>
 
@@ -472,28 +481,28 @@ export default function CreateOrder() {
                             <div className="space-y-3 text-sm">
                                 <div className="flex justify-between">
                                     <span>Sous-total:</span>
-                                    <span>{totals.subtotal.toFixed(2)}€</span>
+                                    <span>{formatCurrency(totals.subtotal)}</span>
                                 </div>
                                 
                                 <div className="flex justify-between">
                                     <span>TVA:</span>
-                                    <span>{totals.vatTotal.toFixed(2)}€</span>
+                                    <span>{formatCurrency(totals.vatTotal)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
                                     <span>Livraison:</span>
-                                    <span>{totals.shippingCost.toFixed(2)}€</span>
+                                    <span>{formatCurrency(totals.shippingCost)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
                                     <span>Remise totale:</span>
-                                    <span>-{totals.totalDiscount.toFixed(2)}€</span>
+                                    <span>-{formatCurrency(totals.totalDiscount)}</span>
                                 </div>
 
                                 <div className="border-t pt-3">
                                     <div className="flex justify-between font-bold text-lg">
                                         <span>Total:</span>
-                                        <span>{totals.total.toFixed(2)}€</span>
+                                        <span>{formatCurrency(totals.total)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -506,7 +515,7 @@ export default function CreateOrder() {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Frais de livraison (€)
+                                        Frais de livraison ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -533,7 +542,7 @@ export default function CreateOrder() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Remise totale (€)
+                                        Remise totale ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -547,7 +556,7 @@ export default function CreateOrder() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Montant déjà payé (€)
+                                        Montant déjà payé ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"

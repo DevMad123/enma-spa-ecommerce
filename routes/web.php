@@ -28,12 +28,18 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\SellController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\PaymentMethodController;
+use App\Http\Controllers\PayPalPaymentController;
 use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\NotificationController;
+
+// Contrôleurs paiement
+use App\Http\Controllers\OrangeMoneyPaymentController;
+use App\Http\Controllers\WavePaymentController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
@@ -122,6 +128,33 @@ Route::prefix('cart')->name('frontend.cart.')->group(function () {
 // API endpoints pour le panier (AJAX)
 Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('/product/{product}', [CartController::class, 'getProductForCart'])->name('product');
+});
+
+// Routes PayPal
+Route::prefix('paypal')->name('paypal.')->group(function () {
+    Route::post('/create-payment', [PayPalPaymentController::class, 'createPayment'])->name('create');
+    Route::get('/callback/success/{order_id}', [PayPalPaymentController::class, 'handleSuccessCallback'])->name('callback.success');
+    Route::get('/callback/cancel/{order_id}', [PayPalPaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
+    Route::post('/check-status', [PayPalPaymentController::class, 'checkPaymentStatus'])->name('check-status');
+});
+
+// Routes Orange Money
+Route::prefix('orange-money')->name('orange-money.')->group(function () {
+    Route::post('/create-payment', [OrangeMoneyPaymentController::class, 'createPayment'])->name('create');
+    Route::get('/callback/success/{order_id}', [OrangeMoneyPaymentController::class, 'handleSuccessCallback'])->name('callback.success');
+    Route::get('/callback/cancel/{order_id}', [OrangeMoneyPaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
+    Route::post('/webhook', [OrangeMoneyPaymentController::class, 'handleWebhook'])->name('webhook');
+    Route::post('/check-status', [OrangeMoneyPaymentController::class, 'checkPaymentStatus'])->name('check-status');
+});
+
+// Routes Wave
+Route::prefix('wave')->name('wave.')->group(function () {
+    Route::post('/create-payment', [WavePaymentController::class, 'createPayment'])->name('create');
+    Route::get('/callback/success/{order_id}', [WavePaymentController::class, 'handleSuccessCallback'])->name('callback.success');
+    Route::get('/callback/cancel/{order_id}', [WavePaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
+    Route::post('/webhook', [WavePaymentController::class, 'handleWebhook'])->name('webhook');
+    Route::post('/check-status', [WavePaymentController::class, 'checkPaymentStatus'])->name('check-status');
+    Route::post('/refund', [WavePaymentController::class, 'refundPayment'])->name('refund');
 });
 
 // Routes Wishlist
@@ -415,6 +448,19 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
         Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-delete', [NotificationController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    // Routes Méthodes de Paiement
+    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\PaymentMethodController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\PaymentMethodController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\PaymentMethodController::class, 'store'])->name('store');
+        Route::get('/{paymentMethod}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'show'])->name('show');
+        Route::get('/{paymentMethod}/edit', [App\Http\Controllers\Admin\PaymentMethodController::class, 'edit'])->name('edit');
+        Route::put('/{paymentMethod}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'update'])->name('update');
+        Route::delete('/{paymentMethod}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'destroy'])->name('destroy');
+        Route::patch('/{paymentMethod}/toggle', [App\Http\Controllers\Admin\PaymentMethodController::class, 'toggleStatus'])->name('toggle');
+        Route::put('/update-order', [App\Http\Controllers\Admin\PaymentMethodController::class, 'updateOrder'])->name('updateOrder');
     });
 
     // Routes Paramètres

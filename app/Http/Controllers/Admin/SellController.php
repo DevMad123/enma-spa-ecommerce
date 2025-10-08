@@ -95,6 +95,7 @@ class SellController extends Controller
             ],
             'orderStatuses' => $this->getOrderStatuses(),
             'paymentStatuses' => $this->getPaymentStatuses(),
+            'localeConfig' => get_js_locale_config(),
             'flash' => [
                 'success' => session('flash.success'),
                 'error' => session('flash.error'),
@@ -123,6 +124,7 @@ class SellController extends Controller
         return Inertia::render('Admin/Orders/create', [
             'customers' => $customers,
             'products' => $products,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -169,6 +171,7 @@ class SellController extends Controller
             'order' => $order,
             'orderStatuses' => $this->getOrderStatuses(),
             'paymentStatuses' => $this->getPaymentStatuses(),
+            'localeConfig' => get_js_locale_config(),
             'flash' => [
                 'success' => session('flash.success'),
                 'error' => session('flash.error'),

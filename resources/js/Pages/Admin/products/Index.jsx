@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     PlusIcon,
     MagnifyingGlassIcon,
@@ -21,9 +22,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ProductsList() {
-    const { productList, categories, brands, filters, stats, flash } = usePage().props;
+    const { productList, categories, brands, filters, stats, flash, localeConfig } = usePage().props;
     const [editingProduct, setEditingProduct] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [activeFilters, setActiveFilters] = useState({
         category_id: filters.category_id || '',
         brand_id: filters.brand_id || '',
@@ -34,6 +36,19 @@ export default function ProductsList() {
         per_page: filters.per_page || 15,
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    // Initialiser la configuration de locale DE SUITE et forcer un re-render
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true); // Force un re-render
+        }
+    }, [localeConfig]);
+
+    // Ne pas rendre tant que la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     // Appliquer les filtres
     const applyFilters = (newFilters = {}) => {
@@ -186,11 +201,11 @@ export default function ProductsList() {
             render: (product) => (
                 <div>
                     <div className="text-sm font-medium text-gray-900">
-                        {new Intl.NumberFormat('fr-FR').format(product.current_sale_price || product.sale_price || product.price)} XOF
+                        {formatCurrency(product.current_sale_price || product.sale_price || product.price)}
                     </div>
                     {product.sale_price && product.current_sale_price !== product.sale_price && (
                         <div className="text-sm text-red-600">
-                            Promo: {new Intl.NumberFormat('fr-FR').format(product.sale_price)} XOF
+                            Promo: {formatCurrency(product.sale_price)}
                         </div>
                     )}
                 </div>
@@ -241,7 +256,7 @@ export default function ProductsList() {
             label: 'Date création',
             render: (product) => (
                 <span className="text-sm text-gray-500">
-                    {new Date(product.created_at).toLocaleDateString('fr-FR')}
+                    {formatDate(new Date(product.created_at))}
                 </span>
             )
         }

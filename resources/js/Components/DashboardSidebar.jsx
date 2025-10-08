@@ -37,6 +37,7 @@ const navigationLinks = [
     submenu: [
       { route: "admin.orders.index", label: "Commandes", icon: HiOutlineClipboardList },
       { route: "admin.payments.index", label: "Paiements", icon: HiOutlineCash },
+      { route: "admin.payment-methods.index", label: "Méthodes de Paiement", icon: HiOutlineCog },
       { route: "admin.shippings.index", label: "Livraisons", icon: HiOutlineTruck },
     ]
   },

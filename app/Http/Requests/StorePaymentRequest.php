@@ -55,10 +55,10 @@ class StorePaymentRequest extends FormRequest
                 'string',
                 'max:255'
             ],
-            'payment_date' => [
-                'sometimes',
-                'date'
-            ],
+            // 'payment_date' => [  // Champ non existant dans payment_infos
+            //     'sometimes',
+            //     'date'
+            // ],
             'notes' => [
                 'nullable',
                 'string',

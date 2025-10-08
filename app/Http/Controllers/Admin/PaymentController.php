@@ -28,7 +28,7 @@ class PaymentController extends Controller
         $perPage = $request->get('per_page', 15);
 
         $query = Payment::with(['sell.customer', 'createdBy'])
-                       ->latest('payment_date');
+                       ->latest('created_at');
 
         // Filtres de recherche
         if ($search) {
@@ -48,11 +48,11 @@ class PaymentController extends Controller
         }
 
         if ($dateFrom) {
-            $query->whereDate('payment_date', '>=', $dateFrom);
+            $query->whereDate('created_at', '>=', $dateFrom);
         }
 
         if ($dateTo) {
-            $query->whereDate('payment_date', '<=', $dateTo);
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $payments = $query->paginate($perPage);
@@ -88,6 +88,8 @@ class PaymentController extends Controller
             ],
             'paymentMethods' => Payment::METHODS,
             'paymentStatuses' => Payment::STATUSES,
+            'currency' => get_currency(),
+            'currencySymbol' => get_currency_symbol(),
         ]);
     }
 
@@ -160,7 +162,7 @@ class PaymentController extends Controller
         $payment->load([
             'sell.customer',
             'sell.payments' => function($query) {
-                $query->orderBy('payment_date', 'desc');
+                $query->orderBy('created_at', 'desc');
             },
             'createdBy',
             'updatedBy'
@@ -427,7 +429,7 @@ class PaymentController extends Controller
     public function refund(Request $request, Payment $payment)
     {
         $request->validate([
-            'amount' => 'nullable|numeric|min:0.01|max:' . $payment->amount,
+            'amount' => 'nullable|numeric|min:0.01|max:' . $payment->total_paid,
             'reason' => 'required|string|max:1000',
         ]);
 
@@ -438,7 +440,7 @@ class PaymentController extends Controller
 
             DB::beginTransaction();
 
-            $refundAmount = $request->amount ?? $payment->amount;
+            $refundAmount = $request->amount ?? $payment->total_paid;
             $payment->refund($refundAmount);
             
             $payment->update(['notes' => $payment->notes . "\nRemboursement: " . $request->reason]);
@@ -487,11 +489,11 @@ class PaymentController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('payment_date', '>=', $request->date_from);
+            $query->whereDate('created_at', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('payment_date', '<=', $request->date_to);
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $payments = $query->get();
@@ -527,11 +529,11 @@ class PaymentController extends Controller
                     $payment->sell ? $payment->sell->order_reference : 'N/A',
                     $payment->sell && $payment->sell->customer ? $payment->sell->customer->first_name . ' ' . $payment->sell->customer->last_name : 'N/A',
                     $payment->method_text,
-                    number_format($payment->amount, 2),
+                    number_format($payment->total_paid, 2),
                     $payment->currency,
                     $payment->status_text,
                     $payment->transaction_reference ?? 'N/A',
-                    $payment->payment_date->format('d/m/Y H:i'),
+                    $payment->created_at->format('d/m/Y H:i'),
                     $payment->notes ?? 'N/A',
                 ]);
             }
@@ -563,10 +565,10 @@ class PaymentController extends Controller
                         $query->bySell($value);
                         break;
                     case 'date_from':
-                        $query->whereDate('payment_date', '>=', $value);
+                        $query->whereDate('created_at', '>=', $value);
                         break;
                     case 'date_to':
-                        $query->whereDate('payment_date', '<=', $value);
+                        $query->whereDate('created_at', '<=', $value);
                         break;
                 }
             }
@@ -577,8 +579,8 @@ class PaymentController extends Controller
             'successful_payments' => $query->clone()->successful()->count(),
             'pending_payments' => $query->clone()->pending()->count(),
             'failed_payments' => $query->clone()->failed()->count(),
-            'total_amount' => $query->clone()->successful()->sum('amount'),
-            'average_amount' => $query->clone()->successful()->avg('amount'),
+            'total_amount' => $query->clone()->successful()->sum('total_paid'),
+            'average_amount' => $query->clone()->successful()->avg('total_paid'),
         ];
     }
 }

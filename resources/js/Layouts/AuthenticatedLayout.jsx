@@ -35,6 +35,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                   Livraisons
                 </NavLink>
                 <NavLink
+                  href={route("admin.payment-methods.index")}
+                  active={route().current("admin.payment-methods.*")}
+                >
+                  Paiements
+                </NavLink>
+                <NavLink
                   href={route("admin.tasks.index")}
                   active={route().current("admin.tasks.index")}
                 >

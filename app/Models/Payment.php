@@ -10,16 +10,19 @@ class Payment extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'payment_infos';
+
     protected $fillable = [
         'sell_id',
-        'method',
-        'amount',
-        'currency',
+        'payment_type',        // au lieu de 'method'
+        'total_paid',          // au lieu de 'amount'
+        'tnx_id',             // au lieu de 'transaction_reference'
+        'card_brand',
+        'card_last_digit',
+        'payment_inv_link',
         'status',
-        'transaction_reference',
-        'payment_date',
-        'notes',
-        'metadata',
+        // Champs pour compatibilité mais pas dans la vraie table
+        // 'method', 'amount', 'currency', 'transaction_reference', 'payment_date', 'notes', 'metadata'
         'created_by',
         'updated_by',
         'deleted_by',
@@ -27,31 +30,48 @@ class Payment extends Model
 
     protected $casts = [
         'sell_id' => 'integer',
-        'amount' => 'decimal:2',
-        'payment_date' => 'datetime',
+        'total_paid' => 'decimal:2',
         'metadata' => 'array',
         'created_by' => 'integer',
         'updated_by' => 'integer',
         'deleted_by' => 'integer',
     ];
 
-    // Constantes pour les méthodes de paiement
+    // Ajouter les accesseurs au JSON automatiquement
+    protected $appends = [
+        'method',
+        'amount', 
+        'transaction_reference',
+        'payment_date',
+        'method_text',
+        'status_text',
+        'formatted_amount',
+        'currency',
+        'currency_symbol'
+    ];
+
+    // Constantes pour les méthodes de paiement (correspondant à payment_type dans payment_infos)
     public const METHODS = [
         'cash' => 'Espèces',
         'paypal' => 'PayPal',
+        'card' => 'Carte bancaire',
+        'bank_transfer' => 'Virement bancaire',
+        'cash_on_delivery' => 'Paiement à la livraison',
+        'wallet' => 'Portefeuille électronique',
+        // Anciens types pour compatibilité
         'stripe' => 'Stripe',
         'orange_money' => 'Orange Money',
         'wave' => 'Wave',
-        'card' => 'Carte bancaire',
-        'bank_transfer' => 'Virement bancaire',
     ];
 
-    // Constantes pour les statuts
+    // Constantes pour les statuts (correspondant à status dans payment_infos)
     public const STATUSES = [
         'pending' => 'En attente',
-        'success' => 'Réussi',
+        'paid' => 'Payé',
         'failed' => 'Échoué',
         'refunded' => 'Remboursé',
+        // Anciens statuts pour compatibilité
+        'success' => 'Réussi',
         'cancelled' => 'Annulé',
     ];
 
@@ -74,6 +94,48 @@ class Payment extends Model
     public function deletedBy()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    // Accesseurs pour la compatibilité avec les anciens noms de champs
+    public function getMethodAttribute()
+    {
+        return $this->payment_type;
+    }
+
+    public function setMethodAttribute($value)
+    {
+        $this->attributes['payment_type'] = $value;
+    }
+
+    public function getAmountAttribute()
+    {
+        return $this->total_paid;
+    }
+
+    public function setAmountAttribute($value)
+    {
+        $this->attributes['total_paid'] = $value;
+    }
+
+    public function getTransactionReferenceAttribute()
+    {
+        return $this->tnx_id;
+    }
+
+    public function setTransactionReferenceAttribute($value)
+    {
+        $this->attributes['tnx_id'] = $value;
+    }
+
+    public function getPaymentDateAttribute()
+    {
+        return $this->created_at;
+    }
+
+    public function setPaymentDateAttribute($value)
+    {
+        // Ignorer l'assignation de payment_date puisque ce champ n'existe pas
+        // Utiliser created_at à la place
     }
 
     // Accessors
@@ -101,13 +163,24 @@ class Payment extends Model
 
     public function getFormattedAmountAttribute()
     {
-        return number_format($this->amount, 0, ',', ' ') . ' ' . $this->currency;
+        $amount = $this->total_paid ?? 0;
+        return format_currency($amount);
+    }
+
+    public function getCurrencyAttribute()
+    {
+        return get_currency();
+    }
+
+    public function getCurrencySymbolAttribute()
+    {
+        return get_currency_symbol();
     }
 
     // Scopes
     public function scopeByMethod($query, $method)
     {
-        return $query->where('method', $method);
+        return $query->where('payment_type', $method);
     }
 
     public function scopeByStatus($query, $status)
@@ -122,7 +195,7 @@ class Payment extends Model
 
     public function scopeSuccessful($query)
     {
-        return $query->where('status', 'success');
+        return $query->whereIn('status', ['paid', 'success']);
     }
 
     public function scopePending($query)
@@ -137,7 +210,7 @@ class Payment extends Model
 
     public function scopeDateRange($query, $startDate, $endDate)
     {
-        return $query->whereBetween('payment_date', [$startDate, $endDate]);
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
     }
 
     public function scopeSearch($query, $search)
@@ -177,15 +250,15 @@ class Payment extends Model
 
     public function refund($amount = null)
     {
-        $refundAmount = $amount ?? $this->amount;
+        $refundAmount = $amount ?? $this->total_paid;
         
-        if ($refundAmount > $this->amount) {
+        if ($refundAmount > $this->total_paid) {
             throw new \Exception('Le montant du remboursement ne peut pas être supérieur au montant du paiement');
         }
 
         $this->update([
             'status' => 'refunded',
-            'amount' => $this->amount - $refundAmount,
+            'total_paid' => $this->total_paid - $refundAmount,
             'updated_by' => auth()->id(),
         ]);
 
@@ -197,7 +270,7 @@ class Payment extends Model
         $sell = $this->sell;
         if (!$sell) return;
 
-        $totalPaid = $sell->payments()->successful()->sum('amount');
+        $totalPaid = $sell->payments()->successful()->sum('total_paid');
         $totalDue = $sell->total_payable_amount;
 
         if ($totalPaid >= $totalDue) {
@@ -219,7 +292,7 @@ class Payment extends Model
         parent::boot();
 
         static::creating(function ($payment) {
-            $payment->payment_date = $payment->payment_date ?? now();
+            // payment_date n'existe pas dans la table, utiliser created_at automatiquement
         });
 
         static::created(function ($payment) {
@@ -227,7 +300,7 @@ class Payment extends Model
         });
 
         static::updated(function ($payment) {
-            if ($payment->wasChanged(['status', 'amount'])) {
+            if ($payment->wasChanged(['status', 'total_paid'])) {
                 $payment->updateSellPaymentStatus();
             }
         });

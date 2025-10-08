@@ -376,7 +376,7 @@ export default function DashboardHeader({
                 {/* Menu items */}
                 <div className="py-2">
                   <Link
-                    href="/admin/profile"
+                    href={route('admin.users.show', user.id)}
                     className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <HiOutlineUserCircle className="h-5 w-5 text-gray-400" />

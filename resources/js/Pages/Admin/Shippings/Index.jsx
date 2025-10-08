@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     PlusIcon,
     MagnifyingGlassIcon,
@@ -20,14 +21,28 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ShippingsList() {
-    const { shippings, stats, filters, flash } = usePage().props;
+    const { shippings, stats, filters, flash, localeConfig } = usePage().props;
     const [editingShipping, setEditingShipping] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [activeFilters, setActiveFilters] = useState({
         status: filters.status || '',
         per_page: filters.per_page || 15,
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     // Appliquer les filtres
     const applyFilters = (newFilters = {}) => {
@@ -95,8 +110,9 @@ export default function ShippingsList() {
         }
     };
 
-    const handleEdit = (shipping) => {
-        setEditingShipping(shipping);
+    const handleEdit = (shippingId) => {
+        // setEditingShipping(shipping);
+        router.visit(route('admin.shippings.edit', shippingId));
     };
 
     const handleView = (shippingId) => {
@@ -168,7 +184,7 @@ export default function ShippingsList() {
                         {shipping.price == 0 ? (
                             <span className="text-green-600 font-semibold">Gratuit</span>
                         ) : (
-                            `${new Intl.NumberFormat('fr-FR').format(shipping.price)} XOF`
+                            formatCurrency(shipping.price)
                         )}
                     </div>
                 </div>
@@ -207,7 +223,7 @@ export default function ShippingsList() {
             label: 'Date création',
             render: (shipping) => (
                 <span className="text-sm text-gray-500">
-                    {shipping.created_at ? new Date(shipping.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                    {shipping.created_at ? formatDate(shipping.created_at) : 'N/A'}
                 </span>
             )
         }

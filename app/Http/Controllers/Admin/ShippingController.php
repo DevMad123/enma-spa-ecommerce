@@ -54,6 +54,7 @@ class ShippingController extends Controller
                 'inactive' => Shipping::inactive()->count(),
                 'total_orders' => Shipping::withCount('sells')->get()->sum('sells_count'),
             ],
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -64,6 +65,7 @@ class ShippingController extends Controller
     {
         return Inertia::render('Admin/Shippings/create', [
             'maxSortOrder' => Shipping::max('sort_order') + 1,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -295,6 +297,7 @@ class ShippingController extends Controller
         return Inertia::render('Admin/Shippings/show', [
             'shipping' => $shipping,
             'sellsStats' => $sellsStats,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -305,6 +308,7 @@ class ShippingController extends Controller
     {
         return Inertia::render('Admin/Shippings/edit', [
             'shipping' => $shipping,
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class SettingController extends Controller
 {
@@ -34,9 +35,28 @@ class SettingController extends Controller
             'ZAR' => 'Rand Sud-Africain (ZAR)'
         ];
         
+        // Définir les langues/locales disponibles
+        $languages = [
+            'fr-FR' => 'Français (France)',
+            'fr-SN' => 'Français (Sénégal)',
+            'fr-CI' => 'Français (Côte d\'Ivoire)',
+            'fr-MA' => 'Français (Maroc)',
+            'fr-TN' => 'Français (Tunisie)',
+            'en-US' => 'English (United States)',
+            'en-GB' => 'English (United Kingdom)',
+            'ar-MA' => 'العربية (المغرب)',
+            'ar-TN' => 'العربية (تونس)',
+            'es-ES' => 'Español (España)',
+            'pt-BR' => 'Português (Brasil)',
+            'de-DE' => 'Deutsch (Deutschland)',
+            'it-IT' => 'Italiano (Italia)'
+        ];
+        
         return Inertia::render('Admin/Settings/Index', [
             'settings' => $settings,
             'currencies' => $currencies,
+            'languages' => $languages,
+            'localeConfig' => get_js_locale_config(),
             'groups' => [
                 'general' => 'Général',
                 'appearance' => 'Apparence', 
@@ -80,6 +100,7 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
+        Log::info('Setting update request data: ', $request->all());
         $validator = Validator::make($request->all(), [
             'settings' => 'required|array',
             'settings.*.key' => 'required|string',
@@ -97,20 +118,47 @@ class SettingController extends Controller
             $updatedCount = 0;
             $createdCount = 0;
             
+            // Fonction pour obtenir le symbole de devise
+            $getCurrencySymbol = function($currencyCode) {
+                $currencySymbols = [
+                    'XOF' => 'F CFA',
+                    'EUR' => '€',
+                    'USD' => '$',
+                    'GBP' => '£',
+                    'MAD' => 'MAD',
+                    'TND' => 'TND',
+                    'NGN' => '₦',
+                    'GHS' => '₵',
+                    'KES' => 'KSh',
+                    'ZAR' => 'R'
+                ];
+                return $currencySymbols[$currencyCode] ?? $currencyCode;
+            };
+            
             foreach ($request->settings as $settingData) {
-                $setting = Setting::where('key', $settingData['key'])->first();
+                $key = $settingData['key'];
+                $value = $settingData['value'];
+                
+                // Traitement spécial pour la devise
+                if ($key === 'default_currency') {
+                    // Au lieu de modifier default_currency, on modifie currency et currency_symbol
+                    Setting::set('currency', $value);
+                    Setting::set('currency_symbol', $getCurrencySymbol($value));
+                    $updatedCount += 2;
+                    continue;
+                }
+                
+                $setting = Setting::where('key', $key)->first();
                 
                 if ($setting) {
                     // Gérer les différents types de valeurs
-                    $value = $settingData['value'];
-                    
                     if ($setting->type === 'boolean') {
                         $value = $value ? '1' : '0';
                     } elseif ($setting->type === 'json' && is_array($value)) {
                         $value = json_encode($value);
                     }
                     
-                    Setting::set($settingData['key'], $value);
+                    Setting::set($key, $value);
                     $updatedCount++;
                 } else {
                     // Créer le paramètre s'il n'existe pas
@@ -118,25 +166,24 @@ class SettingController extends Controller
                     $type = 'string'; // par défaut
                     
                     // Déterminer le groupe et le type basé sur la clé
-                    if (in_array($settingData['key'], ['show_popular_products', 'show_promotions', 'show_new_arrivals', 'show_categories', 'hero_banner', 'promo_banner'])) {
+                    if (in_array($key, ['show_popular_products', 'show_promotions', 'show_new_arrivals', 'show_categories', 'hero_banner', 'promo_banner'])) {
                         $group = 'appearance';
-                        $type = str_starts_with($settingData['key'], 'show_') ? 'boolean' : 'file';
-                    } elseif (in_array($settingData['key'], ['shipping_cost', 'free_shipping_threshold', 'tax_rate', 'allow_guest_checkout'])) {
+                        $type = str_starts_with($key, 'show_') ? 'boolean' : 'file';
+                    } elseif (in_array($key, ['shipping_cost', 'free_shipping_threshold', 'tax_rate', 'allow_guest_checkout'])) {
                         $group = 'ecommerce';
-                        $type = $settingData['key'] === 'allow_guest_checkout' ? 'boolean' : 'number';
+                        $type = $key === 'allow_guest_checkout' ? 'boolean' : 'number';
                     }
                     
-                    $value = $settingData['value'];
                     if ($type === 'boolean') {
                         $value = $value ? '1' : '0';
                     }
                     
                     Setting::create([
-                        'key' => $settingData['key'],
+                        'key' => $key,
                         'value' => $value,
                         'type' => $type,
                         'group' => $group,
-                        'label' => ucfirst(str_replace('_', ' ', $settingData['key'])),
+                        'label' => ucfirst(str_replace('_', ' ', $key)),
                         'description' => 'Paramètre créé automatiquement'
                     ]);
                     $createdCount++;

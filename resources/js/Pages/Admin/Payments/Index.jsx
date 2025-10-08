@@ -23,7 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function PaymentsList() {
-    const { payments, stats, sells, filters, paymentMethods, paymentStatuses, flash } = usePage().props;
+    const { payments, stats, sells, filters, paymentMethods, paymentStatuses, currency, currencySymbol, flash } = usePage().props;
     const [editingPayment, setEditingPayment] = useState(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
@@ -180,7 +180,7 @@ export default function PaymentsList() {
             render: (payment) => (
                 <div>
                     <div className="text-sm font-medium text-gray-900">
-                        {new Intl.NumberFormat('fr-FR').format(payment.amount || 0)} XOF
+                        {payment.formatted_amount || `${new Intl.NumberFormat('fr-FR').format(payment.amount || 0)} ${payment.currency || 'XOF'}`}
                     </div>
                     <div className="text-sm text-gray-500">
                         {payment.currency || 'XOF'}
@@ -194,7 +194,7 @@ export default function PaymentsList() {
             render: (payment) => (
                 <div className="text-sm text-gray-900">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {paymentMethods[payment.method] || payment.method}
+                        {payment.method_text || payment.method}
                     </span>
                 </div>
             )
@@ -391,7 +391,7 @@ export default function PaymentsList() {
                                 <dl>
                                     <dt className="text-sm font-medium text-gray-500 truncate">Montant Total</dt>
                                     <dd className="text-lg font-medium text-gray-900">
-                                        {new Intl.NumberFormat('fr-FR').format(stats.total_amount || 0)} XOF
+                                        {new Intl.NumberFormat('fr-FR').format(stats.total_amount || 0)} {currencySymbol || currency || 'XOF'}
                                     </dd>
                                 </dl>
                             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     PlusIcon, 
     XMarkIcon, 
@@ -12,12 +13,15 @@ import {
     ArrowLeftIcon,
     CheckCircleIcon,
     ExclamationTriangleIcon,
-    CurrencyEuroIcon
+    BanknotesIcon
 } from '@heroicons/react/24/outline';
 
 export default function EditProduct({ product, categories, subcategories: initialSubcategories, brands, suppliers, colors, sizes }) {
+    const { localeConfig } = usePage().props;
     console.log('🔄 Composant EditProduct chargé');
-    console.log('🔍 Attributs reçus:', product, typeof product.attributes);
+    
+    // État pour gérer l'initialisation de la locale
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     
     // Parser les attributs s'ils sont en format JSON string
     const parseAttributes = (attributes) => {
@@ -34,14 +38,10 @@ export default function EditProduct({ product, categories, subcategories: initia
     };
 
     const parsedAttributes = parseAttributes(product.attributes);
-    console.log('🔍 Attributs parsés:', parsedAttributes);
     
     const [subcategories, setSubcategories] = useState(initialSubcategories || []);
     const [selectedColors, setSelectedColors] = useState([...new Set(parsedAttributes.map(attr => attr.color_id).filter(Boolean))] || []);
     const [selectedSizes, setSelectedSizes] = useState([...new Set(parsedAttributes.map(attr => attr.size_id).filter(Boolean))] || []);
-    
-    console.log('🎨 Couleurs sélectionnées:', selectedColors);
-    console.log('📏 Tailles sélectionnées:', selectedSizes);
     
     const [productType, setProductType] = useState(product.type || 'simple');
     const [variants, setVariants] = useState(product.variants || []);
@@ -83,6 +83,14 @@ export default function EditProduct({ product, categories, subcategories: initia
         attributes: parsedAttributes,
         _method: 'PUT'
     });
+
+    // Initialiser la configuration de locale DE SUITE et forcer un re-render
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true); // Force un re-render
+        }
+    }, [localeConfig]);
 
     // Charger sous-catégories quand category change
     useEffect(() => {
@@ -230,11 +238,6 @@ export default function EditProduct({ product, categories, subcategories: initia
     // Soumission du formulaire
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        console.log('🎯 HandleSubmit appelé pour modification !');
-        console.log('🎨 Couleurs sélectionnées au submit:', selectedColors);
-        console.log('📏 Tailles sélectionnées au submit:', selectedSizes);
-        console.log('📋 Attributs actuels dans data:', data.attributes);
 
         if (!data.name.trim()) {
             alert('Le nom du produit est requis');
@@ -247,7 +250,6 @@ export default function EditProduct({ product, categories, subcategories: initia
         // Ajouter tous les champs du formulaire
         Object.keys(data).forEach(key => {
             if (key === 'attributes' || key === 'variants') {
-                console.log(`📤 Envoi ${key}:`, data[key]);
                 formData.append(key, JSON.stringify(data[key]));
             } else if (key === 'main_image' && data[key]) {
                 formData.append(key, data[key]);
@@ -274,9 +276,6 @@ export default function EditProduct({ product, categories, subcategories: initia
             });
         }
 
-        console.log('📦 Données envoyées:', Object.fromEntries(formData));
-        console.log('🔗 Route utilisée:', route('admin.products.update', product.id));
-
         // Envoyer via Inertia
         router.post(route('admin.products.update', product.id), formData, {
             onStart: () => {
@@ -294,6 +293,11 @@ export default function EditProduct({ product, categories, subcategories: initia
             }
         });
     };
+
+    // Ne pas rendre tant que la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     return (
         <AdminLayout>
@@ -504,14 +508,14 @@ export default function EditProduct({ product, categories, subcategories: initia
                         {/* Prix et stock */}
                         <div className="bg-white shadow rounded-lg p-6">
                             <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                                <CurrencyEuroIcon className="h-5 w-5 mr-2" />
+                                <BanknotesIcon className="h-5 w-5 mr-2" />
                                 Prix et stock
                             </h2>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix d'achat (€)
+                                        Prix d'achat ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -526,7 +530,7 @@ export default function EditProduct({ product, categories, subcategories: initia
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix de vente (€)
+                                        Prix de vente ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -541,7 +545,7 @@ export default function EditProduct({ product, categories, subcategories: initia
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Prix de gros (€)
+                                        Prix de gros ({getCurrentCurrencySymbol()})
                                     </label>
                                     <input
                                         type="number"
@@ -740,7 +744,7 @@ export default function EditProduct({ product, categories, subcategories: initia
 
                                                     <div>
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                            Prix d'achat (€)
+                                                            Prix d'achat ({getCurrentCurrencySymbol()})
                                                         </label>
                                                         <input
                                                             type="number"
@@ -754,7 +758,7 @@ export default function EditProduct({ product, categories, subcategories: initia
 
                                                     <div>
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                            Prix de vente (€)
+                                                            Prix de vente ({getCurrentCurrencySymbol()})
                                                         </label>
                                                         <input
                                                             type="number"
@@ -913,7 +917,7 @@ export default function EditProduct({ product, categories, subcategories: initia
                                         onChange={(e) => setData('discount_type', parseInt(e.target.value))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option value={0}>Montant fixe (€)</option>
+                                        <option value={0}>Montant fixe ({getCurrentCurrencySymbol()})</option>
                                         <option value={1}>Pourcentage (%)</option>
                                     </select>
                                 </div>

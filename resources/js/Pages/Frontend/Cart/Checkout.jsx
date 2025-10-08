@@ -47,8 +47,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
         // Notes
         order_notes: '',
         
-        // Items du panier
-        cart_items: cartItems
+        // Items du panier seront ajoutés dynamiquement
     });
 
     const subtotal = getTotalPrice();
@@ -56,7 +55,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
     const shippingCost = selectedShippingMethod ? parseFloat(selectedShippingMethod.price) : 0;
     const tax = subtotal * 0.20;
     const total = subtotal + shippingCost + tax;
-
+    console.log('Cart items at submission:', cartItems);
     const handleSubmit = (e) => {
         e.preventDefault();
         
@@ -65,22 +64,248 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
             return;
         }
 
+        if (!cartItems || cartItems.length === 0) {
+            alert('Votre panier est vide. Veuillez ajouter des articles avant de finaliser la commande.');
+            return;
+        }
+        
+        // Transformer les cart_items pour correspondre à la structure attendue par le serveur
+        const transformedCartItems = cartItems.map(item => ({
+            product_id: item.product_id || item.product?.id,
+            quantity: item.quantity,
+            color_id: item.color_id || item.color?.id || null,
+            size_id: item.size_id || item.size?.id || null,
+            price: item.price || item.product?.current_sale_price || 0
+        }));
         const formData = {
             ...data,
             shipping_method_id: selectedShipping,
             payment_method_id: selectedPayment,
-            cart_items: cartItems,
+            cart_items: transformedCartItems,
             total: total.toFixed(2)
         };
 
-        post(route('frontend.cart.checkout.process'), {
-            onSuccess: () => {
-                clearCart();
-            },
-            onError: (errors) => {
-                console.error('Erreur checkout:', errors);
-            }
+        // Vérifier la méthode de paiement sélectionnée
+        const selectedPaymentMethod = paymentMethods.find(method => method.id == selectedPayment);
+
+        // Debug: Vérifier le contenu avant envoi
+        console.log('Debug checkout:', {
+            originalCartItems: cartItems,
+            transformedCartItems: transformedCartItems,
+            cartItemsLength: cartItems.length,
+            formData: formData,
+            selectedPayment: selectedPayment,
+            selectedPaymentMethod: selectedPaymentMethod
         });
+        
+        if (selectedPaymentMethod && selectedPaymentMethod.code === 'paypal') {
+            // Traitement PayPal
+            handlePayPalPayment(formData);
+        } else if (selectedPaymentMethod && selectedPaymentMethod.code === 'orange_money') {
+            // Traitement Orange Money
+            handleOrangeMoneyPayment(formData);
+        } else if (selectedPaymentMethod && selectedPaymentMethod.code === 'wave') {
+            // Traitement Wave
+            handleWavePayment(formData);
+        } else {
+            // Traitement normal (autres méthodes de paiement)
+            console.log('Sending POST to:', '/cart/checkout');
+            console.log('Data being sent:', formData);
+            
+            // Utiliser fetch avec JSON pour envoyer les cart_items correctement
+            fetch('/cart/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Inertia': 'true',
+                    'X-Inertia-Version': window.inertiaVersion || '',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Checkout successful:', data);
+                if (data.success) {
+                    clearCart();
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la création de la commande');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur checkout détaillée:', {
+                    error: error,
+                    formData: formData,
+                    cartItems: cartItems
+                });
+                alert('Erreur lors de la création de la commande: ' + error.message);
+            });
+        }
+    };
+
+    const handlePayPalPayment = async (formData) => {
+        try {
+            // D'abord, créer la commande
+            const response = await fetch(route('frontend.cart.process'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la création de la commande');
+            }
+
+            const orderData = await response.json();
+            
+            if (orderData.success && orderData.order_id) {
+                // Créer le paiement PayPal
+                const paypalResponse = await fetch(route('paypal.create'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        order_id: orderData.order_id
+                    })
+                });
+
+                if (!paypalResponse.ok) {
+                    throw new Error('Erreur lors de la création du paiement PayPal');
+                }
+
+                const paypalData = await paypalResponse.json();
+                
+                if (paypalData.success && paypalData.approval_url) {
+                    // Vider le panier avant redirection
+                    clearCart();
+                    // Rediriger vers PayPal
+                    window.location.href = paypalData.approval_url;
+                } else {
+                    throw new Error(paypalData.error || 'Erreur PayPal inconnue');
+                }
+            } else {
+                throw new Error(orderData.message || 'Erreur lors de la création de la commande');
+            }
+        } catch (error) {
+            console.error('Erreur PayPal:', error);
+            alert('Erreur lors du paiement PayPal: ' + error.message);
+        }
+    };
+
+    const handleOrangeMoneyPayment = async (formData) => {
+        try {
+            // D'abord, créer la commande
+            const response = await fetch(route('frontend.cart.process'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la création de la commande');
+            }
+
+            const orderData = await response.json();
+            
+            if (orderData.success && orderData.order_id) {
+                // Créer le paiement Orange Money
+                const orangeMoneyResponse = await fetch(route('orange-money.create'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        order_id: orderData.order_id
+                    })
+                });
+
+                if (!orangeMoneyResponse.ok) {
+                    throw new Error('Erreur lors de la création du paiement Orange Money');
+                }
+
+                const orangeMoneyData = await orangeMoneyResponse.json();
+                
+                if (orangeMoneyData.success && orangeMoneyData.payment_url) {
+                    // Vider le panier avant redirection
+                    clearCart();
+                    // Rediriger vers Orange Money
+                    window.location.href = orangeMoneyData.payment_url;
+                } else {
+                    throw new Error(orangeMoneyData.error || 'Erreur Orange Money inconnue');
+                }
+            } else {
+                throw new Error(orderData.message || 'Erreur lors de la création de la commande');
+            }
+        } catch (error) {
+            console.error('Erreur Orange Money:', error);
+            alert('Erreur lors du paiement Orange Money: ' + error.message);
+        }
+    };
+
+    const handleWavePayment = async (formData) => {
+        try {
+            // D'abord, créer la commande
+            const response = await fetch(route('frontend.cart.process'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la création de la commande');
+            }
+
+            const orderData = await response.json();
+            
+            if (orderData.success && orderData.order_id) {
+                // Créer le paiement Wave
+                const waveResponse = await fetch(route('wave.create'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        order_id: orderData.order_id
+                    })
+                });
+
+                if (!waveResponse.ok) {
+                    throw new Error('Erreur lors de la création du paiement Wave');
+                }
+
+                const waveData = await waveResponse.json();
+                
+                if (waveData.success && waveData.checkout_url) {
+                    // Vider le panier avant redirection
+                    clearCart();
+                    // Rediriger vers Wave
+                    window.location.href = waveData.checkout_url;
+                } else {
+                    throw new Error(waveData.error || 'Erreur Wave inconnue');
+                }
+            } else {
+                throw new Error(orderData.message || 'Erreur lors de la création de la commande');
+            }
+        } catch (error) {
+            console.error('Erreur Wave:', error);
+            alert('Erreur lors du paiement Wave: ' + error.message);
+        }
     };
 
     if (cartItems.length === 0) {
@@ -98,7 +323,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
             </div>
         );
     }
-
+    console.log(paymentMethods);
     return (
         <form onSubmit={handleSubmit} className="space-y-8">
             {/* Contact Information */}
@@ -347,7 +572,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
                     </div>
                 </div>
             )}
-
+            
             {/* Payment Method */}
             {paymentMethods.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -508,8 +733,15 @@ const OrderSummary = () => {
 };
 
 function Checkout({ shippingMethods = [], paymentMethods = [] }) {
+    console.log('Checkout props received:', { 
+        shippingMethods: shippingMethods,
+        paymentMethods: paymentMethods,
+        shippingCount: shippingMethods.length,
+        paymentCount: paymentMethods.length
+    });
+    
     return (
-        <FrontendLayout title="Checkout - ENMA SPA">
+        <FrontendLayout title="Checkout">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     MagnifyingGlassIcon, 
     PlusIcon, 
@@ -18,8 +19,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function OrdersList() {
-    const { orders, stats, customers, filters, orderStatuses, paymentStatuses, flash } = usePage().props;
+    const { orders, stats, customers, filters, orderStatuses, paymentStatuses, flash, localeConfig } = usePage().props;
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [activeFilters, setActiveFilters] = useState({
         customer_id: filters.customer_id || '',
         order_status: filters.order_status !== null ? filters.order_status : '',
@@ -29,6 +31,19 @@ export default function OrdersList() {
         per_page: filters.per_page || 15,
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     // Appliquer les filtres
     const applyFilters = (newFilters = {}) => {
@@ -158,7 +173,7 @@ export default function OrdersList() {
             label: 'Date',
             render: (order) => (
                 <span className="text-sm text-gray-900">
-                    {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                    {formatDate(order.created_at)}
                 </span>
             )
         },
@@ -168,17 +183,11 @@ export default function OrdersList() {
             render: (order) => (
                 <div>
                     <div className="text-sm font-medium text-gray-900">
-                        {new Intl.NumberFormat('fr-FR', {
-                            style: 'currency',
-                            currency: 'EUR'
-                        }).format(order.total_payable_amount || 0)}
+                        {formatCurrency(order.total_payable_amount || 0)}
                     </div>
                     {order.total_due > 0 && (
                         <div className="text-sm text-red-600">
-                            Dû: {new Intl.NumberFormat('fr-FR', { 
-                                style: 'currency', 
-                                currency: 'EUR' 
-                            }).format(order.total_due)}
+                            Dû: {formatCurrency(order.total_due)}
                         </div>
                     )}
                 </div>
@@ -299,10 +308,7 @@ export default function OrdersList() {
                                             Chiffre d'Affaires
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {new Intl.NumberFormat('fr-FR', { 
-                                                style: 'currency', 
-                                                currency: 'EUR' 
-                                            }).format(stats.total_amount)}
+                                            {formatCurrency(stats.total_amount)}
                                         </dd>
                                     </dl>
                                 </div>

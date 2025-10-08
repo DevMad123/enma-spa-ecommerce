@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
 import { 
     ArrowLeftIcon,
     PencilIcon,
@@ -14,8 +15,22 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ShowOrder() {
-    const { order, orderStatuses, paymentStatuses, flash } = usePage().props;
+    const { order, orderStatuses, paymentStatuses, flash, localeConfig } = usePage().props;
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
+
+    // Initialiser la configuration de locale
+    useEffect(() => {
+        if (localeConfig && Object.keys(localeConfig).length > 0) {
+            initLocale(localeConfig);
+            setIsLocaleInitialized(true);
+        }
+    }, [localeConfig]);
+
+    // Afficher un écran de chargement si la locale n'est pas initialisée
+    if (!isLocaleInitialized && localeConfig) {
+        return <div>Chargement...</div>;
+    }
 
     // Mettre à jour le statut via AJAX
     const updateStatus = async (statusType, newStatus) => {
@@ -98,13 +113,7 @@ export default function ShowOrder() {
                                 Commande {order.order_reference || `#${order.id}`}
                             </h1>
                             <p className="text-sm text-gray-500">
-                                Créée le {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
+                                Créée le {formatDate(order.created_at)}
                             </p>
                         </div>
                     </div>
@@ -234,16 +243,16 @@ export default function ShowOrder() {
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {parseFloat(detail.unit_sell_price).toFixed(2)}€
+                                                    {formatCurrency(parseFloat(detail.unit_sell_price))}
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {parseFloat(detail.sale_quantity)}
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {parseFloat(detail.total_discount || 0).toFixed(2)}€
+                                                    {formatCurrency(parseFloat(detail.total_discount || 0))}
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                                    {parseFloat(detail.total_payable_amount).toFixed(2)}€
+                                                    {formatCurrency(parseFloat(detail.total_payable_amount))}
                                                 </td>
                                             </tr>
                                         ))}
@@ -281,47 +290,47 @@ export default function ShowOrder() {
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Sous-total articles:</span>
                                 <span className="text-gray-900">
-                                    {(parseFloat(order.total_payable_amount) - parseFloat(order.shipping_cost) - parseFloat(order.total_vat_amount) + parseFloat(order.total_discount)).toFixed(2)}€
+                                    {formatCurrency(parseFloat(order.total_payable_amount) - parseFloat(order.shipping_cost) - parseFloat(order.total_vat_amount) + parseFloat(order.total_discount))}
                                 </span>
                             </div>
 
                             {parseFloat(order.total_vat_amount) > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">TVA:</span>
-                                    <span className="text-gray-900">{parseFloat(order.total_vat_amount).toFixed(2)}€</span>
+                                    <span className="text-gray-900">{formatCurrency(parseFloat(order.total_vat_amount))}</span>
                                 </div>
                             )}
 
                             {parseFloat(order.shipping_cost) > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Frais de livraison:</span>
-                                    <span className="text-gray-900">{parseFloat(order.shipping_cost).toFixed(2)}€</span>
+                                    <span className="text-gray-900">{formatCurrency(parseFloat(order.shipping_cost))}</span>
                                 </div>
                             )}
 
                             {parseFloat(order.total_discount) > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Remise totale:</span>
-                                    <span className="text-red-600">-{parseFloat(order.total_discount).toFixed(2)}€</span>
+                                    <span className="text-red-600">-{formatCurrency(parseFloat(order.total_discount))}</span>
                                 </div>
                             )}
 
                             <div className="border-t pt-3">
                                 <div className="flex justify-between text-lg font-bold">
                                     <span>Total à payer:</span>
-                                    <span>{parseFloat(order.total_payable_amount).toFixed(2)}€</span>
+                                    <span>{formatCurrency(parseFloat(order.total_payable_amount))}</span>
                                 </div>
                             </div>
 
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Montant payé:</span>
-                                <span className="text-green-600">{parseFloat(order.total_paid).toFixed(2)}€</span>
+                                <span className="text-green-600">{formatCurrency(parseFloat(order.total_paid))}</span>
                             </div>
 
                             {parseFloat(order.total_due) > 0 && (
                                 <div className="flex justify-between text-sm font-medium">
                                     <span className="text-gray-500">Montant dû:</span>
-                                    <span className="text-red-600">{parseFloat(order.total_due).toFixed(2)}€</span>
+                                    <span className="text-red-600">{formatCurrency(parseFloat(order.total_due))}</span>
                                 </div>
                             )}
                         </div>
@@ -396,7 +405,7 @@ export default function ShowOrder() {
 
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Coût</div>
-                                    <div className="text-base text-gray-900">{parseFloat(order.shipping_cost).toFixed(2)}€</div>
+                                    <div className="text-base text-gray-900">{formatCurrency(parseFloat(order.shipping_cost))}</div>
                                 </div>
                             </div>
                         </div>
@@ -418,13 +427,7 @@ export default function ShowOrder() {
                             <div>
                                 <div className="text-gray-500">Date de création</div>
                                 <div className="text-gray-900">
-                                    {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    {formatDate(order.created_at)}
                                 </div>
                             </div>
 
@@ -432,13 +435,7 @@ export default function ShowOrder() {
                                 <div>
                                     <div className="text-gray-500">Dernière modification</div>
                                     <div className="text-gray-900">
-                                        {new Date(order.updated_at).toLocaleDateString('fr-FR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
+                                        {formatDate(order.updated_at)}
                                     </div>
                                 </div>
                             )}
