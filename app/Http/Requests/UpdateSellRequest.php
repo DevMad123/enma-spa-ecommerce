@@ -22,11 +22,8 @@ class UpdateSellRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_status' => 'nullable|integer|in:0,1,2,3',
             'order_status' => 'nullable|integer|in:0,1,2,3,4,5,6',
-            'shipping_method' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
-            'total_paid' => 'nullable|numeric|min:0|max:9999999',
         ];
     }
 
@@ -38,11 +35,7 @@ class UpdateSellRequest extends FormRequest
         return [
             'payment_status.in' => 'Le statut de paiement sélectionné est invalide.',
             'order_status.in' => 'Le statut de commande sélectionné est invalide.',
-            'shipping_method.max' => 'La méthode de livraison ne peut pas dépasser 255 caractères.',
             'notes.max' => 'Les notes ne peuvent pas dépasser 1000 caractères.',
-            'total_paid.numeric' => 'Le montant payé doit être un nombre.',
-            'total_paid.min' => 'Le montant payé ne peut pas être négatif.',
-            'total_paid.max' => 'Le montant payé est trop élevé.',
         ];
     }
 

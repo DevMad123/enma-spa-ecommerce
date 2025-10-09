@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { 
@@ -661,7 +661,23 @@ const SettingsTab = ({ user }) => {
 
 export default function Profile({ orders = [], wishlistItems = [], customer = null }) {
     const { auth } = usePage().props;
-    const [activeTab, setActiveTab] = useState('profile');
+    
+    // Détecter l'onglet à partir de l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab') || 'profile';
+    
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Mettre à jour l'URL quand l'onglet change
+    useEffect(() => {
+        const url = new URL(window.location);
+        if (activeTab === 'profile') {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', activeTab);
+        }
+        window.history.replaceState({}, '', url);
+    }, [activeTab]);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -679,7 +695,7 @@ export default function Profile({ orders = [], wishlistItems = [], customer = nu
     };
 
     return (
-        <FrontendLayout title="Mon Profil - ENMA SPA">
+        <FrontendLayout title="Mon Profil">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">

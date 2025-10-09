@@ -55,7 +55,7 @@ export default function ForgotPassword({ status }) {
     };
 
     return (
-        <FrontendLayout title="Mot de passe oublié - ENMA SPA">
+        <FrontendLayout title="Mot de passe oublié">
             <Head title="Mot de passe oublié" />
             
             {/* Hero Section */}

@@ -92,7 +92,7 @@ class ShippingController extends Controller
 
             return redirect()
                 ->route('admin.shippings.index')
-                ->with('flash.success', "Mode de livraison '{$shipping->name}' créé avec succès!");
+                ->with('flash', ['success' => "Mode de livraison '{$shipping->name}' créé avec succès!"]);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -100,7 +100,7 @@ class ShippingController extends Controller
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('flash.error', 'Erreur lors de la création : ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la création : ' . $e->getMessage()]);
         }
     }
 
@@ -329,7 +329,7 @@ class ShippingController extends Controller
 
             return redirect()
                 ->route('admin.shippings.index')
-                ->with('flash.success', "Mode de livraison '{$shipping->name}' mis à jour avec succès!");
+                ->with('flash', ['success' => "Mode de livraison '{$shipping->name}' mis à jour avec succès!"]);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -337,7 +337,7 @@ class ShippingController extends Controller
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('flash.error', 'Erreur lors de la mise à jour : ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la mise à jour : ' . $e->getMessage()]);
         }
     }
 
@@ -353,7 +353,7 @@ class ShippingController extends Controller
             if ($shipping->sells()->exists()) {
                 return redirect()
                     ->back()
-                    ->with('flash.error', 'Impossible de supprimer ce mode de livraison car il est utilisé dans des commandes.');
+                    ->with('flash', ['error' => 'Impossible de supprimer ce mode de livraison car il est utilisé dans des commandes.']);
             }
 
             $shippingName = $shipping->name;
@@ -363,14 +363,14 @@ class ShippingController extends Controller
 
             return redirect()
                 ->route('admin.shippings.index')
-                ->with('flash.success', "Mode de livraison '{$shippingName}' supprimé avec succès!");
+                ->with('flash', ['success' => "Mode de livraison '{$shippingName}' supprimé avec succès!"]);
 
         } catch (\Exception $e) {
             DB::rollback();
             
             return redirect()
                 ->back()
-                ->with('flash.error', 'Erreur lors de la suppression : ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la suppression : ' . $e->getMessage()]);
         }
     }
 

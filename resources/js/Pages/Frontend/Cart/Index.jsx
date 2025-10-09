@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FrontendLayout, { CartProvider, useCart } from '@/Layouts/FrontendLayout';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { usePriceSettings } from '@/Utils/priceFormatter';
 import { 
     TrashIcon,
     PlusIcon,
@@ -14,6 +15,8 @@ import {
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
     const [isUpdating, setIsUpdating] = useState(false);
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
 
     const handleQuantityChange = async (newQuantity) => {
         if (newQuantity < 1) return;
@@ -78,10 +81,10 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
                     <div className="text-right">
                         <p className="text-lg font-medium text-gray-900">
-                            {itemTotal.toFixed(2)}€
+                            {formatPriceWithCurrency(itemTotal)}
                         </p>
                         <p className="text-sm text-gray-500">
-                            {item.price}€ × {item.quantity}
+                            {formatPriceWithCurrency(item.price)} × {item.quantity}
                         </p>
                     </div>
                 </div>
@@ -131,9 +134,9 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
     );
 };
 
-const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
-    const freeShippingThreshold = 50;
-    const remainingForFreeShipping = freeShippingThreshold - subtotal;
+const OrderSummary = ({ cartItems, subtotal, tax, total }) => {
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
 
     return (
         <div className="bg-gray-50 rounded-2xl p-6">
@@ -143,46 +146,21 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
                 {/* Sous-total */}
                 <div className="flex justify-between">
                     <span className="text-gray-600">Sous-total ({cartItems.length} article{cartItems.length > 1 ? 's' : ''})</span>
-                    <span className="font-medium">{subtotal.toFixed(2)}€</span>
+                    <span className="font-medium">{formatPriceWithCurrency(subtotal)}</span>
                 </div>
-
-                {/* Livraison */}
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Livraison</span>
-                    <span className={`font-medium ${shipping === 0 ? 'text-green-600' : ''}`}>
-                        {shipping === 0 ? 'Gratuite' : `${shipping.toFixed(2)}€`}
-                    </span>
-                </div>
-
-                {/* Message livraison gratuite */}
-                {remainingForFreeShipping > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-2">
-                            <TruckIcon className="h-5 w-5 text-amber-600" />
-                            <span className="text-sm text-amber-800">
-                                Plus que <strong>{remainingForFreeShipping.toFixed(2)}€</strong> pour la livraison gratuite !
-                            </span>
-                        </div>
-                        <div className="mt-2 bg-amber-200 rounded-full h-2">
-                            <div 
-                                className="bg-amber-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min((subtotal / freeShippingThreshold) * 100, 100)}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 {/* TVA */}
                 <div className="flex justify-between">
                     <span className="text-gray-600">TVA</span>
-                    <span className="font-medium">{tax.toFixed(2)}€</span>
+                    <span className="font-medium">{formatPriceWithCurrency(tax)}</span>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold text-gray-900">Total</span>
-                        <span className="text-xl font-bold text-gray-900">{total.toFixed(2)}€</span>
+                        <span className="text-lg font-semibold text-gray-900">Sous-total</span>
+                        <span className="text-xl font-bold text-gray-900">{formatPriceWithCurrency(total)}</span>
                     </div>
+                    <p className="text-sm text-gray-500 mt-1">Les frais de livraison seront calculés lors du checkout</p>
                 </div>
             </div>
 
@@ -212,6 +190,8 @@ const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
 
 const RecommendedProducts = ({ products }) => {
     const { addToCart } = useCart();
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
 
     if (!products || products.length === 0) return null;
 
@@ -237,11 +217,11 @@ const RecommendedProducts = ({ products }) => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <span className="text-lg font-bold text-gray-900">
-                                        {product.current_sale_price}€
+                                        {formatPriceWithCurrency(product.current_sale_price)}
                                     </span>
                                     {product.price > product.current_sale_price && (
                                         <span className="ml-2 text-sm text-gray-500 line-through">
-                                            {product.price}€
+                                            {formatPriceWithCurrency(product.price)}
                                         </span>
                                     )}
                                 </div>
@@ -262,11 +242,13 @@ const RecommendedProducts = ({ products }) => {
 
 function Cart({ recommendedProducts = [] }) {
     const { cartItems, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useCart();
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
+    const taxRate = appSettings?.tax_rate || 0.18;
     
     const subtotal = getTotalPrice();
-    const shipping = subtotal >= 50 ? 0 : 5.99; // Livraison gratuite dès 50€
-    const tax = subtotal * 0.20; // TVA 20%
-    const total = subtotal + shipping + tax;
+    const tax = subtotal * taxRate;
+    const total = subtotal + tax;
 
     const handleUpdateQuantity = (productId, quantity, colorId, sizeId) => {
         updateQuantity(productId, quantity, colorId, sizeId);
@@ -359,7 +341,7 @@ function Cart({ recommendedProducts = [] }) {
 
                                 <div className="text-right">
                                     <p className="text-sm text-gray-600">Sous-total</p>
-                                    <p className="text-2xl font-bold text-gray-900">{subtotal.toFixed(2)}€</p>
+                                    <p className="text-2xl font-bold text-gray-900">{formatPriceWithCurrency(subtotal)}</p>
                                 </div>
                             </div>
                         </div>
@@ -370,7 +352,6 @@ function Cart({ recommendedProducts = [] }) {
                         <OrderSummary
                             cartItems={cartItems}
                             subtotal={subtotal}
-                            shipping={shipping}
                             tax={tax}
                             total={total}
                         />

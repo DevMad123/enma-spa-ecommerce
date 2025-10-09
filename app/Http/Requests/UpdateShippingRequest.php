@@ -31,6 +31,8 @@ class UpdateShippingRequest extends FormRequest
             'is_active' => ['boolean'],
             'sort_order' => ['integer', 'min:0'],
             'estimated_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'supports_free_shipping' => ['boolean'],
+            'free_shipping_threshold' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
         ];
     }
 
@@ -48,6 +50,8 @@ class UpdateShippingRequest extends FormRequest
             'is_active' => 'statut actif',
             'sort_order' => 'ordre d\'affichage',
             'estimated_days' => 'délai estimé en jours',
+            'supports_free_shipping' => 'support de livraison gratuite',
+            'free_shipping_threshold' => 'seuil de livraison gratuite',
         ];
     }
 

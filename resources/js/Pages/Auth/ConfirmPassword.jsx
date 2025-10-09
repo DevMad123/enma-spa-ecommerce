@@ -77,7 +77,7 @@ export default function ConfirmPassword() {
     };
 
     return (
-        <FrontendLayout title="Confirmation de mot de passe - ENMA SPA">
+        <FrontendLayout title="Confirmation de mot de passe">
             <Head title="Confirmation de mot de passe" />
             
             {/* Hero Section */}

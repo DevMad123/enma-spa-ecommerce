@@ -15,7 +15,8 @@ import {
     BanknotesIcon,
     ShoppingBagIcon,
     ClockIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    XCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function OrdersList() {
@@ -359,14 +360,29 @@ export default function OrdersList() {
             </div>
 
             {/* Messages Flash */}
-            {flash.success && (
-                <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                    {flash.success}
+            {flash?.success && (
+                <div className="mb-4 rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
+                    <div className="flex">
+                        <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                        <div className="ml-3">
+                            <p className="text-sm font-medium text-green-800">
+                                {flash.success}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
-            {flash.error && (
-                <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    {flash.error}
+            
+            {flash?.error && (
+                <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
+                    <div className="flex">
+                        <XCircleIcon className="h-5 w-5 text-red-400" />
+                        <div className="ml-3">
+                            <p className="text-sm font-medium text-red-800">
+                                {flash.error}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
 

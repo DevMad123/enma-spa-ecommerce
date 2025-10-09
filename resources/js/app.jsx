@@ -8,10 +8,12 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import { CartProvider } from './Layouts/FrontendLayout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => {
+        // Utiliser directement la variable d'environnement comme fallback
+        // Le vrai nom sera géré par le Head component dans chaque page
+        return title;
+    },
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true })
         return pages[`./Pages/${name}.jsx`]

@@ -8,7 +8,9 @@ import {
     CurrencyDollarIcon,
     ClockIcon,
     ListBulletIcon,
-    DocumentTextIcon 
+    DocumentTextIcon,
+    GiftIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 
 export default function ShippingCreate() {
@@ -22,6 +24,8 @@ export default function ShippingCreate() {
         estimated_days: '',
         sort_order: '',
         is_active: true,
+        supports_free_shipping: false,
+        free_shipping_threshold: '',
     });
 
     // Initialiser la configuration de locale
@@ -220,6 +224,77 @@ export default function ShippingCreate() {
                     </div>
                 </div>
 
+                {/* Section Livraison gratuite */}
+                <div className="bg-white shadow rounded-lg p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                        <GiftIcon className="h-5 w-5 text-emerald-500" />
+                        <h2 className="text-lg font-medium text-gray-900">Livraison gratuite</h2>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="flex items-center space-x-3">
+                                <input
+                                    type="checkbox"
+                                    checked={data.supports_free_shipping}
+                                    onChange={(e) => setData('supports_free_shipping', e.target.checked)}
+                                    className="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
+                                />
+                                <span className="text-sm font-medium text-gray-700">
+                                    Supporte la livraison gratuite
+                                </span>
+                            </label>
+                            <p className="mt-1 text-xs text-gray-500 ml-6">
+                                {data.supports_free_shipping 
+                                    ? 'Cette méthode de livraison peut devenir gratuite selon le montant du panier' 
+                                    : 'Cette méthode de livraison garde toujours son prix fixe'
+                                }
+                            </p>
+                        </div>
+
+                        {data.supports_free_shipping && (
+                            <div className="ml-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <div className="mb-3">
+                                    <label className="block text-sm font-medium text-emerald-800 mb-1">
+                                        Seuil de livraison gratuite ({getCurrentCurrencySymbol()})
+                                    </label>
+                                    <div className="relative">
+                                        <SparklesIcon className="h-5 w-5 text-emerald-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                                        <input
+                                            type="number"
+                                            step="1000"
+                                            min="0"
+                                            value={data.free_shipping_threshold}
+                                            onChange={(e) => setData('free_shipping_threshold', e.target.value)}
+                                            placeholder="Ex: 50000, 75000..."
+                                            className={`w-full border rounded-md pl-10 pr-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                                                errors.free_shipping_threshold ? 'border-red-300' : 'border-emerald-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    {errors.free_shipping_threshold && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.free_shipping_threshold}</p>
+                                    )}
+                                    <p className="mt-1 text-xs text-emerald-600">
+                                        Laissez vide pour utiliser le seuil global de l'application (75 000 {getCurrentCurrencySymbol()})
+                                    </p>
+                                </div>
+                                
+                                <div className="bg-white p-3 rounded border border-emerald-200">
+                                    <div className="flex items-start space-x-2">
+                                        <div className="flex-shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-1.5"></div>
+                                        <div className="text-xs text-emerald-700">
+                                            <strong>Comment ça fonctionne :</strong><br />
+                                            Quand le montant du panier atteint ce seuil, la livraison devient gratuite automatiquement.
+                                            Si aucun seuil spécifique n'est défini, le seuil global sera utilisé.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Aperçu */}
                 {data.name && (
                     <div className="bg-white shadow rounded-lg p-6">
@@ -233,9 +308,20 @@ export default function ShippingCreate() {
                                         {!data.is_active && (
                                             <span className="text-xs text-red-500">(Inactif)</span>
                                         )}
+                                        {data.supports_free_shipping && (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                <GiftIcon className="w-3 h-3 mr-1" />
+                                                Livraison gratuite possible
+                                            </span>
+                                        )}
                                     </div>
                                     {data.description && (
                                         <div className="text-sm text-gray-500 mt-1">{data.description}</div>
+                                    )}
+                                    {data.supports_free_shipping && (
+                                        <div className="text-xs text-emerald-600 mt-1">
+                                            Gratuit à partir de {formatCurrency(data.free_shipping_threshold || 75000)}
+                                        </div>
                                     )}
                                 </div>
                                 <div className="text-right">

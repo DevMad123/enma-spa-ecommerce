@@ -142,13 +142,13 @@ class SellController extends Controller
 
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('success', 'Commande créée avec succès!');
+                ->with('flash', ['success' => 'Commande créée avec succès!']);
 
         } catch (\Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Erreur lors de la création de la commande: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la création de la commande: ' . $e->getMessage()]);
         }
     }
 
@@ -161,6 +161,7 @@ class SellController extends Controller
             'customer',
             'sellDetails.product',
             'sellDetails.productVariant',
+            'shipping',
             'createdBy',
             'updatedBy',
             'orderAddress',
@@ -184,13 +185,13 @@ class SellController extends Controller
      */
     public function edit(Sell $sell)
     {
-        $order = $sell->load(['customer', 'sellDetails.product', 'sellDetails.productVariant']);
+        $order = $sell->load(['customer', 'sellDetails.product', 'sellDetails.productVariant', 'shipping']);
 
         // Ne permettre l'édition que si la commande n'est pas terminée
         if ($order->status == 1 || $order->order_status >= 6) {
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('error', 'Cette commande ne peut plus être modifiée.');
+                ->with('flash', ['error' => 'Cette commande ne peut plus être modifiée.']);
         }
 
         $customers = Ecommerce_customer::select('id', 'first_name', 'last_name', 'email')
@@ -198,11 +199,18 @@ class SellController extends Controller
                                       ->orderBy('first_name')
                                       ->get();
 
+        // S'assurer que les données sont dans le bon format pour le frontend
+        $orderArray = $order->toArray();
+        if (isset($orderArray['sell_details'])) {
+            $orderArray['sellDetails'] = $orderArray['sell_details'];
+        }
+
         return Inertia::render('Admin/Orders/edit', [
-            'order' => $order,
+            'order' => $orderArray,
             'customers' => $customers,
             'orderStatuses' => $this->getOrderStatuses(),
             'paymentStatuses' => $this->getPaymentStatuses(),
+            'localeConfig' => get_js_locale_config(),
         ]);
     }
 
@@ -216,13 +224,13 @@ class SellController extends Controller
 
             return redirect()
                 ->route('admin.orders.show', $order->id)
-                ->with('success', 'Commande mise à jour avec succès!');
+                ->with('flash', ['success' => 'Commande mise à jour avec succès!']);
 
         } catch (\Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Erreur lors de la mise à jour: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()]);
         }
     }
 
@@ -236,12 +244,12 @@ class SellController extends Controller
 
             return redirect()
                 ->route('admin.orders.index')
-                ->with('success', 'Commande annulée avec succès!');
+                ->with('flash', ['success' => 'Commande annulée avec succès!']);
 
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', 'Erreur lors de l\'annulation: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de l\'annulation: ' . $e->getMessage()]);
         }
     }
 

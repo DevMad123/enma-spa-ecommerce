@@ -340,6 +340,33 @@ export default function PaymentMethodsList() {
                     </div>
                 </div>
 
+                {/* Flash messages */}
+                {flash?.success && (
+                    <div className="rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
+                        <div className="flex">
+                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                            <div className="ml-3">
+                                <p className="text-sm font-medium text-green-800">
+                                    {flash.success}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {flash?.error && (
+                    <div className="rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
+                        <div className="flex">
+                            <XCircleIcon className="h-5 w-5 text-red-400" />
+                            <div className="ml-3">
+                                <p className="text-sm font-medium text-red-800">
+                                    {flash.error}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Table des données */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                     <DataTable

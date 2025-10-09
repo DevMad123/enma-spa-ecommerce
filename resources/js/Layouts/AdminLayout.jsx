@@ -73,12 +73,14 @@ function getPageTitle(url) {
 
 export default function AdminLayout({ title, children }) {
   const { props } = usePage();
-  const { auth } = props;
+  const { auth, appSettings } = props;
   const { url } = usePage();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const pageTitle = title || getPageTitle(url);
+  const appName = appSettings?.app_name || 'ENMA SPA';
+  const fullTitle = `${pageTitle} - ${appName}`;
 
   const handleSidebarToggle = () => {
     if (window.innerWidth < 1024) {
@@ -90,7 +92,7 @@ export default function AdminLayout({ title, children }) {
 
   return (
     <>
-      <Head title={pageTitle} />
+      <Head title={fullTitle} />
       <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
         <DashboardSidebar 

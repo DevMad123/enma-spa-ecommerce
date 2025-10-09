@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Frontend\WishlistController;
+use App\Http\Controllers\TestPricingController;
 
 // Contrôleurs publics
 use App\Http\Controllers\HomeController;
@@ -43,10 +44,6 @@ use App\Http\Controllers\WavePaymentController;
 
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
-
-// -------------------
-// Routes publiques
-// -------------------
 
 // Route de test pour les paramètres
 Route::get('/test-settings', function () {
@@ -189,7 +186,7 @@ Route::middleware('auth')->prefix('profile')->name('frontend.profile.')->group(f
     Route::get('/edit', [FrontendProfileController::class, 'edit'])->name('edit');
     Route::put('/update', [FrontendProfileController::class, 'update'])->name('update');
     Route::get('/orders', [FrontendProfileController::class, 'orders'])->name('orders');
-    Route::get('/orders/{order}', [FrontendProfileController::class, 'orderDetails'])->name('order.details');
+    Route::get('/orders/{order}', [FrontendProfileController::class, 'orderDetails'])->name('order');
     Route::get('/addresses', [FrontendProfileController::class, 'addresses'])->name('addresses');
 });
 
@@ -461,6 +458,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/{paymentMethod}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'destroy'])->name('destroy');
         Route::patch('/{paymentMethod}/toggle', [App\Http\Controllers\Admin\PaymentMethodController::class, 'toggleStatus'])->name('toggle');
         Route::put('/update-order', [App\Http\Controllers\Admin\PaymentMethodController::class, 'updateOrder'])->name('updateOrder');
+        
+        // Routes pour les actions groupées
+        Route::post('/bulk-delete', [App\Http\Controllers\Admin\PaymentMethodController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-activate', [App\Http\Controllers\Admin\PaymentMethodController::class, 'bulkActivate'])->name('bulk-activate');
+        Route::post('/bulk-deactivate', [App\Http\Controllers\Admin\PaymentMethodController::class, 'bulkDeactivate'])->name('bulk-deactivate');
     });
 
     // Routes Paramètres

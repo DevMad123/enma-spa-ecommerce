@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 
@@ -58,17 +59,32 @@ class PaymentMethodController extends Controller
             'config' => 'nullable|array',
         ]);
 
-        $paymentMethod = PaymentMethod::create([
-            'name' => $request->name,
-            'code' => $request->code,
-            'description' => $request->description,
-            'is_active' => $request->boolean('is_active', true),
-            'sort_order' => $request->sort_order ?? 0,
-            'config' => $request->config ?? [],
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Méthode de paiement créée avec succès.');
+            $paymentMethod = PaymentMethod::create([
+                'name' => $request->name,
+                'code' => $request->code,
+                'description' => $request->description,
+                'is_active' => $request->boolean('is_active', true),
+                'sort_order' => $request->sort_order ?? ((PaymentMethod::max('sort_order') ?? 0) + 1),
+                'config' => $request->config ?? [],
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.payment-methods.index')
+                ->with('flash', ['success' => "Méthode de paiement '{$paymentMethod->name}' créée avec succès!"]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('flash', ['error' => 'Erreur lors de la création : ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -112,17 +128,32 @@ class PaymentMethodController extends Controller
             'config' => 'nullable|array',
         ]);
 
-        $paymentMethod->update([
-            'name' => $request->name,
-            'code' => $request->code,
-            'description' => $request->description,
-            'is_active' => $request->boolean('is_active'),
-            'sort_order' => $request->sort_order ?? $paymentMethod->sort_order,
-            'config' => $request->config ?? [],
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Méthode de paiement mise à jour avec succès.');
+            $paymentMethod->update([
+                'name' => $request->name,
+                'code' => $request->code,
+                'description' => $request->description,
+                'is_active' => $request->boolean('is_active'),
+                'sort_order' => $request->sort_order ?? $paymentMethod->sort_order,
+                'config' => $request->config ?? [],
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.payment-methods.index')
+                ->with('flash', ['success' => "Méthode de paiement '{$paymentMethod->name}' mise à jour avec succès!"]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('flash', ['error' => 'Erreur lors de la mise à jour : ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -130,10 +161,35 @@ class PaymentMethodController extends Controller
      */
     public function destroy(PaymentMethod $paymentMethod)
     {
-        $paymentMethod->delete();
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('admin.payment-methods.index')
-            ->with('success', 'Méthode de paiement supprimée avec succès.');
+            // Vérifier s'il y a des commandes liées (si relation existe)
+            // Note: Ajustez selon votre modèle de données
+            /*
+            if ($paymentMethod->sells()->exists()) {
+                return redirect()
+                    ->back()
+                    ->with('flash', ['error' => 'Impossible de supprimer cette méthode de paiement car elle est utilisée dans des commandes.']);
+            }
+            */
+
+            $paymentMethodName = $paymentMethod->name;
+            $paymentMethod->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.payment-methods.index')
+                ->with('flash', ['success' => "Méthode de paiement '{$paymentMethodName}' supprimée avec succès!"]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return redirect()
+                ->back()
+                ->with('flash', ['error' => 'Erreur lors de la suppression : ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -141,13 +197,25 @@ class PaymentMethodController extends Controller
      */
     public function toggleStatus(PaymentMethod $paymentMethod)
     {
-        $paymentMethod->update([
-            'is_active' => !$paymentMethod->is_active
-        ]);
+        try {
+            $paymentMethod->update([
+                'is_active' => !$paymentMethod->is_active
+            ]);
 
-        $status = $paymentMethod->is_active ? 'activée' : 'désactivée';
+            $status = $paymentMethod->is_active ? 'activée' : 'désactivée';
 
-        return back()->with('success', "Méthode de paiement {$status} avec succès.");
+            return response()->json([
+                'success' => true,
+                'message' => "Méthode de paiement '{$paymentMethod->name}' {$status} avec succès!",
+                'is_active' => $paymentMethod->is_active,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du changement de statut : ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -161,11 +229,140 @@ class PaymentMethodController extends Controller
             'items.*.sort_order' => 'required|integer|min:0',
         ]);
 
-        foreach ($request->items as $item) {
-            PaymentMethod::where('id', $item['id'])
-                ->update(['sort_order' => $item['sort_order']]);
-        }
+        try {
+            DB::beginTransaction();
 
-        return back()->with('success', 'Ordre des méthodes de paiement mis à jour avec succès.');
+            foreach ($request->items as $item) {
+                PaymentMethod::where('id', $item['id'])
+                    ->update(['sort_order' => $item['sort_order']]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ordre des méthodes de paiement mis à jour avec succès!',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Suppression groupée de méthodes de paiement (AJAX)
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payment_methods,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $paymentMethods = PaymentMethod::whereIn('id', $request->ids)->get();
+            $deletedCount = 0;
+
+            foreach ($paymentMethods as $paymentMethod) {
+                // Vérifier s'il y a des commandes liées (si relation existe)
+                // Note: Ajustez selon votre modèle de données
+                /*
+                if (!$paymentMethod->sells()->exists()) {
+                    $paymentMethod->delete();
+                    $deletedCount++;
+                }
+                */
+                $paymentMethod->delete();
+                $deletedCount++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$deletedCount méthode(s) de paiement supprimée(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression groupée: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Activation groupée de méthodes de paiement (AJAX)
+     */
+    public function bulkActivate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payment_methods,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $count = PaymentMethod::whereIn('id', $request->ids)
+                            ->update(['is_active' => true]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$count méthode(s) de paiement activée(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'activation groupée: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Désactivation groupée de méthodes de paiement (AJAX)
+     */
+    public function bulkDeactivate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payment_methods,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $count = PaymentMethod::whereIn('id', $request->ids)
+                            ->update(['is_active' => false]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "$count méthode(s) de paiement désactivée(s) avec succès!",
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la désactivation groupée: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }

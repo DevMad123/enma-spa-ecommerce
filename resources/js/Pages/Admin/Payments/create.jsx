@@ -195,24 +195,6 @@ export default function PaymentCreate({ sell, sells, paymentMethods, paymentStat
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Statut
-                                    </label>
-                                    <select
-                                        value={data.status}
-                                        onChange={(e) => setData('status', e.target.value)}
-                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        {Object.entries(paymentStatuses).map(([key, value]) => (
-                                            <option key={key} value={key}>{value}</option>
-                                        ))}
-                                    </select>
-                                    {errors.status && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.status}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
                                         Date de paiement
                                     </label>
                                     <input
@@ -315,8 +297,8 @@ export default function PaymentCreate({ sell, sells, paymentMethods, paymentStat
                             <ul className="text-sm text-blue-800 space-y-1">
                                 <li>• Vérifiez que le montant correspond au paiement reçu</li>
                                 <li>• Indiquez la référence de transaction si disponible</li>
-                                <li>• Le statut sera automatiquement mis à "Réussi" si validé</li>
-                                <li>• Le solde de la commande sera mis à jour automatiquement</li>
+                                <li>• Le statut sera automatiquement défini selon la validation</li>
+                                <li>• Le statut de paiement de la commande sera mis à jour automatiquement</li>
                             </ul>
                         </div>
                     </div>

@@ -9,11 +9,17 @@ use App\Models\Sell_details;
 use App\Models\Shipping;
 use App\Models\PaymentMethod;
 use App\Models\Ecommerce_customer;
+use App\Models\User;
+use App\Models\Notification as CustomNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Log;
+use App\Notifications\NewOrderNotification;
+use App\Mail\OrderConfirmationMail;
 
 class CartController extends Controller
 {
@@ -26,6 +32,7 @@ class CartController extends Controller
     {
         $shippingMethods = Shipping::where('is_active', true)
             ->orderBy('sort_order', 'asc')
+            ->select(['id', 'name', 'description', 'price', 'estimated_days', 'supports_free_shipping', 'free_shipping_threshold'])
             ->get();
 
         $paymentMethods = PaymentMethod::where('is_active', true)
@@ -40,6 +47,25 @@ class CartController extends Controller
 
     public function processCheckout(Request $request)
     {
+        // Protection contre les soumissions multiples
+        $cacheKey = 'checkout_processing_' . session()->getId() . '_' . md5(json_encode($request->only(['email', 'cart_items'])));
+        if (cache()->has($cacheKey)) {
+            Log::warning('Duplicate checkout attempt detected', ['cache_key' => $cacheKey]);
+            
+            if ($request->expectsJson() || $request->header('X-Inertia')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Une commande est déjà en cours de traitement.',
+                ], 429);
+            }
+            
+            return redirect()->back()
+                ->with('error', 'Une commande est déjà en cours de traitement.');
+        }
+        
+        // Marquer comme en cours de traitement pour 60 secondes
+        cache()->put($cacheKey, true, 60);
+
         // Debug : Vérifier que la méthode est bien appelée
         Log::info('ProcessCheckout Data: ', $request->all());
         Log::info('ProcessCheckout called with method: ' . $request->method());
@@ -89,10 +115,10 @@ class CartController extends Controller
                 // 'total' => 'required|numeric|min:0',
             ]);
             
-            \Log::info('Validation passed successfully');
+            Log::info('Validation passed successfully');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed:', [
+            Log::error('Validation failed:', [
                 'errors' => $e->errors(),
                 'failed_fields' => array_keys($e->errors())
             ]);
@@ -100,26 +126,26 @@ class CartController extends Controller
         }
 
         // Debug temporaire : log des données reçues
-        \Log::info('Checkout data received:', $request->all());
-        \Log::info('Cart items details:', $request->input('cart_items', []));
+        Log::info('Checkout data received:', $request->all());
+        Log::info('Cart items details:', $request->input('cart_items', []));
 
         try {
-            \Log::info('Starting transaction...');
+            Log::info('Starting transaction...');
             DB::beginTransaction();
 
             // Récupérer la méthode de paiement
             $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
-            \Log::info('Payment method found:', ['method' => $paymentMethod->code]);
+            Log::info('Payment method found:', ['method' => $paymentMethod->code]);
 
             // Calculer totaux
             $cartItems = $request->cart_items;
-            \Log::info('Processing cart items:', ['cart_items' => $cartItems]);
+            Log::info('Processing cart items:', ['cart_items' => $cartItems]);
             
             $subtotal = 0;
             $orderItems = [];
 
             foreach ($cartItems as $item) {
-                \Log::info('Processing item:', $item);
+                Log::info('Processing item:', $item);
                 $product = Product::findOrFail($item['product_id']);
                 $itemTotal = $product->current_sale_price * $item['quantity'];
                 $subtotal += $itemTotal;
@@ -143,7 +169,7 @@ class CartController extends Controller
             $totalDiscount = 0; // À implémenter selon vos règles
             $totalPayable = $subtotal + $shippingCost + $totalVat - $totalDiscount;
 
-            \Log::info('Order calculations:', [
+            Log::info('Order calculations:', [
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingCost,
                 'total_payable' => $totalPayable,
@@ -185,24 +211,23 @@ class CartController extends Controller
                 ]);
             }
 
-            \Log::info('Customer created/found:', ['customer_id' => $customer->id]);
+            Log::info('Customer created/found:', ['customer_id' => $customer->id]);
 
             // Créer la commande (Sell)
             $sell = Sell::create([
                 'customer_id' => $customer->id,
-                'invoice_number' => $this->generateInvoiceNumber(),
-                'total_quantity' => array_sum(array_column($cartItems, 'quantity')),
-                'total_amount' => $subtotal,
+                'order_reference' => $this->generateInvoiceNumber(),
                 'shipping_cost' => $shippingCost,
                 'total_vat_amount' => $totalVat,
                 'total_discount' => $totalDiscount,
                 'total_payable_amount' => $totalPayable,
+                'grand_total' => $totalPayable,
                 'total_paid' => 0, // Sera mis à jour après paiement
                 'total_due' => $totalPayable,
                 'payment_status' => 0, // En attente
-                'order_status' => 'pending',
+                'order_status' => 0, // 0=pending (integer)
                 'shipping_status' => 'pending',
-                'shipping_method_id' => $request->shipping_method_id,
+                'shipping_id' => $request->shipping_method_id,
                 'payment_method_id' => $request->payment_method_id,
                 'shipping_address' => $request->shipping_address,
                 'shipping_phone' => $request->shipping_phone,
@@ -210,18 +235,20 @@ class CartController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            \Log::info('Sell created:', ['sell_id' => $sell->id]);
+            Log::info('Sell created:', ['sell_id' => $sell->id]);
 
             // Créer les détails de commande (SellDetails)
             foreach ($orderItems as $item) {
                 Sell_details::create([
                     'sell_id' => $sell->id,
                     'product_id' => $item['product']->id,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price'],
-                    'color_id' => $item['color_id'],
-                    'size_id' => $item['size_id'],
+                    'unit_sell_price' => $item['unit_price'],
+                    'sale_quantity' => $item['quantity'],
+                    'total_payable_amount' => $item['total_price'],
+                    'unit_vat' => 0, // Default to 0
+                    'total_discount' => 0, // Default to 0
+                    'status' => 1, // Active
+                    'created_by' => Auth::id(),
                 ]);
 
                 // Mettre à jour le stock du produit
@@ -229,16 +256,56 @@ class CartController extends Controller
                 $product->available_quantity -= $item['quantity'];
                 $product->save();
                 
-                \Log::info('Item processed:', ['product_id' => $item['product']->id, 'quantity' => $item['quantity']]);
+                Log::info('Item processed:', ['product_id' => $item['product']->id, 'quantity' => $item['quantity']]);
             }
 
-            \Log::info('Order created successfully, committing transaction...');
+            Log::info('Order created successfully, committing transaction...');
             DB::commit();
-            \Log::info('Transaction committed successfully');
+            Log::info('Transaction committed successfully');
+
+            // Envoyer les notifications après la création de la commande
+            try {
+                Log::info('Starting notification sending process...');
+                
+                // 1. Charger la commande avec les relations nécessaires
+                $orderWithRelations = Sell::with(['customer', 'sellDetails.product', 'paymentMethod'])->find($sell->id);
+                
+                // 2. Notification aux administrateurs - utiliser le système personnalisé
+                Log::info('Creating admin notifications for order: ' . $sell->id);
+                $notificationCount = $this->createAdminNotification($orderWithRelations);
+                Log::info("Created {$notificationCount} admin notifications");
+                
+                // 3. Email aux admins (en plus des notifications)
+                $adminUsers = User::whereHas('roles', function($query) {
+                    $query->whereIn('name', ['Admin', 'Manager']);
+                })->get();
+                
+                if ($adminUsers->count() > 0) {
+                    Log::info('Sending email notification to ' . $adminUsers->count() . ' admin users');
+                    Notification::send($adminUsers, new NewOrderNotification($orderWithRelations));
+                    Log::info('Admin email notifications sent successfully');
+                }
+                
+                // 3. Email de confirmation au client
+                Log::info('Sending confirmation email to customer: ' . $customer->email);
+                Mail::to($customer->email)->queue(new OrderConfirmationMail($orderWithRelations));
+                Log::info('Customer confirmation email queued successfully');
+                
+            } catch (\Exception $e) {
+                Log::error('Error sending notifications:', [
+                    'error' => $e->getMessage(),
+                    'order_id' => $sell->id,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Ne pas faire échouer la commande si les notifications échouent
+            }
+
+            // Supprimer le cache de protection anti-duplication
+            cache()->forget($cacheKey);
 
             // Retourner une réponse JSON pour toutes les requêtes AJAX (incluant Inertia)
             if ($request->expectsJson() || $request->header('X-Inertia')) {
-                \Log::info('Returning JSON response for AJAX/Inertia request');
+                Log::info('Returning JSON response for AJAX/Inertia request');
                 return response()->json([
                     'success' => true,
                     'order_id' => $sell->id,
@@ -248,12 +315,12 @@ class CartController extends Controller
             }
 
             // Pour les requêtes normales, redirection
-            \Log::info('Returning redirect response');
+            Log::info('Returning redirect response');
             return redirect()->route('frontend.cart.success', $sell->id)
                 ->with('success', 'Votre commande a été créée avec succès !');
 
         } catch (\Exception $e) {
-            \Log::error('Checkout error:', [
+            Log::error('Checkout error:', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -261,6 +328,9 @@ class CartController extends Controller
             ]);
             
             DB::rollback();
+            
+            // Supprimer le cache en cas d'erreur aussi
+            cache()->forget($cacheKey);
             
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 return response()->json([
@@ -278,11 +348,93 @@ class CartController extends Controller
 
     public function orderSuccess($sellId)
     {
-        $sell = Sell::with(['customer', 'sellDetails.product', 'shipping'])
-            ->findOrFail($sellId);
+        // Vérification de sécurité : s'assurer que l'utilisateur peut accéder à cette commande
+        if (Auth::check()) {
+            // Utilisateur connecté : vérifier que la commande lui appartient
+            $user = Auth::user();
+            $customer = Ecommerce_customer::where('user_id', $user->id)->first();
+            
+            if (!$customer) {
+                abort(403, 'Accès non autorisé.');
+            }
+            
+            $sell = Sell::with(['customer', 'sellDetails.product', 'paymentMethod'])
+                ->where('customer_id', $customer->id) // Vérifier la propriété
+                ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
+                ->findOrFail($sellId);
+        } else {
+            // Pour les invités, on pourrait ajouter une vérification par session ou token
+            // Pour l'instant, refuser l'accès si non connecté
+            return redirect()->route('login')
+                ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+        }
+        
+        Log::info('Order sell details:', $sell->toArray());
 
-        return Inertia::render('Frontend/Cart/OrderSuccess', [
-            'order' => $sell,
+        // Récupérer la méthode de livraison séparément (pas de relation directe)
+        $shippingMethod = null;
+        if ($sell->shipping_id) {
+            $shippingMethod = Shipping::find($sell->shipping_id);
+        }
+
+        // Calculer le sous-total à partir des détails de commande
+        $subtotal = $sell->sellDetails->sum(function ($detail) {
+            return floatval($detail->unit_sell_price ?? 0) * intval($detail->sale_quantity ?? 1);
+        });
+        
+        $shippingCost = floatval($sell->shipping_cost ?? 0);
+        $tax = floatval($sell->total_vat_amount ?? 0);
+        
+        // Si la TVA est 0 mais qu'on a des paramètres de TVA, calculer la TVA
+        if ($tax == 0 && $subtotal > 0) {
+            $taxRate = floatval(\App\Services\AppSettingsService::getTaxRate());
+            if ($taxRate > 0) {
+                $tax = ($subtotal * $taxRate) / 100;
+            }
+        }
+        
+        $total = floatval($sell->total_payable_amount ?? ($subtotal + $shippingCost + $tax));
+
+        $formattedOrder = [
+            'id' => $sell->id,
+            'order_number' => $sell->order_reference ?? 'ORD-' . $sell->id,
+            'status' => $sell->shipping_status ?? 'pending',
+            'created_at' => $sell->created_at,
+            'total' => $total,
+            'subtotal' => $subtotal,
+            'shipping_cost' => $shippingCost,
+            'tax' => $tax,
+            'notes' => $sell->notes,
+            
+            // Adresse de livraison
+            'shipping_first_name' => $sell->customer->first_name ?? '',
+            'shipping_last_name' => $sell->customer->last_name ?? '',
+            'shipping_address' => $sell->shipping_address ?? $sell->customer->present_address ?? '',
+            'shipping_address_2' => null,
+            'shipping_postal_code' => '',
+            'shipping_city' => '',
+            'shipping_country' => 'France',
+            'shipping_phone' => $sell->shipping_phone ?? $sell->customer->phone_one ?? '',
+            
+            // Méthodes
+            'payment_method' => $sell->paymentMethod, // Utilise maintenant la relation
+            'shipping_method' => $shippingMethod,
+            
+            // Articles commandés
+            'items' => $sell->sellDetails->map(function ($detail) {
+                return [
+                    'product_name' => $detail->product->name ?? 'Produit inconnu',
+                    'product_image' => $detail->product->image ?? '/images/placeholder.jpg',
+                    'quantity' => intval($detail->sale_quantity ?? 1),
+                    'price' => floatval($detail->unit_sell_price ?? 0),
+                    'color_name' => null,
+                    'size_name' => null,
+                ];
+            }),
+        ];
+
+        return Inertia::render('Frontend/Cart/Success', [
+            'order' => $formattedOrder,
         ]);
     }
 
@@ -302,5 +454,48 @@ class CartController extends Controller
         $nextNumber = $lastSell ? ($lastSell->id + 1) : 1;
         
         return 'CMD-' . date('Ym') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Créer une notification personnalisée pour les admins
+     */
+    private function createAdminNotification($order)
+    {
+        // Utiliser les bons noms de champs pour le client
+        $customerName = trim(($order->customer->first_name ?? '') . ' ' . ($order->customer->last_name ?? ''));
+        if (empty($customerName)) {
+            $customerName = $order->customer->email ?? 'Client inconnu';
+        }
+        
+        // Utiliser le bon champ pour le montant
+        $totalAmount = $order->total_payable_amount ?? $order->grand_total ?? 0;
+        
+        // Créer une notification dans la table personnalisée pour chaque admin
+        $adminUsers = User::whereHas('roles', function($query) {
+            $query->whereIn('name', ['Admin', 'Manager']);
+        })->get();
+
+        foreach ($adminUsers as $admin) {
+            CustomNotification::create([
+                'type' => 'new_order',
+                'title' => 'Nouvelle commande #' . $order->id,
+                'message' => 'Nouvelle commande de ' . $customerName . ' pour un montant de ' . number_format((float)$totalAmount, 0, ',', ' ') . ' XOF',
+                'data' => json_encode([
+                    'order_id' => $order->id,
+                    'customer_name' => $customerName,
+                    'customer_email' => $order->customer->email,
+                    'total_amount' => $totalAmount,
+                    'payment_method' => $order->paymentMethod->name ?? 'Non spécifié',
+                    'created_at' => $order->created_at
+                ]),
+                'user_id' => $admin->id,
+                'action_url' => '/admin/sells/' . $order->id,
+                'icon' => 'shopping-cart',
+                'color' => 'green'
+            ]);
+        }
+
+        Log::info('Admin notifications created for ' . $adminUsers->count() . ' users');
+        return $adminUsers->count();
     }
 }

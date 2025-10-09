@@ -121,11 +121,18 @@ export const CartProvider = ({ children }) => {
 };
 
 const FrontendLayout = ({ children, title }) => {
-    const { auth } = usePage().props;
+    const { auth, appSettings } = usePage().props;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const { getTotalItems } = useCart();
     const { getTotalItems: getWishlistTotalItems } = useWishlist();
+
+    // Valeurs dynamiques depuis les settings
+    const appName = appSettings?.app_name || 'ENMA SPA';
+    const contactEmail = appSettings?.contact_email || 'contact@enma-spa.com';
+    const phone = appSettings?.phone || '+33 1 23 45 67 89';
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
+    const firstLetter = appName.charAt(0).toUpperCase();
 
     const navigation = [
         { name: 'Accueil', href: route('home') },
@@ -143,7 +150,7 @@ const FrontendLayout = ({ children, title }) => {
 
     return (
         <>
-            <Head title={title} />
+            <Head title={`${title} - ${appName}`} />
             <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
                 {/* Header */}
                 <header className="bg-white shadow-lg sticky top-0 z-50">
@@ -152,11 +159,11 @@ const FrontendLayout = ({ children, title }) => {
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center space-x-4">
-                                    <span>📞 +33 1 23 45 67 89</span>
-                                    <span>✉️ contact@enma-spa.com</span>
+                                    <span>📞 {phone}</span>
+                                    <span>✉️ {contactEmail}</span>
                                 </div>
                                 <div className="hidden md:flex items-center space-x-4">
-                                    <span>🚚 Livraison gratuite dès 50€</span>
+                                    <span>🚚 Livraison gratuite dès 50000 {currencySymbol}</span>
                                     <span>🎁 Retours gratuits</span>
                                 </div>
                             </div>
@@ -170,10 +177,10 @@ const FrontendLayout = ({ children, title }) => {
                             <div className="flex-shrink-0">
                                 <Link href={route('home')} className="flex items-center">
                                     <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                                        E
+                                        {firstLetter}
                                     </div>
                                     <span className="ml-2 text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                                        ENMA SPA
+                                        {appName}
                                     </span>
                                 </Link>
                             </div>
@@ -352,9 +359,9 @@ const FrontendLayout = ({ children, title }) => {
                             <div className="col-span-1 md:col-span-2">
                                 <div className="flex items-center mb-4">
                                     <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                                        E
+                                        {firstLetter}
                                     </div>
-                                    <span className="ml-2 text-2xl font-bold">ENMA SPA</span>
+                                    <span className="ml-2 text-2xl font-bold">{appName}</span>
                                 </div>
                                 <p className="text-gray-300 mb-4">
                                     Votre destination e-commerce pour des produits de qualité. 
@@ -398,7 +405,7 @@ const FrontendLayout = ({ children, title }) => {
 
                         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
                             <p className="text-gray-400">
-                                © {new Date().getFullYear()} ENMA SPA. Tous droits réservés.
+                                © {new Date().getFullYear()} {appName}. Tous droits réservés.
                             </p>
                         </div>
                     </div>
@@ -408,7 +415,7 @@ const FrontendLayout = ({ children, title }) => {
     );
 };
 
-const LayoutWithProviders = ({ children, title = 'ENMA SPA', wishlistItems = [] }) => {
+const LayoutWithProviders = ({ children, title, wishlistItems = [] }) => {
     return (
         <NotificationProvider>
             <WishlistProvider initialWishlistItems={wishlistItems}>

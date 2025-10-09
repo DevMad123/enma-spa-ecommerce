@@ -315,7 +315,7 @@ export default function ShippingsList() {
 
                 {/* Flash messages */}
                 {flash?.success && (
-                    <div className="mt-4 rounded-md bg-green-50 p-4">
+                    <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
                         <div className="flex">
                             <CheckCircleIcon className="h-5 w-5 text-green-400" />
                             <div className="ml-3">
@@ -328,7 +328,7 @@ export default function ShippingsList() {
                 )}
                 
                 {flash?.error && (
-                    <div className="mt-4 rounded-md bg-red-50 p-4">
+                    <div className="mt-4 rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
                         <div className="flex">
                             <XCircleIcon className="h-5 w-5 text-red-400" />
                             <div className="ml-3">

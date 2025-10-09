@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TestShippingController;
+
+Route::get('/test-shipping', [TestShippingController::class, 'testShipping']);
 
 Route::post('/test-store', function(\Illuminate\Http\Request $request) {
     \Log::info('TEST ROUTE APPELÉE');

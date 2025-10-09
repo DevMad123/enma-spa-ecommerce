@@ -7,6 +7,7 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Models\Sell;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,12 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
     /**
      * Afficher la liste des paiements
      */
@@ -129,28 +136,19 @@ class PaymentController extends Controller
     public function store(StorePaymentRequest $request)
     {
         try {
-            DB::beginTransaction();
-
-            $paymentData = $request->validated();
-            $paymentData['created_by'] = auth()->id();
-            $paymentData['updated_by'] = auth()->id();
-
-            $payment = Payment::create($paymentData);
-
-            DB::commit();
+            $payment = $this->paymentService->createPayment($request->validated());
 
             return redirect()
                 ->route('admin.payments.show', $payment->id)
-                ->with('success', 'Paiement enregistré avec succès!');
+                ->with('flash', ['success' => 'Paiement enregistré avec succès!']);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Erreur lors de la création du paiement: ' . $e->getMessage());
             
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Erreur lors de l\'enregistrement du paiement: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de l\'enregistrement du paiement: ' . $e->getMessage()]);
         }
     }
 
@@ -363,15 +361,16 @@ class PaymentController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
-
-            $payment->markAsSuccess($request->transaction_reference);
+            // Utiliser le service pour valider le paiement
+            $this->paymentService->validatePayment($payment);
+            
+            if ($request->transaction_reference) {
+                $payment->update(['transaction_reference' => $request->transaction_reference]);
+            }
             
             if ($request->notes) {
                 $payment->update(['notes' => $request->notes]);
             }
-
-            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -380,7 +379,6 @@ class PaymentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Erreur lors de la validation du paiement: ' . $e->getMessage());
             
             return response()->json([
@@ -400,11 +398,12 @@ class PaymentController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
-
-            $payment->markAsFailed($request->reason);
-
-            DB::commit();
+            // Utiliser le service pour rejeter le paiement
+            $this->paymentService->rejectPayment($payment);
+            
+            if ($request->reason) {
+                $payment->update(['notes' => $request->reason]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -413,7 +412,6 @@ class PaymentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Erreur lors du rejet du paiement: ' . $e->getMessage());
             
             return response()->json([
@@ -429,7 +427,6 @@ class PaymentController extends Controller
     public function refund(Request $request, Payment $payment)
     {
         $request->validate([
-            'amount' => 'nullable|numeric|min:0.01|max:' . $payment->total_paid,
             'reason' => 'required|string|max:1000',
         ]);
 
@@ -438,14 +435,12 @@ class PaymentController extends Controller
                 throw new \Exception('Seuls les paiements réussis peuvent être remboursés.');
             }
 
-            DB::beginTransaction();
-
-            $refundAmount = $request->amount ?? $payment->total_paid;
-            $payment->refund($refundAmount);
+            // Utiliser le service pour rembourser le paiement
+            $this->paymentService->refundPayment($payment);
             
-            $payment->update(['notes' => $payment->notes . "\nRemboursement: " . $request->reason]);
-
-            DB::commit();
+            if ($request->reason) {
+                $payment->update(['notes' => $payment->notes . "\nRemboursement: " . $request->reason]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -454,7 +449,6 @@ class PaymentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Erreur lors du remboursement: ' . $e->getMessage());
             
             return response()->json([

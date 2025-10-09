@@ -13,8 +13,9 @@ import CartButton from '@/Components/Frontend/CartButton';
 import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
 import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, appSettings }) => {
     const { addToCart } = useCart();
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
 
     return (
         <div className="group relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
@@ -84,11 +85,11 @@ const ProductCard = ({ product }) => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <span className="text-2xl font-bold text-gray-900">
-                            {product.current_sale_price}€
+                            {product.current_sale_price} {currencySymbol}
                         </span>
                         {product.price > product.current_sale_price && (
                             <span className="ml-2 text-lg text-gray-500 line-through">
-                                {product.price}€
+                                {product.price} {currencySymbol}
                             </span>
                         )}
                     </div>
@@ -138,8 +139,11 @@ function HomeContent({
     newProducts = [], 
     categories = [], 
     brands = [],
-    stats = {} 
+    stats = {},
+    appSettings = {}
 }) {
+    const appName = appSettings?.app_name || 'ENMA SPA';
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
     return (
         <>
             {/* Hero Section */}
@@ -156,7 +160,7 @@ function HomeContent({
                         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                             Bienvenue chez
                             <span className="block bg-gradient-to-r from-yellow-300 to-white bg-clip-text text-transparent">
-                                ENMA SPA
+                                {appName}
                             </span>
                         </h1>
                         
@@ -262,7 +266,7 @@ function HomeContent({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             {featuredProducts.slice(0, 8).map((product) => (
-                                <ProductCard key={product.id} product={product} />
+                                <ProductCard key={product.id} product={product} appSettings={appSettings} />
                             ))}
                         </div>
 
@@ -294,7 +298,7 @@ function HomeContent({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             {newProducts.slice(0, 4).map((product) => (
-                                <ProductCard key={product.id} product={product} />
+                                <ProductCard key={product.id} product={product} appSettings={appSettings} />
                             ))}
                         </div>
                     </div>
@@ -313,12 +317,14 @@ function HomeContent({
 }
 
 export default function Home({ wishlistItems, ...props }) {
+    const { appSettings } = usePage().props;
+
     return (
         <FrontendLayout 
-            title="Accueil - ENMA SPA" 
+            title="Accueil" 
             wishlistItems={wishlistItems}
         >
-            <HomeContent {...props} />
+            <HomeContent {...props} appSettings={appSettings} />
         </FrontendLayout>
     );
 }

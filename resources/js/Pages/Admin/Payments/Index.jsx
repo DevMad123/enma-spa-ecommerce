@@ -234,17 +234,11 @@ export default function PaymentsList() {
         },
         {
             type: 'button',
-            onClick: (payment) => handleEdit(payment),
-            icon: PencilIcon,
-            label: 'Modifier',
-            className: 'text-indigo-600 hover:text-indigo-900'
-        },
-        {
-            type: 'button',
             onClick: (payment) => handleDelete(payment.id),
             icon: TrashIcon,
             label: 'Supprimer',
-            className: 'text-red-600 hover:text-red-900'
+            className: 'text-red-600 hover:text-red-900',
+            condition: (payment) => ['pending', 'failed', 'cancelled'].includes(payment.status)
         }
     ];
 

@@ -151,25 +151,15 @@ class OrderService
                 throw new Exception("Cette commande ne peut plus être modifiée");
             }
 
-            // Mettre à jour les informations de base
+            // Mettre à jour les informations de base (statut commande et notes uniquement)
             $order->update([
-                'payment_status' => $orderData['payment_status'] ?? $order->payment_status,
                 'order_status' => $orderData['order_status'] ?? $order->order_status,
-                'shipping_method' => $orderData['shipping_method'] ?? $order->shipping_method,
                 'notes' => $orderData['notes'] ?? $order->notes,
-                'total_paid' => $orderData['total_paid'] ?? $order->total_paid,
                 'updated_by' => auth()->id(),
             ]);
 
-            // Recalculer le montant dû
-            $order->total_due = $order->total_payable_amount - $order->total_paid;
-            $order->save();
-
-            // Si le paiement est complet, marquer comme payé
-            if ($order->total_paid >= $order->total_payable_amount) {
-                $order->payment_status = 1; // Payé
-                $order->save();
-            }
+            // Pas de recalcul des montants car ils ne sont plus modifiables
+            // Le total_due reste basé sur les données d'origine
 
             return $order->load(['customer', 'sellDetails.product', 'sellDetails.productVariant']);
         });

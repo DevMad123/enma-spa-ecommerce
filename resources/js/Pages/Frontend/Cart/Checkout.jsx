@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FrontendLayout, { CartProvider, useCart } from '@/Layouts/FrontendLayout';
-import { Link, useForm, router } from '@inertiajs/react';
+import { Link, useForm, router, usePage } from '@inertiajs/react';
+import { usePriceSettings } from '@/Utils/priceFormatter';
 import { 
     ArrowLeftIcon,
     CreditCardIcon,
@@ -10,9 +11,11 @@ import {
     ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 
-const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
+const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipping, setSelectedShipping }) => {
     const { cartItems, getTotalPrice, clearCart } = useCart();
-    const [selectedShipping, setSelectedShipping] = useState(shippingMethods[0]?.id || '');
+    const { appSettings } = usePage().props;
+    const { formatPrice, formatPriceWithCurrency } = usePriceSettings(appSettings);
+    const taxRate = appSettings?.tax_rate || 0.18;
     const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0]?.id || '');
     const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -53,7 +56,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
     const subtotal = getTotalPrice();
     const selectedShippingMethod = shippingMethods.find(method => method.id == selectedShipping);
     const shippingCost = selectedShippingMethod ? parseFloat(selectedShippingMethod.price) : 0;
-    const tax = subtotal * 0.20;
+    const tax = subtotal * taxRate;
     const total = subtotal + shippingCost + tax;
     console.log('Cart items at submission:', cartItems);
     const handleSubmit = (e) => {
@@ -565,7 +568,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
                                     </div>
                                 </div>
                                 <span className="font-medium text-gray-900">
-                                    {parseFloat(method.price) === 0 ? 'Gratuit' : `${method.price}€`}
+                                    {parseFloat(method.price) === 0 ? 'Gratuit' : formatPriceWithCurrency(parseFloat(method.price))}
                                 </span>
                             </label>
                         ))}
@@ -664,7 +667,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
                 ) : (
                     <>
                         <CheckCircleIcon className="h-6 w-6" />
-                        <span>Finaliser ma commande - {total.toFixed(2)}€</span>
+                        <span>Finaliser ma commande - {formatPriceWithCurrency(total)}</span>
                     </>
                 )}
             </button>
@@ -672,11 +675,42 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [] }) => {
     );
 };
 
-const OrderSummary = () => {
+const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
     const { cartItems, getTotalPrice } = useCart();
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
+    const taxRate = appSettings?.tax_rate || 0.18;
+    
     const subtotal = getTotalPrice();
-    const shipping = subtotal >= 50 ? 0 : 5.99;
-    const tax = subtotal * 0.20;
+    const selectedShippingMethod = shippingMethods.find(method => method.id == selectedShipping);
+    
+    // Calcul dynamique de la livraison avec gestion de la livraison gratuite
+    let shipping = 0;
+    let isFreeShipping = false;
+    let freeShippingMessage = '';
+    
+    if (selectedShippingMethod) {
+        const originalShippingCost = parseFloat(selectedShippingMethod.price);
+        
+        // Vérifier si cette méthode supporte la livraison gratuite
+        if (selectedShippingMethod.supports_free_shipping) {
+            const threshold = selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000;
+            
+            if (subtotal >= threshold) {
+                shipping = 0;
+                isFreeShipping = true;
+                freeShippingMessage = `Livraison gratuite (seuil de ${formatPriceWithCurrency(threshold)} atteint)`;
+            } else {
+                shipping = originalShippingCost;
+                const remaining = threshold - subtotal;
+                freeShippingMessage = `Plus que ${formatPriceWithCurrency(remaining)} pour la livraison gratuite`;
+            }
+        } else {
+            shipping = originalShippingCost;
+        }
+    }
+    
+    const tax = subtotal * taxRate;
     const total = subtotal + shipping + tax;
 
     return (
@@ -701,7 +735,7 @@ const OrderSummary = () => {
                         </div>
                         <div className="text-sm">
                             <span className="text-gray-600">×{item.quantity}</span>
-                            <span className="ml-2 font-medium text-gray-900">{(item.price * item.quantity).toFixed(2)}€</span>
+                            <span className="ml-2 font-medium text-gray-900">{formatPriceWithCurrency(item.price * item.quantity)}</span>
                         </div>
                     </div>
                 ))}
@@ -711,21 +745,84 @@ const OrderSummary = () => {
             <div className="space-y-3 border-t border-gray-200 pt-6">
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Sous-total</span>
-                    <span className="font-medium">{subtotal.toFixed(2)}€</span>
+                    <span className="font-medium">{formatPriceWithCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Livraison</span>
-                    <span className={`font-medium ${shipping === 0 ? 'text-green-600' : ''}`}>
-                        {shipping === 0 ? 'Gratuite' : `${shipping.toFixed(2)}€`}
-                    </span>
+                    <div className="text-right">
+                        <span className={`font-medium ${isFreeShipping ? 'text-green-600' : ''}`}>
+                            {isFreeShipping ? 'Gratuite' : formatPriceWithCurrency(shipping)}
+                        </span>
+                    </div>
                 </div>
+                
+                {/* Indicateur de livraison gratuite stylé */}
+                {selectedShippingMethod?.supports_free_shipping && (
+                    <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        {isFreeShipping ? (
+                            <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                        <CheckCircleIcon className="w-5 h-5 text-white" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-green-800">
+                                        🎉 Livraison gratuite obtenue !
+                                    </p>
+                                    <p className="text-xs text-green-600">
+                                        Vous avez atteint le seuil de {formatPriceWithCurrency(selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <TruckIcon className="w-5 h-5 text-blue-600" />
+                                        <span className="text-sm font-medium text-blue-800">
+                                            Livraison gratuite
+                                        </span>
+                                    </div>
+                                    <span className="text-xs text-blue-600 font-medium">
+                                        {Math.round((subtotal / (selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)) * 100)}%
+                                    </span>
+                                </div>
+                                
+                                {/* Barre de progression */}
+                                <div className="relative">
+                                    <div className="w-full bg-blue-200 rounded-full h-2">
+                                        <div 
+                                            className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
+                                            style={{
+                                                width: `${Math.min((subtotal / (selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)) * 100, 100)}%`
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-blue-600">
+                                        {formatPriceWithCurrency(subtotal)}
+                                    </span>
+                                    <span className="text-orange-600 font-medium">
+                                        Plus que {formatPriceWithCurrency((selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000) - subtotal)} !
+                                    </span>
+                                    <span className="text-blue-600">
+                                        {formatPriceWithCurrency(selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">TVA (20%)</span>
-                    <span className="font-medium">{tax.toFixed(2)}€</span>
+                    <span className="text-gray-600">TVA ({(taxRate * 100).toFixed(0)}%)</span>
+                    <span className="font-medium">{formatPriceWithCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
                     <span>Total</span>
-                    <span>{total.toFixed(2)}€</span>
+                    <span>{formatPriceWithCurrency(total)}</span>
                 </div>
             </div>
         </div>
@@ -733,6 +830,8 @@ const OrderSummary = () => {
 };
 
 function Checkout({ shippingMethods = [], paymentMethods = [] }) {
+    const [selectedShipping, setSelectedShipping] = useState(shippingMethods[0]?.id || '');
+    
     console.log('Checkout props received:', { 
         shippingMethods: shippingMethods,
         paymentMethods: paymentMethods,
@@ -764,12 +863,17 @@ function Checkout({ shippingMethods = [], paymentMethods = [] }) {
                         <CheckoutForm 
                             shippingMethods={shippingMethods}
                             paymentMethods={paymentMethods}
+                            selectedShipping={selectedShipping}
+                            setSelectedShipping={setSelectedShipping}
                         />
                     </div>
 
                     {/* Récapitulatif */}
                     <div className="mt-8 lg:mt-0 lg:col-span-1">
-                        <OrderSummary />
+                        <OrderSummary 
+                            selectedShipping={selectedShipping}
+                            shippingMethods={shippingMethods}
+                        />
                     </div>
                 </div>
             </div>

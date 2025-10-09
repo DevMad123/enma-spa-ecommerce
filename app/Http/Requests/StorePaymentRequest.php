@@ -45,11 +45,6 @@ class StorePaymentRequest extends FormRequest
                 'string',
                 'size:3'
             ],
-            'status' => [
-                'sometimes',
-                'string',
-                Rule::in(array_keys(Payment::STATUSES))
-            ],
             'transaction_reference' => [
                 'nullable',
                 'string',
@@ -86,7 +81,6 @@ class StorePaymentRequest extends FormRequest
             'amount.min' => 'Le montant doit être supérieur à 0.',
             'amount.max' => 'Le montant ne peut pas dépasser 999 999,99.',
             'currency.size' => 'La devise doit contenir exactement 3 caractères.',
-            'status.in' => 'Le statut sélectionné n\'est pas valide.',
             'transaction_reference.max' => 'La référence de transaction ne peut pas dépasser 255 caractères.',
             'payment_date.date' => 'La date de paiement doit être une date valide.',
             'notes.max' => 'Les notes ne peuvent pas dépasser 1000 caractères.',
@@ -100,7 +94,6 @@ class StorePaymentRequest extends FormRequest
     {
         $this->merge([
             'currency' => $this->currency ?? 'XOF',
-            'status' => $this->status ?? 'pending',
             'payment_date' => $this->payment_date ?? now(),
         ]);
     }

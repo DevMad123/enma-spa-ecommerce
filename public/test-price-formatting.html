@@ -1,0 +1,57 @@
+&lt;!DOCTYPE html&gt;
+&lt;html lang="fr"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Test formatage des prix&lt;/title&gt;
+    &lt;style&gt;
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .result { font-weight: bold; color: #007bff; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Test du formatage des prix&lt;/h1&gt;
+    
+    &lt;div class="test"&gt;
+        &lt;h3&gt;formatPrice (fonction simple)&lt;/h3&gt;
+        &lt;p&gt;100.50 avec décimales: &lt;span id="test1" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;100.50 sans décimales: &lt;span id="test2" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;100.00 sans décimales: &lt;span id="test3" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;99.99 sans décimales: &lt;span id="test4" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+    &lt;/div&gt;
+
+    &lt;div class="test"&gt;
+        &lt;h3&gt;formatPriceWithCurrency&lt;/h3&gt;
+        &lt;p&gt;100.50 F CFA avec décimales: &lt;span id="test5" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;100.50 F CFA sans décimales: &lt;span id="test6" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+        &lt;p&gt;100.00 F CFA sans décimales: &lt;span id="test7" class="result"&gt;&lt;/span&gt;&lt;/p&gt;
+    &lt;/div&gt;
+
+    &lt;script type="module"&gt;
+        // Fonction pour formater les prix
+        const formatPrice = (price, showDecimals = false) =&gt; {
+            if (showDecimals) {
+                return price.toFixed(2);
+            }
+            return Math.round(price).toString();
+        };
+
+        // Fonction pour formater les prix avec devise
+        const formatPriceWithCurrency = (price, currencySymbol = 'F CFA', showDecimals = false) =&gt; {
+            const formattedPrice = formatPrice(price, showDecimals);
+            return `${formattedPrice} ${currencySymbol}`;
+        };
+
+        // Tests
+        document.getElementById('test1').textContent = formatPrice(100.50, true);
+        document.getElementById('test2').textContent = formatPrice(100.50, false);
+        document.getElementById('test3').textContent = formatPrice(100.00, false);
+        document.getElementById('test4').textContent = formatPrice(99.99, false);
+        
+        document.getElementById('test5').textContent = formatPriceWithCurrency(100.50, 'F CFA', true);
+        document.getElementById('test6').textContent = formatPriceWithCurrency(100.50, 'F CFA', false);
+        document.getElementById('test7').textContent = formatPriceWithCurrency(100.00, 'F CFA', false);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;

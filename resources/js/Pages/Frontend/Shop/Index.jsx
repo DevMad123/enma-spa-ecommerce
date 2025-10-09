@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FrontendLayout, { CartProvider } from '@/Layouts/FrontendLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { 
     FunnelIcon,
     Squares2X2Icon,
@@ -28,6 +28,8 @@ const SafeLink = ({ href, children, ...props }) => {
 const ProductCard = ({ product, viewMode = 'grid' }) => {
     const { addToCart } = useCart();
     const { showSuccess } = useNotification();
+    const { appSettings } = usePage().props;
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
 
     // Protection contre les produits invalides
     if (!product || !product.id) {
@@ -88,11 +90,11 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <span className="text-2xl font-bold text-gray-900">
-                                            {product.current_sale_price}€
+                                            {product.current_sale_price} {currencySymbol}
                                         </span>
                                         {product.price > product.current_sale_price && (
                                             <span className="ml-2 text-lg text-gray-500 line-through">
-                                                {product.price}€
+                                                {product.price} {currencySymbol}
                                             </span>
                                         )}
                                     </div>
@@ -189,11 +191,11 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <span className="text-xl font-bold text-gray-900">
-                            {product.current_sale_price}€
+                            {product.current_sale_price} {currencySymbol}
                         </span>
                         {product.price > product.current_sale_price && (
                             <span className="ml-2 text-base text-gray-500 line-through">
-                                {product.price}€
+                                {product.price} {currencySymbol}
                             </span>
                         )}
                     </div>
@@ -227,8 +229,10 @@ const FilterSidebar = ({
     const safeBrands = Array.isArray(brands) ? brands : [];
     const safeColors = Array.isArray(colors) ? colors : [];
     const safeSizes = Array.isArray(sizes) ? sizes : [];
+    const { appSettings } = usePage().props;
+    const maxPriceDefault = appSettings?.max_price_filter || 1000;
     
-    const [priceRange, setPriceRange] = useState([filters.min_price || 0, filters.max_price || 1000]);
+    const [priceRange, setPriceRange] = useState([filters.min_price || 0, filters.max_price || maxPriceDefault]);
 
     const handlePriceChange = (index, value) => {
         const newRange = [...priceRange];

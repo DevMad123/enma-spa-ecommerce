@@ -381,6 +381,8 @@ const ReviewSection = ({ reviews, averageRating, product }) => {
 const RelatedProducts = ({ products }) => {
     const { addToCart } = useCart();
     const { showSuccess } = useNotification();
+    const { appSettings } = usePage().props;
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
 
     if (!products || products.length === 0) return null;
 
@@ -405,7 +407,7 @@ const RelatedProducts = ({ products }) => {
                             </h4>
                             <div className="flex items-center justify-between">
                                 <span className="text-lg font-bold text-gray-900">
-                                    {product.current_sale_price}€
+                                    {product.current_sale_price} {currencySymbol}
                                 </span>
                                 <PulseButton
                                     onClick={() => {
@@ -429,6 +431,8 @@ const RelatedProducts = ({ products }) => {
 function ProductShow({ product, relatedProducts = [], reviews = [], userCanReview = false }) {
     const { addToCart } = useCart();
     const { showSuccess, showError, showWarning } = useNotification();
+    const { appSettings } = usePage().props;
+    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
     const [selectedColor, setSelectedColor] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [quantity, setQuantity] = useState(1);
@@ -583,12 +587,12 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-4">
                                     <span className="text-3xl font-bold text-gray-900">
-                                        {product.current_sale_price}€
+                                        {product.current_sale_price} {currencySymbol}
                                     </span>
                                     {product.price > product.current_sale_price && (
                                         <>
                                             <span className="text-xl text-gray-500 line-through">
-                                                {product.price}€
+                                                {product.price} {currencySymbol}
                                             </span>
                                             <span className="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
                                                 -{product.discount_percentage}%
@@ -598,7 +602,7 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                                 </div>
                                 {product.price > product.current_sale_price && (
                                     <p className="text-green-600 font-medium">
-                                        Vous économisez {(product.price - product.current_sale_price).toFixed(2)}€
+                                        Vous économisez {(product.price - product.current_sale_price).toFixed(2)} {currencySymbol}
                                     </p>
                                 )}
                             </div>
@@ -701,7 +705,7 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                                     <TruckIcon className="h-6 w-6 text-amber-600" />
                                     <div>
                                         <p className="font-medium text-gray-900">Livraison gratuite</p>
-                                        <p className="text-sm text-gray-600">Dès 50€ d'achat</p>
+                                        <p className="text-sm text-gray-600">Dès {appSettings?.free_shipping_threshold || '50000'} {currencySymbol} d'achat</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-3">

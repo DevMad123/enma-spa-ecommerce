@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AppSettingsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,13 +16,17 @@ class Shipping extends Model
         'is_active',
         'sort_order',
         'estimated_days',
+        'supports_free_shipping',
+        'free_shipping_threshold',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'free_shipping_threshold' => 'decimal:2',
         'is_active' => 'boolean',
+        'supports_free_shipping' => 'boolean',
         'sort_order' => 'integer',
         'estimated_days' => 'integer',
         'created_by' => 'integer',
@@ -42,6 +47,35 @@ class Shipping extends Model
     public function updatedBy()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Check if free shipping applies for the given cart total
+     *
+     * @param float $cartTotal
+     * @return bool
+     */
+    public function isFreeShipping(float $cartTotal): bool
+    {
+        if (!$this->supports_free_shipping) {
+            return false;
+        }
+
+        // Use method-specific threshold if set, otherwise use global threshold
+        $threshold = $this->free_shipping_threshold ?? AppSettingsService::getFreeShippingThreshold();
+        
+        return $cartTotal >= $threshold;
+    }
+
+    /**
+     * Get the calculated shipping cost for the given cart total
+     *
+     * @param float $cartTotal
+     * @return float
+     */
+    public function getShippingCost(float $cartTotal): float
+    {
+        return $this->isFreeShipping($cartTotal) ? 0.0 : $this->price;
     }
 
     // Scopes

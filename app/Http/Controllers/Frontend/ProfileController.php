@@ -16,69 +16,63 @@ class ProfileController extends Controller
 {
 
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $customer = Ecommerce_customer::where('user_id', $user->id)->first();
         
-        // Récupérer les commandes récentes
+        // Récupérer les commandes récentes pour l'onglet par défaut
         $recentOrders = [];
+        // Récupérer toutes les commandes pour l'onglet orders
+        $allOrders = [];
+        
         if ($customer) {
-            $recentOrders = Sell::with(['shipping', 'sell_details.product'])
+            $recentOrders = Sell::with(['shipping', 'sellDetails.product'])
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
+                
+            // Pour l'onglet orders, récupérer toutes les commandes
+            $allOrdersRaw = Sell::with(['shipping', 'sellDetails.product', 'paymentMethod'])
+                ->where('customer_id', $customer->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+                
+            // Formater les données pour le composant React
+            $allOrders = $allOrdersRaw->map(function ($sell) {
+                return [
+                    'id' => $sell->id,
+                    'order_number' => $sell->order_reference,
+                    'status' => $sell->shipping_status,
+                    'created_at' => $sell->created_at,
+                    'total' => number_format(floatval($sell->total_payable_amount), 2),
+                    'shipping_method' => $sell->shipping,
+                    'payment_method' => $sell->paymentMethod,
+                    'items' => $sell->sellDetails->map(function ($detail) {
+                        return [
+                            'product_name' => $detail->product->name,
+                            'product_image' => $detail->product->image ?? '/images/placeholder.jpg',
+                            'quantity' => intval($detail->sale_quantity),
+                            'price' => floatval($detail->unit_sell_price),
+                        ];
+                    })->toArray(),
+                ];
+            })->toArray();
         }
 
         return Inertia::render('Frontend/Profile/Index', [
             'user' => $user,
             'customer' => $customer,
             'recentOrders' => $recentOrders,
+            'orders' => $allOrders, // Pour l'onglet orders
         ]);
     }
 
     public function orders(Request $request)
     {
-        $user = Auth::user();
-        $customer = Ecommerce_customer::where('user_id', $user->id)->first();
-        
-        if (!$customer) {
-            return redirect()->route('frontend.profile.index')
-                ->with('error', 'Aucun profil client trouvé.');
-        }
-
-        $query = Sell::with(['shipping', 'sell_details.product'])
-            ->where('customer_id', $customer->id);
-
-        // Filtre par statut
-        if ($request->filled('status')) {
-            $query->where('order_status', $request->status);
-        }
-
-        // Filtre par période
-        if ($request->filled('period')) {
-            switch ($request->period) {
-                case 'last_month':
-                    $query->where('created_at', '>=', now()->subMonth());
-                    break;
-                case 'last_3_months':
-                    $query->where('created_at', '>=', now()->subMonths(3));
-                    break;
-                case 'last_year':
-                    $query->where('created_at', '>=', now()->subYear());
-                    break;
-            }
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
-
-        return Inertia::render('Frontend/Profile/Orders', [
-            'orders' => $orders,
-            'filters' => $request->only(['status', 'period']),
-        ]);
+        // Rediriger vers la page index avec l'onglet orders actif
+        return redirect()->route('frontend.profile.index', ['tab' => 'orders']);
     }
 
     public function orderDetails($orderId)
@@ -94,9 +88,9 @@ class ProfileController extends Controller
         $order = Sell::with([
             'customer',
             'shipping', 
-            'sell_details.product.brand',
-            'sell_details.color',
-            'sell_details.size'
+            'sellDetails.product.brand',
+            'sellDetails.color',
+            'sellDetails.size'
         ])
         ->where('customer_id', $customer->id)
         ->findOrFail($orderId);

@@ -32,6 +32,7 @@ class Sell extends Model
         'total_paid',
         'total_due',
         'payment_type',
+        'payment_method_id',
         'payment_status',
         'order_status',
         'notes',
@@ -81,6 +82,11 @@ class Sell extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'sell_id');
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
     }
 
     public function shipping()

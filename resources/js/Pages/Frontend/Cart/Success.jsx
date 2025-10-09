@@ -1,6 +1,7 @@
 import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { usePriceSettings } from '@/Utils/priceFormatter';
 import { 
     CheckCircleIcon,
     PrinterIcon,
@@ -11,6 +12,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function CheckoutSuccess({ order }) {
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
+    
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
             year: 'numeric',
@@ -44,7 +48,7 @@ export default function CheckoutSuccess({ order }) {
     };
 
     return (
-        <FrontendLayout title="Commande confirmée - ENMA SPA">
+        <FrontendLayout title="Commande confirmée">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Success Header */}
                 <div className="text-center mb-12">
@@ -119,10 +123,10 @@ export default function CheckoutSuccess({ order }) {
                                 </h3>
                                 <div className="bg-gray-50 rounded-lg p-4">
                                     <p className="font-medium text-gray-900">
-                                        {order.payment_method?.name || 'Carte bancaire'}
+                                        {order.payment_method?.name || 'A la livraison (COD)'}
                                     </p>
                                     <p className="text-gray-700 mt-1">
-                                        Montant: <span className="font-semibold">{order.total}€</span>
+                                        Montant: <span className="font-semibold">{formatPriceWithCurrency(order.total)}</span>
                                     </p>
                                     <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         ✓ Paiement confirmé
@@ -142,7 +146,7 @@ export default function CheckoutSuccess({ order }) {
                                             <p className="text-sm text-gray-600">{order.shipping_method.description}</p>
                                         </div>
                                         <span className="font-medium text-gray-900">
-                                            {parseFloat(order.shipping_method.price) === 0 ? 'Gratuit' : `${order.shipping_method.price}€`}
+                                            {parseFloat(order.shipping_method.price) === 0 ? 'Gratuit' : formatPriceWithCurrency(order.shipping_method.price)}
                                         </span>
                                     </div>
                                 </div>
@@ -169,10 +173,10 @@ export default function CheckoutSuccess({ order }) {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-medium text-gray-900">
-                                                {(item.price * item.quantity).toFixed(2)}€
+                                                {formatPriceWithCurrency(item.price * item.quantity)}
                                             </p>
                                             <p className="text-sm text-gray-600">
-                                                {item.price}€ × {item.quantity}
+                                                {formatPriceWithCurrency(item.price)} × {item.quantity}
                                             </p>
                                         </div>
                                     </div>
@@ -184,21 +188,21 @@ export default function CheckoutSuccess({ order }) {
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Sous-total</span>
-                                        <span className="font-medium">{order.subtotal}€</span>
+                                        <span className="font-medium">{formatPriceWithCurrency(order.subtotal)}</span>
                                     </div>
                                     {order.shipping_cost > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Livraison</span>
-                                            <span className="font-medium">{order.shipping_cost}€</span>
+                                            <span className="font-medium">{formatPriceWithCurrency(order.shipping_cost)}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">TVA</span>
-                                        <span className="font-medium">{order.tax}€</span>
+                                        <span className="font-medium">{formatPriceWithCurrency(order.tax)}</span>
                                     </div>
                                     <div className="flex justify-between text-lg font-bold border-t border-amber-200 pt-2">
                                         <span>Total</span>
-                                        <span className="text-amber-600">{order.total}€</span>
+                                        <span className="text-amber-600">{formatPriceWithCurrency(order.total)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -294,17 +298,17 @@ export default function CheckoutSuccess({ order }) {
                         </Link>
                         <span className="hidden sm:block text-gray-400">•</span>
                         <a
-                            href="mailto:support@enma-spa.com"
+                            href={`mailto:${appSettings?.contact_email || 'support@enma-spa.com'}`}
                             className="text-amber-600 hover:text-amber-700 font-medium"
                         >
-                            support@enma-spa.com
+                            {appSettings?.contact_email || 'support@enma-spa.com'}
                         </a>
                         <span className="hidden sm:block text-gray-400">•</span>
                         <a
-                            href="tel:+33123456789"
+                            href={`tel:${appSettings?.phone || '+33123456789'}`}
                             className="text-amber-600 hover:text-amber-700 font-medium"
                         >
-                            +33 1 23 45 67 89
+                            {appSettings?.phone || '+33 1 23 45 67 89'}
                         </a>
                     </div>
                 </div>

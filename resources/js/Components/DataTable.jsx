@@ -64,6 +64,11 @@ export default function DataTable({
       const action = safeActions[0];
       const Icon = action.icon;
       
+      // Vérifier les conditions d'affichage
+      if (action.condition && !action.condition(item)) {
+        return null;
+      }
+      
       if (action.type === 'link') {
         return (
           <Link
@@ -92,6 +97,11 @@ export default function DataTable({
         {safeActions.slice(0, 2).map((action, index) => {
           const Icon = action.icon;
           
+          // Vérifier les conditions d'affichage
+          if (action.condition && !action.condition(item)) {
+            return null;
+          }
+          
           if (action.type === 'link') {
             return (
               <Link
@@ -119,37 +129,42 @@ export default function DataTable({
         
         {safeActions.length > 2 && (
           <div className="relative group">
-            <button className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100">
+            <div className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 cursor-pointer">
               <HiOutlineDotsVertical className="h-4 w-4" />
-            </button>
-            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 min-w-[120px]">
-              {safeActions.slice(2).map((action, index) => {
-                const Icon = action.icon;
-                
-                if (action.type === 'link') {
+              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 min-w-[120px] pointer-events-none group-hover:pointer-events-auto">
+                {safeActions.slice(2).map((action, index) => {
+                  const Icon = action.icon;
+                  
+                  // Vérifier les conditions d'affichage
+                  if (action.condition && !action.condition(item)) {
+                    return null;
+                  }
+                  
+                  if (action.type === 'link') {
+                    return (
+                      <Link
+                        key={index}
+                        href={typeof action.href === 'function' ? action.href(item) : action.href}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        {action.label}
+                      </Link>
+                    );
+                  }
+                  
                   return (
-                    <Link
+                    <button
                       key={index}
-                      href={typeof action.href === 'function' ? action.href(item) : action.href}
+                      onClick={() => action.onClick && action.onClick(item)}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <Icon className="h-4 w-4 mr-2" />
                       {action.label}
-                    </Link>
+                    </button>
                   );
-                }
-                
-                return (
-                  <button
-                    key={index}
-                    onClick={() => action.onClick && action.onClick(item)}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {action.label}
-                  </button>
-                );
-              })}
+                })}
+              </div>
             </div>
           </div>
         )}
