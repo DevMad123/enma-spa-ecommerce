@@ -20,25 +20,25 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         $customer = Ecommerce_customer::where('user_id', $user->id)->first();
-        
+
         // Récupérer les commandes récentes pour l'onglet par défaut
         $recentOrders = [];
         // Récupérer toutes les commandes pour l'onglet orders
         $allOrders = [];
-        
+
         if ($customer) {
             $recentOrders = Sell::with(['shipping', 'sellDetails.product'])
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
-                
+
             // Pour l'onglet orders, récupérer toutes les commandes
             $allOrdersRaw = Sell::with(['shipping', 'sellDetails.product', 'paymentMethod'])
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
-                
+
             // Formater les données pour le composant React
             $allOrders = $allOrdersRaw->map(function ($sell) {
                 return [
@@ -79,7 +79,7 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         $customer = Ecommerce_customer::where('user_id', $user->id)->first();
-        
+
         if (!$customer) {
             return redirect()->route('frontend.profile.index')
                 ->with('error', 'Aucun profil client trouvé.');
@@ -87,10 +87,11 @@ class ProfileController extends Controller
 
         $order = Sell::with([
             'customer',
-            'shipping', 
+            'shipping',
             'sellDetails.product.brand',
             'sellDetails.color',
-            'sellDetails.size'
+            'sellDetails.size',
+            'sellDetails.productVariant'
         ])
         ->where('customer_id', $customer->id)
         ->findOrFail($orderId);
@@ -149,7 +150,7 @@ class ProfileController extends Controller
 
         // Mettre à jour ou créer le profil client
         $customer = Ecommerce_customer::where('user_id', $user->id)->first();
-        
+
         $customerData = [
             'user_id' => $user->id,
             'name' => $request->name,

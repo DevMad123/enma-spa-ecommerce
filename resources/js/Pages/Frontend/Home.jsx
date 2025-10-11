@@ -1,8 +1,8 @@
 import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage } from '@inertiajs/react';
-import { 
-    ArrowRightIcon, 
+import {
+    ArrowRightIcon,
     StarIcon,
     HeartIcon,
     ShoppingCartIcon
@@ -30,7 +30,7 @@ const ProductCard = ({ product, appSettings }) => {
 
             {/* Bouton favoris */}
             <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <WishlistButton 
+                <WishlistButton
                     product={product}
                     size="default"
                 />
@@ -69,8 +69,8 @@ const ProductCard = ({ product, appSettings }) => {
                         {[...Array(5)].map((_, i) => (
                             <StarIcon
                                 key={i}
-                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5) 
-                                    ? 'text-yellow-400 fill-current' 
+                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5)
+                                    ? 'text-yellow-400 fill-current'
                                     : 'text-gray-300'
                                 }`}
                             />
@@ -97,8 +97,8 @@ const ProductCard = ({ product, appSettings }) => {
 
                 {/* Bouton d'ajout au panier */}
                 <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
-                    <CartButton 
-                        product={product} 
+                    <CartButton
+                        product={product}
                         className="w-full"
                         variant="gradient"
                     />
@@ -134,10 +134,10 @@ const CategoryCard = ({ category }) => {
     );
 };
 
-function HomeContent({ 
-    featuredProducts = [], 
-    newProducts = [], 
-    categories = [], 
+function HomeContent({
+    featuredProducts = [],
+    newProducts = [],
+    categories = [],
     brands = [],
     stats = {},
     appSettings = {}
@@ -147,7 +147,7 @@ function HomeContent({
     return (
         <>
             {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            <section className="relative min-h-[calc(100vh_-_100px)] flex items-center justify-center overflow-hidden">
                 {/* Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-500 to-red-600">
                     <div className="absolute inset-0 bg-black/20" />
@@ -163,9 +163,9 @@ function HomeContent({
                                 {appName}
                             </span>
                         </h1>
-                        
+
                         <p className="text-xl md:text-2xl mb-8 text-gray-100 max-w-3xl mx-auto">
-                            Découvrez notre collection unique de produits de qualité supérieure. 
+                            Découvrez notre collection unique de produits de qualité supérieure.
                             Une expérience shopping exceptionnelle vous attend.
                         </p>
 
@@ -177,7 +177,7 @@ function HomeContent({
                                 <span>Découvrir la boutique</span>
                                 <ArrowRightIcon className="h-5 w-5" />
                             </Link>
-                            
+
                             <Link
                                 href={route('a-propos-de-nous')}
                                 className="border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-amber-600 transition-all duration-200"
@@ -320,8 +320,8 @@ export default function Home({ wishlistItems, ...props }) {
     const { appSettings } = usePage().props;
 
     return (
-        <FrontendLayout 
-            title="Accueil" 
+        <FrontendLayout
+            title="Accueil"
             wishlistItems={wishlistItems}
         >
             <HomeContent {...props} appSettings={appSettings} />

@@ -58,6 +58,36 @@ class Sell_details extends Model
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
+    /**
+     * Relation vers la couleur via le variant de produit
+     */
+    public function color()
+    {
+        return $this->hasOneThrough(
+            ProductColor::class,
+            ProductVariant::class,
+            'id', // Foreign key on ProductVariant table
+            'id', // Foreign key on ProductColor table
+            'product_variant_id', // Local key on Sell_details table
+            'color_id' // Local key on ProductVariant table
+        );
+    }
+
+    /**
+     * Relation vers la taille via le variant de produit
+     */
+    public function size()
+    {
+        return $this->hasOneThrough(
+            ProductSize::class,
+            ProductVariant::class,
+            'id', // Foreign key on ProductVariant table
+            'id', // Foreign key on ProductSize table
+            'product_variant_id', // Local key on Sell_details table
+            'size_id' // Local key on ProductVariant table
+        );
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

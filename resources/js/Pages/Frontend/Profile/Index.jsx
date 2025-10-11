@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { 
+import {
     UserIcon,
     ShoppingBagIcon,
     HeartIcon,
@@ -12,27 +12,27 @@ import {
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
     const navigation = [
-        { 
-            name: 'Profil', 
-            id: 'profile', 
+        {
+            name: 'Profil',
+            id: 'profile',
             icon: UserIcon,
             description: 'Informations personnelles'
         },
-        { 
-            name: 'Mes commandes', 
-            id: 'orders', 
+        {
+            name: 'Mes commandes',
+            id: 'orders',
             icon: ShoppingBagIcon,
             description: 'Historique des achats'
         },
-        { 
-            name: 'Liste de souhaits', 
-            id: 'wishlist', 
+        {
+            name: 'Liste de souhaits',
+            id: 'wishlist',
             icon: HeartIcon,
             description: 'Produits favoris'
         },
-        { 
-            name: 'Paramètres', 
-            id: 'settings', 
+        {
+            name: 'Paramètres',
+            id: 'settings',
             icon: CogIcon,
             description: 'Préférences du compte'
         }
@@ -47,8 +47,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
                         onClick={() => setActiveTab(item.id)}
                         className={`
                             w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200
-                            ${activeTab === item.id 
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg' 
+                            ${activeTab === item.id
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg'
                                 : 'text-gray-700 hover:bg-gray-50'
                             }
                         `}
@@ -98,8 +98,8 @@ const ProfileTab = ({ user, customer }) => {
                     onClick={() => setIsEditing(!isEditing)}
                     className={`
                         px-4 py-2 rounded-lg font-medium transition-all duration-200
-                        ${isEditing 
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                        ${isEditing
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-600 hover:to-orange-700'
                         }
                     `}
@@ -123,8 +123,8 @@ const ProfileTab = ({ user, customer }) => {
                             disabled={!isEditing}
                             className={`
                                 w-full px-4 py-3 border rounded-lg transition-colors
-                                ${isEditing 
-                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                ${isEditing
+                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                     : 'border-gray-200 bg-gray-50 text-gray-600'
                                 }
                             `}
@@ -144,8 +144,8 @@ const ProfileTab = ({ user, customer }) => {
                             disabled={!isEditing}
                             className={`
                                 w-full px-4 py-3 border rounded-lg transition-colors
-                                ${isEditing 
-                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                ${isEditing
+                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                     : 'border-gray-200 bg-gray-50 text-gray-600'
                                 }
                             `}
@@ -165,8 +165,8 @@ const ProfileTab = ({ user, customer }) => {
                             disabled={!isEditing}
                             className={`
                                 w-full px-4 py-3 border rounded-lg transition-colors
-                                ${isEditing 
-                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                ${isEditing
+                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                     : 'border-gray-200 bg-gray-50 text-gray-600'
                                 }
                             `}
@@ -187,8 +187,8 @@ const ProfileTab = ({ user, customer }) => {
                             disabled={!isEditing}
                             className={`
                                 w-full px-4 py-3 border rounded-lg transition-colors
-                                ${isEditing 
-                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                ${isEditing
+                                    ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                     : 'border-gray-200 bg-gray-50 text-gray-600'
                                 }
                             `}
@@ -213,8 +213,8 @@ const ProfileTab = ({ user, customer }) => {
                                 disabled={!isEditing}
                                 className={`
                                     w-full px-4 py-3 border rounded-lg transition-colors
-                                    ${isEditing 
-                                        ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                    ${isEditing
+                                        ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                         : 'border-gray-200 bg-gray-50 text-gray-600'
                                     }
                                 `}
@@ -235,8 +235,8 @@ const ProfileTab = ({ user, customer }) => {
                                 disabled={!isEditing}
                                 className={`
                                     w-full px-4 py-3 border rounded-lg transition-colors
-                                    ${isEditing 
-                                        ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                    ${isEditing
+                                        ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                         : 'border-gray-200 bg-gray-50 text-gray-600'
                                     }
                                 `}
@@ -257,8 +257,8 @@ const ProfileTab = ({ user, customer }) => {
                                     disabled={!isEditing}
                                     className={`
                                         w-full px-4 py-3 border rounded-lg transition-colors
-                                        ${isEditing 
-                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                        ${isEditing
+                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                             : 'border-gray-200 bg-gray-50 text-gray-600'
                                         }
                                     `}
@@ -278,8 +278,8 @@ const ProfileTab = ({ user, customer }) => {
                                     disabled={!isEditing}
                                     className={`
                                         w-full px-4 py-3 border rounded-lg transition-colors
-                                        ${isEditing 
-                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                        ${isEditing
+                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                             : 'border-gray-200 bg-gray-50 text-gray-600'
                                         }
                                     `}
@@ -298,8 +298,8 @@ const ProfileTab = ({ user, customer }) => {
                                     disabled={!isEditing}
                                     className={`
                                         w-full px-4 py-3 border rounded-lg transition-colors
-                                        ${isEditing 
-                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent' 
+                                        ${isEditing
+                                            ? 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent'
                                             : 'border-gray-200 bg-gray-50 text-gray-600'
                                         }
                                     `}
@@ -456,7 +456,7 @@ const OrdersTab = ({ orders = [] }) => {
                                     {order.shipping_method?.name || 'Standard'}
                                 </span>
                             </div>
-                            
+
                             <div className="flex space-x-3">
                                 <Link
                                     href={route('frontend.profile.order', order.id)}
@@ -464,13 +464,13 @@ const OrdersTab = ({ orders = [] }) => {
                                 >
                                     Voir détails
                                 </Link>
-                                
+
                                 {order.status === 'delivered' && (
                                     <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
                                         Laisser un avis
                                     </button>
                                 )}
-                                
+
                                 {['pending', 'processing'].includes(order.status) && (
                                     <button className="text-red-600 hover:text-red-700 font-medium text-sm">
                                         Annuler
@@ -661,11 +661,11 @@ const SettingsTab = ({ user }) => {
 
 export default function Profile({ orders = [], wishlistItems = [], customer = null }) {
     const { auth } = usePage().props;
-    
+
     // Détecter l'onglet à partir de l'URL
     const urlParams = new URLSearchParams(window.location.search);
     const initialTab = urlParams.get('tab') || 'profile';
-    
+
     const [activeTab, setActiveTab] = useState(initialTab);
 
     // Mettre à jour l'URL quand l'onglet change
