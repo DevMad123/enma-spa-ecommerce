@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
-use Log;
+use Illuminate\Support\Facades\Log;
 use App\Notifications\NewOrderNotification;
 use App\Mail\OrderConfirmationMail;
 
@@ -51,18 +51,18 @@ class CartController extends Controller
         $cacheKey = 'checkout_processing_' . session()->getId() . '_' . md5(json_encode($request->only(['email', 'cart_items'])));
         if (cache()->has($cacheKey)) {
             Log::warning('Duplicate checkout attempt detected', ['cache_key' => $cacheKey]);
-            
+
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Une commande est déjà en cours de traitement.',
                 ], 429);
             }
-            
+
             return redirect()->back()
                 ->with('error', 'Une commande est déjà en cours de traitement.');
         }
-        
+
         // Marquer comme en cours de traitement pour 60 secondes
         cache()->put($cacheKey, true, 60);
 
@@ -80,10 +80,10 @@ class CartController extends Controller
                 'cart_items.*.quantity' => 'required|integer|min:1',
                 'cart_items.*.color_id' => 'nullable|integer',
                 'cart_items.*.size_id' => 'nullable|integer',
-                
+
                 // Informations personnelles
                 'email' => 'required|email|max:255',
-                
+
                 // Adresse de livraison
                 'shipping_first_name' => 'required|string|max:255',
                 'shipping_last_name' => 'required|string|max:255',
@@ -93,7 +93,7 @@ class CartController extends Controller
                 'shipping_postal_code' => 'required|string|max:20',
                 'shipping_country' => 'required|string|max:255',
                 'shipping_phone' => 'required|string|max:20',
-                
+
                 // Adresse de facturation
                 'billing_same_as_shipping' => 'boolean',
                 'billing_first_name' => 'nullable|string|max:255',
@@ -103,20 +103,20 @@ class CartController extends Controller
                 'billing_city' => 'nullable|string|max:255',
                 'billing_postal_code' => 'nullable|string|max:20',
                 'billing_country' => 'nullable|string|max:255',
-                
+
                 // Méthodes
                 'shipping_method_id' => 'required|exists:shippings,id',
                 'payment_method_id' => 'required|exists:payment_methods,id',
-                
+
                 // Notes
                 'order_notes' => 'nullable|string|max:500',
-                
+
                 // Total (optionnel pour le moment)
                 // 'total' => 'required|numeric|min:0',
             ]);
-            
+
             Log::info('Validation passed successfully');
-            
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation failed:', [
                 'errors' => $e->errors(),
@@ -140,7 +140,7 @@ class CartController extends Controller
             // Calculer totaux
             $cartItems = $request->cart_items;
             Log::info('Processing cart items:', ['cart_items' => $cartItems]);
-            
+
             $subtotal = 0;
             $orderItems = [];
 
@@ -165,13 +165,16 @@ class CartController extends Controller
             $shippingCost = $shippingMethod->price;
 
             // Calculs finaux
-            $totalVat = 0; // À implémenter selon vos règles
+            $taxRate = floatval(\App\Services\AppSettingsService::getTaxRate());
+            $totalVat = $subtotal * $taxRate; // Calculer la TVA correctement
             $totalDiscount = 0; // À implémenter selon vos règles
             $totalPayable = $subtotal + $shippingCost + $totalVat - $totalDiscount;
 
             Log::info('Order calculations:', [
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingCost,
+                'tax_rate' => $taxRate,
+                'total_vat' => $totalVat,
                 'total_payable' => $totalPayable,
                 'items_count' => count($orderItems)
             ]);
@@ -186,7 +189,7 @@ class CartController extends Controller
                     $nameParts = explode(' ', $user->name, 2);
                     $firstName = $nameParts[0] ?? $request->shipping_first_name;
                     $lastName = $nameParts[1] ?? $request->shipping_last_name;
-                    
+
                     $customer = Ecommerce_customer::create([
                         'user_id' => $user->id,
                         'first_name' => $firstName,
@@ -255,7 +258,7 @@ class CartController extends Controller
                 $product = $item['product'];
                 $product->available_quantity -= $item['quantity'];
                 $product->save();
-                
+
                 Log::info('Item processed:', ['product_id' => $item['product']->id, 'quantity' => $item['quantity']]);
             }
 
@@ -266,31 +269,31 @@ class CartController extends Controller
             // Envoyer les notifications après la création de la commande
             try {
                 Log::info('Starting notification sending process...');
-                
+
                 // 1. Charger la commande avec les relations nécessaires
                 $orderWithRelations = Sell::with(['customer', 'sellDetails.product', 'paymentMethod'])->find($sell->id);
-                
+
                 // 2. Notification aux administrateurs - utiliser le système personnalisé
                 Log::info('Creating admin notifications for order: ' . $sell->id);
                 $notificationCount = $this->createAdminNotification($orderWithRelations);
                 Log::info("Created {$notificationCount} admin notifications");
-                
+
                 // 3. Email aux admins (en plus des notifications)
                 $adminUsers = User::whereHas('roles', function($query) {
                     $query->whereIn('name', ['Admin', 'Manager']);
                 })->get();
-                
+
                 if ($adminUsers->count() > 0) {
                     Log::info('Sending email notification to ' . $adminUsers->count() . ' admin users');
                     Notification::send($adminUsers, new NewOrderNotification($orderWithRelations));
                     Log::info('Admin email notifications sent successfully');
                 }
-                
+
                 // 3. Email de confirmation au client
                 Log::info('Sending confirmation email to customer: ' . $customer->email);
                 Mail::to($customer->email)->queue(new OrderConfirmationMail($orderWithRelations));
                 Log::info('Customer confirmation email queued successfully');
-                
+
             } catch (\Exception $e) {
                 Log::error('Error sending notifications:', [
                     'error' => $e->getMessage(),
@@ -326,12 +329,12 @@ class CartController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             DB::rollback();
-            
+
             // Supprimer le cache en cas d'erreur aussi
             cache()->forget($cacheKey);
-            
+
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 return response()->json([
                     'success' => false,
@@ -339,7 +342,7 @@ class CartController extends Controller
                     'error' => $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->back()
                 ->with('error', 'Une erreur est survenue lors de la création de votre commande: ' . $e->getMessage())
                 ->withInput();
@@ -353,11 +356,11 @@ class CartController extends Controller
             // Utilisateur connecté : vérifier que la commande lui appartient
             $user = Auth::user();
             $customer = Ecommerce_customer::where('user_id', $user->id)->first();
-            
+
             if (!$customer) {
                 abort(403, 'Accès non autorisé.');
             }
-            
+
             $sell = Sell::with(['customer', 'sellDetails.product', 'paymentMethod'])
                 ->where('customer_id', $customer->id) // Vérifier la propriété
                 ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
@@ -368,7 +371,7 @@ class CartController extends Controller
             return redirect()->route('login')
                 ->with('error', 'Vous devez être connecté pour accéder à cette page.');
         }
-        
+
         Log::info('Order sell details:', $sell->toArray());
 
         // Récupérer la méthode de livraison séparément (pas de relation directe)
@@ -381,18 +384,18 @@ class CartController extends Controller
         $subtotal = $sell->sellDetails->sum(function ($detail) {
             return floatval($detail->unit_sell_price ?? 0) * intval($detail->sale_quantity ?? 1);
         });
-        
+
         $shippingCost = floatval($sell->shipping_cost ?? 0);
         $tax = floatval($sell->total_vat_amount ?? 0);
-        
+
         // Si la TVA est 0 mais qu'on a des paramètres de TVA, calculer la TVA
         if ($tax == 0 && $subtotal > 0) {
             $taxRate = floatval(\App\Services\AppSettingsService::getTaxRate());
             if ($taxRate > 0) {
-                $tax = ($subtotal * $taxRate) / 100;
+                $tax = $subtotal * $taxRate; // getTaxRate() retourne déjà un décimal (0.18), pas un pourcentage
             }
         }
-        
+
         $total = floatval($sell->total_payable_amount ?? ($subtotal + $shippingCost + $tax));
 
         $formattedOrder = [
@@ -405,7 +408,7 @@ class CartController extends Controller
             'shipping_cost' => $shippingCost,
             'tax' => $tax,
             'notes' => $sell->notes,
-            
+
             // Adresse de livraison
             'shipping_first_name' => $sell->customer->first_name ?? '',
             'shipping_last_name' => $sell->customer->last_name ?? '',
@@ -415,11 +418,11 @@ class CartController extends Controller
             'shipping_city' => '',
             'shipping_country' => 'France',
             'shipping_phone' => $sell->shipping_phone ?? $sell->customer->phone_one ?? '',
-            
+
             // Méthodes
             'payment_method' => $sell->paymentMethod, // Utilise maintenant la relation
             'shipping_method' => $shippingMethod,
-            
+
             // Articles commandés
             'items' => $sell->sellDetails->map(function ($detail) {
                 return [
@@ -452,7 +455,7 @@ class CartController extends Controller
     {
         $lastSell = Sell::orderBy('id', 'desc')->first();
         $nextNumber = $lastSell ? ($lastSell->id + 1) : 1;
-        
+
         return 'CMD-' . date('Ym') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
@@ -466,10 +469,10 @@ class CartController extends Controller
         if (empty($customerName)) {
             $customerName = $order->customer->email ?? 'Client inconnu';
         }
-        
+
         // Utiliser le bon champ pour le montant
         $totalAmount = $order->total_payable_amount ?? $order->grand_total ?? 0;
-        
+
         // Créer une notification dans la table personnalisée pour chaque admin
         $adminUsers = User::whereHas('roles', function($query) {
             $query->whereIn('name', ['Admin', 'Manager']);

@@ -15,6 +15,7 @@ use Image;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Illuminate\Support\Facades\Log;
 
 class ProductSubcategoryController extends Controller
 {
@@ -371,7 +372,7 @@ class ProductSubcategoryController extends Controller
     {
         $subcategory->load(['category', 'products']);
         $subcategory->loadCount('products');
-        
+
         return Inertia::render('Admin/Subcategories/show', [
             'subcategory' => $subcategory
         ]);

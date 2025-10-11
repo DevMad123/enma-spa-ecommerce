@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->boolean('supports_free_shipping')->default(false)->after('price');
-            $table->decimal('free_shipping_threshold', 10, 2)->nullable()->after('supports_free_shipping');
+            // $table->boolean('supports_free_shipping')->default(false)->after('price');
+            // $table->decimal('free_shipping_threshold', 10, 2)->nullable()->after('supports_free_shipping');
         });
     }
 
