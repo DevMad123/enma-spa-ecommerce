@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link } from '@inertiajs/react';
-import { 
+import {
     ArrowLeftIcon,
     TruckIcon,
     CalendarIcon,
@@ -113,7 +113,7 @@ export default function OrderDetail({ order }) {
                             <ArrowLeftIcon className="h-5 w-5" />
                             <span>Retour au profil</span>
                         </Link>
-                        
+
                         <h1 className="text-3xl font-bold text-gray-900">
                             Commande #{order.order_number}
                         </h1>
@@ -164,7 +164,7 @@ export default function OrderDetail({ order }) {
                                             <p className="text-sm font-medium text-blue-900">Numéro de suivi</p>
                                             <p className="text-lg font-mono text-blue-700">{order.tracking_number}</p>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => setShowTrackingDetails(!showTrackingDetails)}
                                             className="text-blue-600 hover:text-blue-700 font-medium"
                                         >
@@ -180,8 +180,8 @@ export default function OrderDetail({ order }) {
                                     <div key={index} className="flex items-start space-x-4">
                                         <div className={`
                                             w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                                            ${step.completed 
-                                                ? 'bg-green-100 text-green-600' 
+                                            ${step.completed
+                                                ? 'bg-green-100 text-green-600'
                                                 : 'bg-gray-100 text-gray-400'
                                             }
                                         `}>
@@ -217,7 +217,7 @@ export default function OrderDetail({ order }) {
                         {/* Articles commandés */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                             <h2 className="text-xl font-semibold text-gray-900 mb-6">Articles commandés</h2>
-                            
+
                             <div className="space-y-4">
                                 {order.items.map((item, index) => (
                                     <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
@@ -228,14 +228,14 @@ export default function OrderDetail({ order }) {
                                         />
                                         <div className="flex-1">
                                             <h3 className="font-medium text-gray-900 mb-2">
-                                                <Link 
+                                                <Link
                                                     href={route('frontend.shop.show', item.product_id)}
                                                     className="hover:text-amber-600 transition-colors"
                                                 >
                                                     {item.product_name}
                                                 </Link>
                                             </h3>
-                                            
+
                                             <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                                                 {item.color_name && (
                                                     <span>Couleur: {item.color_name}</span>
@@ -250,7 +250,7 @@ export default function OrderDetail({ order }) {
                                                 <span className="text-lg font-medium text-gray-900">
                                                     {(item.price * item.quantity).toFixed(2)}€
                                                 </span>
-                                                
+
                                                 {order.status === 'delivered' && (
                                                     <button className="text-amber-600 hover:text-amber-700 text-sm font-medium">
                                                         Laisser un avis
@@ -279,25 +279,25 @@ export default function OrderDetail({ order }) {
                         {/* Récapitulatif */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Récapitulatif</h3>
-                            
+
                             <div className="space-y-3">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Sous-total</span>
                                     <span className="font-medium">{order.subtotal}€</span>
                                 </div>
-                                
+
                                 {order.shipping_cost > 0 && (
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Livraison</span>
                                         <span className="font-medium">{order.shipping_cost}€</span>
                                     </div>
                                 )}
-                                
+
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">TVA</span>
                                     <span className="font-medium">{order.tax}€</span>
                                 </div>
-                                
+
                                 <div className="border-t border-gray-200 pt-3">
                                     <div className="flex justify-between">
                                         <span className="font-semibold text-gray-900">Total</span>
@@ -313,7 +313,7 @@ export default function OrderDetail({ order }) {
                                 <MapPinIcon className="w-5 h-5 mr-2 text-amber-600" />
                                 Adresse de livraison
                             </h3>
-                            
+
                             <div className="text-sm text-gray-700 space-y-1">
                                 <p className="font-medium">
                                     {order.shipping_first_name} {order.shipping_last_name}
@@ -337,7 +337,7 @@ export default function OrderDetail({ order }) {
                                     <TruckIcon className="w-5 h-5 mr-2 text-amber-600" />
                                     Livraison
                                 </h3>
-                                
+
                                 <div>
                                     <p className="font-medium text-gray-900">{order.shipping_method.name}</p>
                                     <p className="text-sm text-gray-600 mt-1">{order.shipping_method.description}</p>
@@ -354,13 +354,13 @@ export default function OrderDetail({ order }) {
                                 <CreditCardIcon className="w-5 h-5 mr-2 text-amber-600" />
                                 Paiement
                             </h3>
-                            
+
                             <div>
                                 <p className="font-medium text-gray-900">
                                     {order.payment_method?.name || 'Carte bancaire'}
                                 </p>
                                 <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    ✓ Paiement confirmé
+                                    ✓ Commande confirmé
                                 </div>
                             </div>
                         </div>
@@ -371,11 +371,11 @@ export default function OrderDetail({ order }) {
                                 <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2 text-amber-600" />
                                 Besoin d'aide ?
                             </h3>
-                            
+
                             <p className="text-sm text-gray-700 mb-4">
                                 Notre équipe est là pour vous accompagner
                             </p>
-                            
+
                             <div className="space-y-3">
                                 <Link
                                     href={route('contact')}
@@ -383,7 +383,7 @@ export default function OrderDetail({ order }) {
                                 >
                                     Nous contacter
                                 </Link>
-                                
+
                                 <div className="text-xs text-gray-600 text-center space-y-1">
                                     <p>📧 support@enma-spa.com</p>
                                     <p>📞 +33 1 23 45 67 89</p>

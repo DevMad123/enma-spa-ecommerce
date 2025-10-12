@@ -34,7 +34,7 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $perPage = $request->get('per_page', 15);
 
-        $query = Payment::with(['sell.customer', 'createdBy'])
+        $query = Payment::with(['sell.customer'])
                        ->latest('created_at');
 
         // Filtres de recherche
@@ -97,6 +97,10 @@ class PaymentController extends Controller
             'paymentStatuses' => Payment::STATUSES,
             'currency' => get_currency(),
             'currencySymbol' => get_currency_symbol(),
+            'flash' => [
+                'success' => session('flash.success'),
+                'error' => session('flash.error'),
+            ],
         ]);
     }
 
@@ -107,7 +111,7 @@ class PaymentController extends Controller
     {
         $sellId = $request->get('sell_id');
         $sell = null;
-        
+
         if ($sellId) {
             $sell = Sell::with(['customer', 'payments' => function($query) {
                 $query->successful();
@@ -139,12 +143,12 @@ class PaymentController extends Controller
             $payment = $this->paymentService->createPayment($request->validated());
 
             return redirect()
-                ->route('admin.payments.show', $payment->id)
+                ->route('admin.payments.index')
                 ->with('flash', ['success' => 'Paiement enregistré avec succès!']);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la création du paiement: ' . $e->getMessage());
-            
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -161,9 +165,7 @@ class PaymentController extends Controller
             'sell.customer',
             'sell.payments' => function($query) {
                 $query->orderBy('created_at', 'desc');
-            },
-            'createdBy',
-            'updatedBy'
+            }
         ]);
 
         return Inertia::render('Admin/Payments/show', [
@@ -184,7 +186,7 @@ class PaymentController extends Controller
         if (in_array($payment->status, ['success', 'refunded'])) {
             return redirect()
                 ->route('admin.payments.index')
-                ->with('error', 'Ce paiement ne peut plus être modifié.');
+                ->with('flash', ['error' => 'Ce paiement ne peut plus être modifié.']);
         }
 
         return Inertia::render('Admin/Payments/edit', [
@@ -203,24 +205,23 @@ class PaymentController extends Controller
             DB::beginTransaction();
 
             $paymentData = $request->validated();
-            $paymentData['updated_by'] = auth()->id();
 
             $payment->update($paymentData);
 
             DB::commit();
 
             return redirect()
-                ->route('admin.payments.show', $payment->id)
-                ->with('success', 'Paiement mis à jour avec succès!');
+                ->route('admin.payments.index')
+                ->with('flash', ['success' => 'Paiement mis à jour avec succès!']);
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la mise à jour du paiement: ' . $e->getMessage());
-            
+
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Erreur lors de la mise à jour: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()]);
         }
     }
 
@@ -233,15 +234,13 @@ class PaymentController extends Controller
             if (in_array($payment->status, ['success', 'refunded'])) {
                 return redirect()
                     ->back()
-                    ->with('error', 'Un paiement réussi ou remboursé ne peut pas être supprimé. Utilisez la fonction de remboursement.');
+                    ->with('flash', ['error' => 'Un paiement réussi ou remboursé ne peut pas être supprimé. Utilisez la fonction de remboursement.']);
             }
 
             DB::beginTransaction();
 
             $payment->update([
                 'status' => 'cancelled',
-                'deleted_by' => auth()->id(),
-                'updated_by' => auth()->id(),
             ]);
 
             $payment->delete();
@@ -250,15 +249,15 @@ class PaymentController extends Controller
 
             return redirect()
                 ->route('admin.payments.index')
-                ->with('success', 'Paiement annulé avec succès!');
+                ->with('flash', ['success' => 'Paiement annulé avec succès!']);
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de l\'annulation du paiement: ' . $e->getMessage());
-            
+
             return redirect()
                 ->back()
-                ->with('error', 'Erreur lors de l\'annulation: ' . $e->getMessage());
+                ->with('flash', ['error' => 'Erreur lors de l\'annulation: ' . $e->getMessage()]);
         }
     }
 
@@ -282,8 +281,6 @@ class PaymentController extends Controller
                 if (!in_array($payment->status, ['success', 'refunded'])) {
                     $payment->update([
                         'status' => 'cancelled',
-                        'deleted_by' => auth()->id(),
-                        'updated_by' => auth()->id(),
                     ]);
                     $payment->delete();
                     $deletedCount++;
@@ -300,7 +297,7 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la suppression groupée: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -342,7 +339,7 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la validation groupée: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -363,28 +360,42 @@ class PaymentController extends Controller
         try {
             // Utiliser le service pour valider le paiement
             $this->paymentService->validatePayment($payment);
-            
+
             if ($request->transaction_reference) {
                 $payment->update(['transaction_reference' => $request->transaction_reference]);
             }
-            
+
             if ($request->notes) {
                 $payment->update(['notes' => $request->notes]);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Paiement validé avec succès!',
-                'payment' => $payment->fresh(['sell']),
-            ]);
+            // Si c'est une requête AJAX, retourner JSON
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Paiement validé avec succès!',
+                    'payment' => $payment->fresh(['sell']),
+                ]);
+            }
+
+            // Sinon rediriger vers l'index avec message flash
+            return redirect()
+                ->route('admin.payments.index')
+                ->with('flash', ['success' => 'Paiement validé avec succès!']);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la validation du paiement: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()
+                ->back()
+                ->with('flash', ['error' => $e->getMessage()]);
         }
     }
 
@@ -400,24 +411,38 @@ class PaymentController extends Controller
         try {
             // Utiliser le service pour rejeter le paiement
             $this->paymentService->rejectPayment($payment);
-            
+
             if ($request->reason) {
                 $payment->update(['notes' => $request->reason]);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Paiement rejeté!',
-                'payment' => $payment->fresh(['sell']),
-            ]);
+            // Si c'est une requête AJAX, retourner JSON
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Paiement rejeté!',
+                    'payment' => $payment->fresh(['sell']),
+                ]);
+            }
+
+            // Sinon rediriger vers l'index avec message flash
+            return redirect()
+                ->route('admin.payments.index')
+                ->with('flash', ['success' => 'Paiement rejeté!']);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors du rejet du paiement: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()
+                ->back()
+                ->with('flash', ['error' => $e->getMessage()]);
         }
     }
 
@@ -437,24 +462,38 @@ class PaymentController extends Controller
 
             // Utiliser le service pour rembourser le paiement
             $this->paymentService->refundPayment($payment);
-            
+
             if ($request->reason) {
                 $payment->update(['notes' => $payment->notes . "\nRemboursement: " . $request->reason]);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Remboursement effectué avec succès!',
-                'payment' => $payment->fresh(['sell']),
-            ]);
+            // Si c'est une requête AJAX, retourner JSON
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Remboursement effectué avec succès!',
+                    'payment' => $payment->fresh(['sell']),
+                ]);
+            }
+
+            // Sinon rediriger vers l'index avec message flash
+            return redirect()
+                ->route('admin.payments.index')
+                ->with('flash', ['success' => 'Remboursement effectué avec succès!']);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors du remboursement: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()
+                ->back()
+                ->with('flash', ['error' => $e->getMessage()]);
         }
     }
 
@@ -493,7 +532,7 @@ class PaymentController extends Controller
         $payments = $query->get();
 
         $filename = 'paiements_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -501,7 +540,7 @@ class PaymentController extends Controller
 
         $callback = function () use ($payments) {
             $file = fopen('php://output', 'w');
-            
+
             // En-têtes CSV
             fputcsv($file, [
                 'ID',

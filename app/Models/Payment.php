@@ -21,26 +21,20 @@ class Payment extends Model
         'card_last_digit',
         'payment_inv_link',
         'status',
-        // Champs pour compatibilité mais pas dans la vraie table
-        // 'method', 'amount', 'currency', 'transaction_reference', 'payment_date', 'notes', 'metadata'
-        'created_by',
-        'updated_by',
-        'deleted_by',
+        // Champs pour compatibilité via accesseurs/mutateurs
+        'method', 'amount', 'transaction_reference',
     ];
 
     protected $casts = [
         'sell_id' => 'integer',
         'total_paid' => 'decimal:2',
         'metadata' => 'array',
-        'created_by' => 'integer',
-        'updated_by' => 'integer',
-        'deleted_by' => 'integer',
     ];
 
     // Ajouter les accesseurs au JSON automatiquement
     protected $appends = [
         'method',
-        'amount', 
+        'amount',
         'transaction_reference',
         'payment_date',
         'method_text',
@@ -81,30 +75,51 @@ class Payment extends Model
         return $this->belongsTo(Sell::class, 'sell_id');
     }
 
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy()
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function deletedBy()
-    {
-        return $this->belongsTo(User::class, 'deleted_by');
-    }
-
     // Accesseurs pour la compatibilité avec les anciens noms de champs
     public function getMethodAttribute()
     {
-        return $this->payment_type;
+        // Mapping inverse pour l'affichage
+        $reverseMapping = [
+            'cash_on_delivery' => 'cash',
+            'card' => 'card', // Peut être 'stripe' ou 'card', on garde 'card' par défaut
+            'wallet' => 'wallet', // Peut être 'orange_money' ou 'wave', on garde 'wallet' par défaut
+        ];
+
+        return $reverseMapping[$this->payment_type] ?? $this->payment_type;
     }
 
     public function setMethodAttribute($value)
     {
-        $this->attributes['payment_type'] = $value;
+        // Mapper certaines valeurs vers les valeurs autorisées dans l'enum
+        $mapping = [
+            'cash' => 'cash_on_delivery',
+            'stripe' => 'card',
+            'orange_money' => 'wallet',
+            'wave' => 'wallet',
+        ];
+
+        $this->attributes['payment_type'] = $mapping[$value] ?? $value;
+    }
+
+    public function setStatusAttribute($value)
+    {
+        // Mapper certains statuts vers les valeurs autorisées dans l'enum
+        $mapping = [
+            'success' => 'paid',
+            'cancelled' => 'failed',
+        ];
+
+        $this->attributes['status'] = $mapping[$value] ?? $value;
+    }
+
+    public function getStatusAttribute($value)
+    {
+        // Mapping inverse pour l'affichage
+        $reverseMapping = [
+            'paid' => 'success', // Afficher 'success' au lieu de 'paid'
+        ];
+
+        return $reverseMapping[$value] ?? $value;
     }
 
     public function getAmountAttribute()
@@ -124,6 +139,13 @@ class Payment extends Model
 
     public function setTransactionReferenceAttribute($value)
     {
+        // Si aucune référence n'est fournie, générer automatiquement un ID unique
+        if (empty($value)) {
+            do {
+                $value = 'TXN_' . date('YmdHis') . '_' . uniqid();
+            } while (Payment::where('tnx_id', $value)->exists());
+        }
+
         $this->attributes['tnx_id'] = $value;
     }
 
@@ -153,7 +175,7 @@ class Payment extends Model
     {
         return match($this->status) {
             'pending' => 'yellow',
-            'success' => 'green',
+            'success', 'paid' => 'green',
             'failed' => 'red',
             'refunded' => 'orange',
             'cancelled' => 'gray',
@@ -195,7 +217,7 @@ class Payment extends Model
 
     public function scopeSuccessful($query)
     {
-        return $query->whereIn('status', ['paid', 'success']);
+        return $query->whereIn('status', ['paid']);
     }
 
     public function scopePending($query)
@@ -230,7 +252,6 @@ class Payment extends Model
         $this->update([
             'status' => 'success',
             'transaction_reference' => $transactionRef ?? $this->transaction_reference,
-            'updated_by' => auth()->id(),
         ]);
 
         // Mettre à jour le statut de paiement de la commande
@@ -242,7 +263,6 @@ class Payment extends Model
         $this->update([
             'status' => 'failed',
             'notes' => $reason ? ($this->notes . "\n" . $reason) : $this->notes,
-            'updated_by' => auth()->id(),
         ]);
 
         $this->updateSellPaymentStatus();
@@ -251,7 +271,7 @@ class Payment extends Model
     public function refund($amount = null)
     {
         $refundAmount = $amount ?? $this->total_paid;
-        
+
         if ($refundAmount > $this->total_paid) {
             throw new \Exception('Le montant du remboursement ne peut pas être supérieur au montant du paiement');
         }
@@ -259,7 +279,6 @@ class Payment extends Model
         $this->update([
             'status' => 'refunded',
             'total_paid' => $this->total_paid - $refundAmount,
-            'updated_by' => auth()->id(),
         ]);
 
         $this->updateSellPaymentStatus();
@@ -283,7 +302,6 @@ class Payment extends Model
 
         $sell->total_paid = $totalPaid;
         $sell->total_due = $totalDue - $totalPaid;
-        $sell->updated_by = auth()->id();
         $sell->save();
     }
 
@@ -292,7 +310,12 @@ class Payment extends Model
         parent::boot();
 
         static::creating(function ($payment) {
-            // payment_date n'existe pas dans la table, utiliser created_at automatiquement
+            // Générer automatiquement tnx_id si vide avec plus d'unicité
+            if (empty($payment->tnx_id)) {
+                do {
+                    $payment->tnx_id = 'TXN_' . date('YmdHis') . '_' . uniqid();
+                } while (Payment::where('tnx_id', $payment->tnx_id)->exists());
+            }
         });
 
         static::created(function ($payment) {

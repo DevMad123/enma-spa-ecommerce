@@ -107,13 +107,13 @@ class StorePaymentRequest extends FormRequest
             if ($this->sell_id) {
                 $sell = \App\Models\Sell::find($this->sell_id);
                 if ($sell) {
-                    $totalPaid = $sell->payments()->successful()->sum('amount');
+                    $totalPaid = $sell->payments()->successful()->sum('total_paid');
                     $remainingAmount = $sell->total_payable_amount - $totalPaid;
-                    
+
                     if ($this->amount > $remainingAmount) {
                         $currency = $this->currency ?? 'XOF';
                         $validator->errors()->add(
-                            'amount', 
+                            'amount',
                             "Le montant ne peut pas dépasser le solde restant de {$remainingAmount} {$currency}."
                         );
                     }

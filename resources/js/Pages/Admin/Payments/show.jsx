@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { 
+import {
     ArrowLeftIcon,
     CurrencyDollarIcon,
     CreditCardIcon,
@@ -39,10 +39,10 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
             cancelled: { color: 'bg-gray-100 text-gray-800', text: 'Annulé', icon: XCircleIcon },
             refunded: { color: 'bg-purple-100 text-purple-800', text: 'Remboursé', icon: ArrowUturnLeftIcon },
         };
-        
+
         const badge = badges[status] || badges.pending;
         const IconComponent = badge.icon;
-        
+
         return (
             <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${badge.color}`}>
                 <IconComponent className="w-4 h-4 mr-1" />
@@ -57,15 +57,15 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
             reject: 'rejeter',
             refund: 'rembourser'
         };
-        
+
         if (!confirm(`Êtes-vous sûr de vouloir ${messages[action]} ce paiement ?`)) {
             return;
         }
 
         router.patch(route(`admin.payments.${action}`, payment.id), {}, {
             onSuccess: () => {
-                // Actualiser la page après l'action
-                router.reload();
+                // Rediriger vers l'index après l'action
+                router.visit(route('admin.payments.index'));
             }
         });
     };
@@ -90,9 +90,9 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                             <ArrowLeftIcon className="w-4 h-4 mr-1" />
                             Retour aux paiements
                         </Link>
-                        
+
                         <div className="border-l border-gray-300 h-6"></div>
-                        
+
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">Paiement #{payment.id}</h1>
                             <p className="mt-1 text-sm text-gray-600">
@@ -100,7 +100,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                             </p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                         {getStatusBadge(payment.status)}
                     </div>
@@ -110,7 +110,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Contenu principal */}
                 <div className="lg:col-span-2 space-y-6">
-                    
+
                     {/* Informations du paiement */}
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-6 py-4 border-b border-gray-200">
@@ -129,14 +129,14 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                         {paymentMethods[payment.method] || payment.method}
                                     </dd>
                                 </div>
-                                
+
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Montant</dt>
                                     <dd className="mt-1 text-lg font-semibold text-gray-900">
                                         {new Intl.NumberFormat('fr-FR').format(payment.amount)} {payment.currency}
                                     </dd>
                                 </div>
-                                
+
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Date de paiement</dt>
                                     <dd className="mt-1 text-sm text-gray-900">
@@ -149,14 +149,14 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                         })}
                                     </dd>
                                 </div>
-                                
+
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Statut</dt>
                                     <dd className="mt-1">
                                         {getStatusBadge(payment.status)}
                                     </dd>
                                 </div>
-                                
+
                                 {payment.transaction_reference && (
                                     <div className="sm:col-span-2">
                                         <dt className="text-sm font-medium text-gray-500">Référence de transaction</dt>
@@ -165,7 +165,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                         </dd>
                                     </div>
                                 )}
-                                
+
                                 {payment.notes && (
                                     <div className="sm:col-span-2">
                                         <dt className="text-sm font-medium text-gray-500">Notes</dt>
@@ -209,7 +209,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                                  'Non payé'}
                                             </span>
                                         </div>
-                                        
+
                                         <dl className="mt-2 grid grid-cols-2 gap-4 text-sm">
                                             <div>
                                                 <dt className="font-medium text-gray-500">Montant total:</dt>
@@ -230,7 +230,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                                 </dd>
                                             </div>
                                         </dl>
-                                        
+
                                         {payment.sell.customer && (
                                             <div className="mt-3 pt-3 border-t border-gray-200">
                                                 <div className="flex items-center space-x-2">
@@ -253,7 +253,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
 
                 {/* Barre latérale */}
                 <div className="space-y-6">
-                    
+
                     {/* Actions */}
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-6 py-4 border-b border-gray-200">
@@ -271,7 +271,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                     Valider le paiement
                                 </button>
                             )}
-                            
+
                             {canReject && (
                                 <button
                                     onClick={() => handleAction('reject')}
@@ -281,7 +281,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                     Rejeter le paiement
                                 </button>
                             )}
-                            
+
                             {canRefund && (
                                 <button
                                     onClick={() => handleAction('refund')}
@@ -291,7 +291,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                     Rembourser
                                 </button>
                             )}
-                            
+
                             {canDelete && (
                                 <button
                                     onClick={() => {
@@ -325,7 +325,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                     <dt className="font-medium text-gray-500">ID du paiement:</dt>
                                     <dd className="text-gray-900">#{payment.id}</dd>
                                 </div>
-                                
+
                                 <div>
                                     <dt className="font-medium text-gray-500">Créé le:</dt>
                                     <dd className="text-gray-900">
@@ -338,7 +338,7 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                         })}
                                     </dd>
                                 </div>
-                                
+
                                 <div>
                                     <dt className="font-medium text-gray-500">Modifié le:</dt>
                                     <dd className="text-gray-900">
@@ -351,14 +351,14 @@ export default function PaymentShow({ payment, paymentMethods, paymentStatuses }
                                         })}
                                     </dd>
                                 </div>
-                                
+
                                 {payment.created_by && (
                                     <div>
                                         <dt className="font-medium text-gray-500">Créé par:</dt>
                                         <dd className="text-gray-900">{payment.created_by.name || 'N/A'}</dd>
                                     </div>
                                 )}
-                                
+
                                 {payment.updated_by && payment.updated_by.id !== payment.created_by?.id && (
                                     <div>
                                         <dt className="font-medium text-gray-500">Modifié par:</dt>

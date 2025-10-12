@@ -121,7 +121,7 @@ export default function OrderDetails({ order }) {
                                         {formatPriceWithCurrency(order.total_payable_amount)}
                                     </span>
                                 </p>
-                                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <div className="mt-3 inline-flex iCommandeter px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     ✓ Paiement confirmé
                                 </div>
                             </div>

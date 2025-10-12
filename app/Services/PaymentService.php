@@ -17,8 +17,6 @@ class PaymentService
         return DB::transaction(function () use ($paymentData) {
             // Définir automatiquement le statut comme pending
             $paymentData['status'] = 'pending';
-            $paymentData['created_by'] = auth()->id();
-            $paymentData['updated_by'] = auth()->id();
 
             // Créer le paiement
             $payment = Payment::create($paymentData);
@@ -41,7 +39,6 @@ class PaymentService
             // Marquer le paiement comme réussi
             $payment->update([
                 'status' => 'success',
-                'updated_by' => auth()->id(),
             ]);
 
             // Mettre à jour les statuts de la commande
@@ -59,11 +56,11 @@ class PaymentService
     public function updateOrderPaymentStatus($sellId)
     {
         $sell = Sell::with('payments')->findOrFail($sellId);
-        
+
         // Calculer le total payé (seuls les paiements réussis comptent)
         $totalPaid = $sell->payments()
-            ->where('status', 'success')
-            ->sum('amount');
+            ->successful()
+            ->sum('total_paid');
 
         // Calculer le montant total à payer
         $totalAmount = $sell->total_payable_amount;
@@ -76,7 +73,6 @@ class PaymentService
             'total_paid' => $totalPaid,
             'total_due' => max(0, $totalAmount - $totalPaid),
             'payment_status' => $newPaymentStatus,
-            'updated_by' => auth()->id(),
         ]);
 
         Log::info("Statut de paiement mis à jour pour la commande {$sellId}: {$newPaymentStatus}");
@@ -106,7 +102,6 @@ class PaymentService
         return DB::transaction(function () use ($payment) {
             $payment->update([
                 'status' => 'failed',
-                'updated_by' => auth()->id(),
             ]);
 
             // Mettre à jour les statuts de la commande
@@ -126,7 +121,6 @@ class PaymentService
         return DB::transaction(function () use ($payment) {
             $payment->update([
                 'status' => 'refunded',
-                'updated_by' => auth()->id(),
             ]);
 
             // Mettre à jour les statuts de la commande

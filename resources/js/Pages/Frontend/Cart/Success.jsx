@@ -2,7 +2,7 @@ import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage } from '@inertiajs/react';
 import { usePriceSettings } from '@/Utils/priceFormatter';
-import { 
+import {
     CheckCircleIcon,
     PrinterIcon,
     EnvelopeIcon,
@@ -14,7 +14,7 @@ import {
 export default function CheckoutSuccess({ order }) {
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
-    
+
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
             year: 'numeric',
@@ -129,7 +129,7 @@ export default function CheckoutSuccess({ order }) {
                                         Montant: <span className="font-semibold">{formatPriceWithCurrency(order.total)}</span>
                                     </p>
                                     <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        ✓ Paiement confirmé
+                                        ✓ Commande confirmé
                                     </div>
                                 </div>
                             </div>
