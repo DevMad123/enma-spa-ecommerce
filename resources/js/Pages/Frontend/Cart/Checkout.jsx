@@ -5,7 +5,7 @@ import { usePriceSettings } from '@/Utils/priceFormatter';
 import { useAppSettings } from '@/Hooks/useAppSettings';
 import { getShortDeliveryMessage } from '@/Utils/deliveryDateUtils';
 import useCountryTax from '@/Hooks/useCountryTax';
-import { 
+import {
     ArrowLeftIcon,
     CreditCardIcon,
     TruckIcon,
@@ -19,24 +19,24 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
     const { appSettings } = usePage().props;
     const { formatPrice, formatPriceWithCurrency } = usePriceSettings(appSettings);
     const { locale } = useAppSettings();
-    
+
     // Utilisation du hook pour la gestion des pays et TVA
-    const { 
-        selectedCountry, 
-        setSelectedCountry, 
-        calculateTax, 
+    const {
+        selectedCountry,
+        setSelectedCountry,
+        calculateTax,
         currentTaxRate,
         selectedCountryInfo,
-        isCountryAllowed 
+        isCountryAllowed
     } = useCountryTax(defaultCountry);
-    
+
     const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0]?.id || '');
     const [acceptTerms, setAcceptTerms] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         // Informations personnelles
         email: '',
-        
+
         // Adresse de livraison
         shipping_first_name: '',
         shipping_last_name: '',
@@ -46,7 +46,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
         shipping_postal_code: '',
         shipping_country: selectedCountryInfo?.name || 'Côte d\'Ivoire',
         shipping_phone: '',
-        
+
         // Adresse de facturation
         billing_same_as_shipping: true,
         billing_first_name: '',
@@ -56,14 +56,14 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
         billing_city: '',
         billing_postal_code: '',
         billing_country: selectedCountryInfo?.name || 'Côte d\'Ivoire',
-        
+
         // Méthodes
         shipping_method_id: selectedShipping,
         payment_method_id: selectedPayment,
-        
+
         // Notes
         order_notes: '',
-        
+
         // Items du panier seront ajoutés dynamiquement
     });
 
@@ -79,7 +79,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         if (!acceptTerms) {
             alert('Veuillez accepter les conditions générales');
             return;
@@ -89,7 +89,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             alert('Votre panier est vide. Veuillez ajouter des articles avant de finaliser la commande.');
             return;
         }
-        
+
         // Transformer les cart_items pour correspondre à la structure attendue par le serveur
         const transformedCartItems = cartItems.map(item => ({
             product_id: item.product_id || item.product?.id,
@@ -103,6 +103,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             shipping_method_id: selectedShipping,
             payment_method_id: selectedPayment,
             cart_items: transformedCartItems,
+            defaultCountryCode: defaultCountry,
             total: total.toFixed(2)
         };
 
@@ -118,7 +119,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             selectedPayment: selectedPayment,
             selectedPaymentMethod: selectedPaymentMethod
         });
-        
+
         if (selectedPaymentMethod && selectedPaymentMethod.code === 'paypal') {
             // Traitement PayPal
             handlePayPalPayment(formData);
@@ -129,41 +130,41 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             // Traitement Wave
             handleWavePayment(formData);
         } else {
-            // Traitement normal (autres méthodes de paiement)
-            console.log('Sending POST to:', '/cart/checkout');
-            console.log('Data being sent:', formData);
-            
-            // Utiliser fetch avec JSON pour envoyer les cart_items correctement
-            fetch('/cart/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Inertia': 'true',
-                    'X-Inertia-Version': window.inertiaVersion || '',
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Checkout successful:', data);
-                if (data.success) {
-                    clearCart();
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    }
-                } else {
-                    throw new Error(data.message || 'Erreur lors de la création de la commande');
-                }
-            })
-            .catch(error => {
-                console.error('Erreur checkout détaillée:', {
-                    error: error,
-                    formData: formData,
-                    cartItems: cartItems
-                });
-                alert('Erreur lors de la création de la commande: ' + error.message);
-            });
+          // // Traitement normal (autres méthodes de paiement)
+          // console.log('Sending POST to:', '/cart/checkout');
+          // console.log('Data being sent:', formData);
+
+          // Utiliser fetch avec JSON pour envoyer les cart_items correctement
+          fetch('/cart/checkout', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                  'X-Inertia': 'true',
+                  'X-Inertia-Version': window.inertiaVersion || '',
+              },
+              body: JSON.stringify(formData)
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log('Checkout successful:', data);
+              if (data.success) {
+                  clearCart();
+                  if (data.redirect) {
+                      window.location.href = data.redirect;
+                  }
+              } else {
+                  throw new Error(data.message || 'Erreur lors de la création de la commande');
+              }
+          })
+          .catch(error => {
+              console.error('Erreur checkout détaillée:', {
+                  error: error,
+                  formData: formData,
+                  cartItems: cartItems
+              });
+              alert('Erreur lors de la création de la commande: ' + error.message);
+          });
         }
     };
 
@@ -184,7 +185,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             }
 
             const orderData = await response.json();
-            
+
             if (orderData.success && orderData.order_id) {
                 // Créer le paiement PayPal
                 const paypalResponse = await fetch(route('paypal.create'), {
@@ -203,7 +204,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 }
 
                 const paypalData = await paypalResponse.json();
-                
+
                 if (paypalData.success && paypalData.approval_url) {
                     // Vider le panier avant redirection
                     clearCart();
@@ -238,7 +239,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             }
 
             const orderData = await response.json();
-            
+
             if (orderData.success && orderData.order_id) {
                 // Créer le paiement Orange Money
                 const orangeMoneyResponse = await fetch(route('orange-money.create'), {
@@ -257,7 +258,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 }
 
                 const orangeMoneyData = await orangeMoneyResponse.json();
-                
+
                 if (orangeMoneyData.success && orangeMoneyData.payment_url) {
                     // Vider le panier avant redirection
                     clearCart();
@@ -292,7 +293,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             }
 
             const orderData = await response.json();
-            
+
             if (orderData.success && orderData.order_id) {
                 // Créer le paiement Wave
                 const waveResponse = await fetch(route('wave.create'), {
@@ -311,7 +312,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 }
 
                 const waveData = await waveResponse.json();
-                
+
                 if (waveData.success && waveData.checkout_url) {
                     // Vider le panier avant redirection
                     clearCart();
@@ -350,7 +351,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             {/* Contact Information */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Informations de contact</h2>
-                
+
                 <div className="grid grid-cols-1 gap-6">
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -373,7 +374,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             {/* Shipping Information */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Adresse de livraison</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label htmlFor="shipping_first_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -503,11 +504,11 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                             ))}
                         </select>
                         {errors.shipping_country && <p className="mt-1 text-sm text-red-600">{errors.shipping_country}</p>}
-                        
+
                         {/* Affichage du taux de TVA */}
                         <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                             <p className="text-sm text-blue-800">
-                                <span className="font-medium">TVA appliquée:</span> {(tax).toFixed(1)}% 
+                                <span className="font-medium">TVA appliquée:</span> {(tax).toFixed(1)}%
                                 {selectedCountryInfo?.flag && (
                                     <span className="ml-2">{selectedCountryInfo.flag} {selectedCountryInfo.name}</span>
                                 )}
@@ -521,7 +522,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-semibold text-gray-900">Adresse de facturation</h2>
-                    
+
                     <label className="flex items-center">
                         <input
                             type="checkbox"
@@ -598,7 +599,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             {shippingMethods.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6">Mode de livraison</h2>
-                    
+
                     <div className="space-y-4">
                         {shippingMethods.map((method) => (
                             <label key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
@@ -632,12 +633,12 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                     </div>
                 </div>
             )}
-            
+
             {/* Payment Method */}
             {paymentMethods.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6">Mode de paiement</h2>
-                    
+
                     <div className="space-y-4">
                         {paymentMethods.map((method) => (
                             <label key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
@@ -670,7 +671,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             {/* Order Notes */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Notes de commande (optionnel)</h2>
-                
+
                 <textarea
                     value={data.order_notes}
                     onChange={(e) => setData('order_notes', e.target.value)}
@@ -736,25 +737,25 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
     const { cartItems, getTotalPrice } = useCart();
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
-    
+
     // Utilisation du hook pour la gestion des pays et TVA dans le résumé
     const { calculateTax, currentTaxRate, selectedCountryInfo } = useCountryTax();
-    
+
     const subtotal = getTotalPrice();
     const selectedShippingMethod = shippingMethods.find(method => method.id == selectedShipping);
-    
+
     // Calcul dynamique de la livraison avec gestion de la livraison gratuite
     let shipping = 0;
     let isFreeShipping = false;
     let freeShippingMessage = '';
-    
+
     if (selectedShippingMethod) {
         const originalShippingCost = parseFloat(selectedShippingMethod.price);
-        
+
         // Vérifier si cette méthode supporte la livraison gratuite
         if (selectedShippingMethod.supports_free_shipping) {
             const threshold = selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000;
-            
+
             if (subtotal >= threshold) {
                 shipping = 0;
                 isFreeShipping = true;
@@ -768,7 +769,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
             shipping = originalShippingCost;
         }
     }
-    
+
     const taxRate = parseFloat(appSettings?.tax_rate?.tax_rate) / 100 || 0.00;
     const tax = subtotal * taxRate;
     const total = subtotal + shipping + tax;
@@ -814,7 +815,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                         </span>
                     </div>
                 </div>
-                
+
                 {/* Indicateur de livraison gratuite stylé */}
                 {selectedShippingMethod?.supports_free_shipping && (
                     <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
@@ -847,11 +848,11 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                                         {Math.round((subtotal / (selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)) * 100)}%
                                     </span>
                                 </div>
-                                
+
                                 {/* Barre de progression */}
                                 <div className="relative">
                                     <div className="w-full bg-blue-200 rounded-full h-2">
-                                        <div 
+                                        <div
                                             className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
                                             style={{
                                                 width: `${Math.min((subtotal / (selectedShippingMethod.free_shipping_threshold || appSettings?.free_shipping_threshold || 75000)) * 100, 100)}%`
@@ -859,7 +860,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                                         ></div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-blue-600">
                                         {formatPriceWithCurrency(subtotal)}
@@ -876,7 +877,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                     </div>
                 )}
                 <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">TVA ({(tax).toFixed(1)}%) {selectedCountryInfo?.flag}</span>
+                    <span className="text-gray-600">TVA ({(taxRate * 100).toFixed(1)}%) {selectedCountryInfo?.flag}</span>
                     <span className="font-medium">{formatPriceWithCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
@@ -890,8 +891,8 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
 
 function Checkout({ shippingMethods = [], paymentMethods = [], availableCountries = {}, defaultCountry = 'FR', isInternationalShippingEnabled = true }) {
     const [selectedShipping, setSelectedShipping] = useState(shippingMethods[0]?.id || '');
-    
-    console.log('Checkout props received:', { 
+
+    console.log('Checkout props received:', {
         shippingMethods: shippingMethods,
         paymentMethods: paymentMethods,
         availableCountries: availableCountries,
@@ -899,7 +900,7 @@ function Checkout({ shippingMethods = [], paymentMethods = [], availableCountrie
         shippingCount: shippingMethods.length,
         paymentCount: paymentMethods.length
     });
-    
+
     return (
         <FrontendLayout title="Checkout">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -921,7 +922,7 @@ function Checkout({ shippingMethods = [], paymentMethods = [], availableCountrie
                 <div className="lg:grid lg:grid-cols-3 lg:gap-8">
                     {/* Formulaire */}
                     <div className="lg:col-span-2">
-                        <CheckoutForm 
+                        <CheckoutForm
                             shippingMethods={shippingMethods}
                             paymentMethods={paymentMethods}
                             selectedShipping={selectedShipping}
@@ -933,7 +934,7 @@ function Checkout({ shippingMethods = [], paymentMethods = [], availableCountrie
 
                     {/* Récapitulatif */}
                     <div className="mt-8 lg:mt-0 lg:col-span-1">
-                        <OrderSummary 
+                        <OrderSummary
                             selectedShipping={selectedShipping}
                             shippingMethods={shippingMethods}
                         />

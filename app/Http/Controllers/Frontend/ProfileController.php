@@ -27,11 +27,23 @@ class ProfileController extends Controller
         $allOrders = [];
 
         if ($customer) {
-            $recentOrders = Sell::with(['shipping', 'sellDetails.product'])
+            $recentOrdersRaw = Sell::with(['shipping', 'sellDetails.product'])
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
+
+            // Formater les commandes récentes
+            $recentOrders = $recentOrdersRaw->map(function ($sell) {
+                return [
+                    'id' => $sell->id,
+                    'order_number' => $sell->order_reference,
+                    'status' => $sell->frontend_status,
+                    'created_at' => $sell->created_at,
+                    'total' => number_format(floatval($sell->total_payable_amount), 2),
+                    'shipping_method' => $sell->shipping,
+                ];
+            })->toArray();
 
             // Pour l'onglet orders, récupérer toutes les commandes
             $allOrdersRaw = Sell::with(['shipping', 'sellDetails.product', 'paymentMethod'])
@@ -44,7 +56,7 @@ class ProfileController extends Controller
                 return [
                     'id' => $sell->id,
                     'order_number' => $sell->order_reference,
-                    'status' => $sell->shipping_status,
+                    'status' => $sell->frontend_status, // Utiliser la nouvelle méthode
                     'created_at' => $sell->created_at,
                     'total' => number_format(floatval($sell->total_payable_amount), 2),
                     'shipping_method' => $sell->shipping,
@@ -98,6 +110,9 @@ class ProfileController extends Controller
         ])
         ->where('customer_id', $customer->id)
         ->findOrFail($orderId);
+
+        // Ajouter le statut frontend à l'objet order
+        $order->frontend_status_value = $order->frontend_status;
 
         return Inertia::render('Frontend/Profile/OrderDetails', [
             'order' => $order,

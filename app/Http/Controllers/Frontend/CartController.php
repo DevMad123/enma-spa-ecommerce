@@ -170,9 +170,10 @@ class CartController extends Controller
 
             // Calculs finaux avec TVA dynamique selon le pays
             $shippingCountryCode = $this->getCountryCodeFromName($request->shipping_country);
-            
+
             // Utiliser les TaxRules au lieu des settings
-            $taxRule = \App\Models\TaxRule::getByCountryCode($shippingCountryCode) ?? \App\Models\TaxRule::getDefault();
+            // $taxRule = \App\Models\TaxRule::getByCountryCode($shippingCountryCode) ?? \App\Models\TaxRule::getDefault();
+            $taxRule = \App\Models\TaxRule::getByCountryCode($request->defaultCountryCode) ?? \App\Models\TaxRule::getDefault();
             $totalVat = $taxRule ? $taxRule->calculateTax($subtotal) : 0;
             $taxRate = $taxRule ? $taxRule->tax_rate : 0;
             $totalDiscount = 0; // À implémenter selon vos règles
@@ -245,7 +246,7 @@ class CartController extends Controller
                 'total_paid' => 0, // Sera mis à jour après paiement
                 'total_due' => $totalPayable,
                 'payment_status' => 0, // En attente
-                'order_status' => 0, // 0=pending 
+                'order_status' => 0, // 0=pending
                 'shipping_status' => 'pending',
                 'shipping_id' => $request->shipping_method_id,
                 'payment_method_id' => $request->payment_method_id,
@@ -428,8 +429,8 @@ class CartController extends Controller
             }
 
             $sell = Sell::with([
-                'customer', 
-                'sellDetails.product', 
+                'customer',
+                'sellDetails.product',
                 'paymentMethod',
                 'shipping',
                 'shippingAddress',

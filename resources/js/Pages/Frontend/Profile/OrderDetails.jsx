@@ -77,9 +77,9 @@ export default function OrderDetails({ order }) {
                         <div className="text-right">
                             <div className={`
                                 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border
-                                ${getStatusColor(order.shipping_status)}
+                                ${getStatusColor(order.frontend_status_value || order.shipping_status)}
                             `}>
-                                {getStatusLabel(order.shipping_status)}
+                                {getStatusLabel(order.frontend_status_value || order.shipping_status)}
                             </div>
                         </div>
                     </div>

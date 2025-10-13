@@ -254,6 +254,36 @@ class Sell extends Model
         };
     }
 
+    /**
+     * Convertit le statut de la commande pour l'affichage frontend
+     * Combine shipping_status et order_status pour déterminer le statut final
+     */
+    public function getFrontendStatusAttribute(): string
+    {
+        // Si la commande est annulée
+        if (in_array($this->order_status, [3, 4, 5]) || $this->shipping_status === 'cancelled') {
+            return 'cancelled';
+        }
+        
+        // Si la commande est livrée
+        if ($this->shipping_status === 'delivered' || $this->order_status === 6) {
+            return 'delivered';
+        }
+        
+        // Si la commande est en cours de livraison
+        if ($this->shipping_status === 'in_progress') {
+            return 'shipped';
+        }
+        
+        // Si la commande est en traitement (payée et confirmée)
+        if ($this->order_status === 1 || $this->payment_status === 1) {
+            return 'processing';
+        }
+        
+        // Par défaut, en attente
+        return 'pending';
+    }
+
     // public function markAsShipped(): bool
     // {
     //     return $this->update([

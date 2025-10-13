@@ -285,7 +285,7 @@ export default function CheckoutSuccess({ order }) {
                             </div>
                             <h3 className="font-semibold text-gray-900 mb-2">Livraison</h3>
                             <p className="text-sm text-gray-600">
-                                {order.shipping_method?.estimated_days 
+                                {order.shipping_method?.estimated_days
                                     ? `Votre colis vous sera livré ${getDeliveryMessage(order.shipping_method.estimated_days, locale).toLowerCase()}`
                                     : 'Votre commande sera livrée à l\'adresse indiquée sous 2-5 jours ouvrés.'
                                 }

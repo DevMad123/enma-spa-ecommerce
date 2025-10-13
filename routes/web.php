@@ -440,6 +440,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::get('/header', [NotificationController::class, 'getForHeader'])->name('header');
+        Route::get('/{notification}/details', [NotificationController::class, 'details'])->name('details');
         Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
         Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
         Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
