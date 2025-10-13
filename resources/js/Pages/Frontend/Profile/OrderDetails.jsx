@@ -2,6 +2,8 @@ import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage } from '@inertiajs/react';
 import { usePriceSettings } from '@/Utils/priceFormatter';
+import { useAppSettings } from '@/Hooks/useAppSettings';
+import { getDeliveryMessage } from '@/Utils/deliveryDateUtils';
 import {
     ArrowLeftIcon,
     CalendarIcon,
@@ -14,6 +16,7 @@ import {
 export default function OrderDetails({ order }) {
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
+    const { locale } = useAppSettings();
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -93,18 +96,69 @@ export default function OrderDetails({ order }) {
                                 Adresse de livraison
                             </h2>
                             <div className="text-gray-700">
-                                <p className="font-medium">{order.customer?.name}</p>
-                                <p>{order.shipping_address}</p>
-                                {order.shipping_city && (
-                                    <p>{order.shipping_city}</p>
-                                )}
-                                {order.shipping_phone && (
-                                    <p className="mt-2">📞 {order.shipping_phone}</p>
+                                <p className="font-medium">
+                                    {order.shipping_address?.first_name} {order.shipping_address?.last_name}
+                                </p>
+                                <p>{order.shipping_address?.address}</p>
+                                <p>
+                                    {order.shipping_address?.zip} {order.shipping_address?.city}
+                                </p>
+                                <p>{order.shipping_address?.country}</p>
+                                {order.shipping_address?.phone && (
+                                    <p className="mt-2">📞 {order.shipping_address.phone}</p>
                                 )}
                             </div>
                         </div>
 
-                        {/* Informations de paiement */}
+                        {/* Adresse de facturation */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <CreditCardIcon className="w-5 h-5 mr-2 text-purple-600" />
+                                Adresse de facturation
+                            </h2>
+                            <div className="text-gray-700">
+                                {order.billing_address ? (
+                                    <>
+                                        <p className="font-medium">
+                                            {order.billing_address.first_name} {order.billing_address.last_name}
+                                        </p>
+                                        <p>{order.billing_address.address}</p>
+                                        <p>
+                                            {order.billing_address.zip} {order.billing_address.city}
+                                        </p>
+                                        <p>{order.billing_address.country}</p>
+                                        {order.billing_address.phone && (
+                                            <p className="mt-2">📞 {order.billing_address.phone}</p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="text-gray-500 italic">Identique à l'adresse de livraison</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Informations de paiement */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <CreditCardIcon className="w-5 h-5 mr-2 text-green-600" />
+                            Paiement
+                        </h2>
+                        <div className="space-y-2 text-gray-700">
+                            <p>
+                                <span className="font-medium">Méthode:</span>{' '}
+                                {order.payment_method?.name || 'À la livraison'}
+                            </p>
+                            <p>
+                                <span className="font-medium">Montant total:</span>{' '}
+                                <span className="text-lg font-bold text-gray-900">
+                                    {formatPriceWithCurrency(order.total_payable_amount)}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Informations de livraison */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                                 <CreditCardIcon className="w-5 h-5 mr-2 text-green-600" />
@@ -126,7 +180,6 @@ export default function OrderDetails({ order }) {
                                 </div>
                             </div>
                         </div>
-                    </div>
 
                     {/* Méthode de livraison */}
                     {order.shipping && (
@@ -139,6 +192,14 @@ export default function OrderDetails({ order }) {
                                 <div>
                                     <p className="font-medium text-gray-900">{order.shipping.name}</p>
                                     <p className="text-sm text-gray-600">{order.shipping.description}</p>
+                                    {order.shipping.estimated_days && (
+                                        <div className="mt-2">
+                                            <p className="text-sm font-medium text-blue-600 flex items-center">
+                                                <TruckIcon className="w-4 h-4 mr-1" />
+                                                {getDeliveryMessage(order.shipping.estimated_days, locale, order.shipping.name)}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <span className="font-medium text-gray-900">
                                     {parseFloat(order.shipping.price) === 0 ? 'Gratuit' : formatPriceWithCurrency(order.shipping.price)}

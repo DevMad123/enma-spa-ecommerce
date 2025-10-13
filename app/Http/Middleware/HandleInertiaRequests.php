@@ -42,7 +42,8 @@ class HandleInertiaRequests extends Middleware
                 'currency' => AppSettingsService::getCurrency(),
                 'currency_symbol' => AppSettingsService::getCurrencySymbol(),
                 'show_decimals' => AppSettingsService::getShowDecimals(),
-                'tax_rate' => AppSettingsService::getTaxRate(),
+                'tax_rate' => \App\Models\TaxRule::getDefault(),
+                // 'tax_rate' => AppSettingsService::getTaxRate(),\App\Models\TaxRule::getDefault()
                 'shipping_threshold' => AppSettingsService::getShippingThreshold(),
                 'free_shipping_threshold' => AppSettingsService::getFreeShippingThreshold(),
                 'shipping_cost' => AppSettingsService::getShippingCost(),

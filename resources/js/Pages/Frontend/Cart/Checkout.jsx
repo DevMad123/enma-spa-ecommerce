@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import FrontendLayout, { CartProvider, useCart } from '@/Layouts/FrontendLayout';
 import { Link, useForm, router, usePage } from '@inertiajs/react';
 import { usePriceSettings } from '@/Utils/priceFormatter';
+import { useAppSettings } from '@/Hooks/useAppSettings';
+import { getShortDeliveryMessage } from '@/Utils/deliveryDateUtils';
+import useCountryTax from '@/Hooks/useCountryTax';
 import { 
     ArrowLeftIcon,
     CreditCardIcon,
@@ -11,11 +14,22 @@ import {
     ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 
-const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipping, setSelectedShipping }) => {
+const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipping, setSelectedShipping, availableCountries = {}, defaultCountry = 'CI' }) => {
     const { cartItems, getTotalPrice, clearCart } = useCart();
     const { appSettings } = usePage().props;
     const { formatPrice, formatPriceWithCurrency } = usePriceSettings(appSettings);
-    const taxRate = appSettings?.tax_rate || 0.18;
+    const { locale } = useAppSettings();
+    
+    // Utilisation du hook pour la gestion des pays et TVA
+    const { 
+        selectedCountry, 
+        setSelectedCountry, 
+        calculateTax, 
+        currentTaxRate,
+        selectedCountryInfo,
+        isCountryAllowed 
+    } = useCountryTax(defaultCountry);
+    
     const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0]?.id || '');
     const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -30,7 +44,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
         shipping_address_2: '',
         shipping_city: '',
         shipping_postal_code: '',
-        shipping_country: 'France',
+        shipping_country: selectedCountryInfo?.name || 'Côte d\'Ivoire',
         shipping_phone: '',
         
         // Adresse de facturation
@@ -41,7 +55,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
         billing_address_2: '',
         billing_city: '',
         billing_postal_code: '',
-        billing_country: 'France',
+        billing_country: selectedCountryInfo?.name || 'Côte d\'Ivoire',
         
         // Méthodes
         shipping_method_id: selectedShipping,
@@ -56,9 +70,13 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
     const subtotal = getTotalPrice();
     const selectedShippingMethod = shippingMethods.find(method => method.id == selectedShipping);
     const shippingCost = selectedShippingMethod ? parseFloat(selectedShippingMethod.price) : 0;
+    const taxRate = parseFloat(appSettings?.tax_rate?.tax_rate) / 100 || 0.00;
+    // const subtotal = getTotalPrice();
     const tax = subtotal * taxRate;
+    // const total = subtotal + tax;
+    console.log(tax);
     const total = subtotal + shippingCost + tax;
-    console.log('Cart items at submission:', cartItems);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         
@@ -462,6 +480,40 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                         />
                         {errors.shipping_phone && <p className="mt-1 text-sm text-red-600">{errors.shipping_phone}</p>}
                     </div>
+
+                    <div>
+                        <label htmlFor="shipping_country" className="block text-sm font-medium text-gray-700 mb-2">
+                            Pays *
+                        </label>
+                        <select
+                            id="shipping_country"
+                            required
+                            value={selectedCountry}
+                            onChange={(e) => {
+                                setSelectedCountry(e.target.value);
+                                setData('shipping_country', availableCountries[e.target.value]?.name || 'Côte d\'Ivoire');
+                            }}
+                            disabled={true}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-50 cursor-not-allowed"
+                        >
+                            {Object.entries(availableCountries).map(([code, country]) => (
+                                <option key={code} value={code}>
+                                    {country.flag} {country.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.shipping_country && <p className="mt-1 text-sm text-red-600">{errors.shipping_country}</p>}
+                        
+                        {/* Affichage du taux de TVA */}
+                        <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                                <span className="font-medium">TVA appliquée:</span> {(tax).toFixed(1)}% 
+                                {selectedCountryInfo?.flag && (
+                                    <span className="ml-2">{selectedCountryInfo.flag} {selectedCountryInfo.name}</span>
+                                )}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -563,6 +615,11 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                                         <div className="flex items-center">
                                             <TruckIcon className="h-5 w-5 text-gray-400 mr-2" />
                                             <span className="font-medium text-gray-900">{method.name}</span>
+                                            {method.estimated_days && (
+                                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {getShortDeliveryMessage(method.estimated_days, locale)}
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-sm text-gray-600">{method.description}</p>
                                     </div>
@@ -679,7 +736,9 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
     const { cartItems, getTotalPrice } = useCart();
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
-    const taxRate = appSettings?.tax_rate || 0.18;
+    
+    // Utilisation du hook pour la gestion des pays et TVA dans le résumé
+    const { calculateTax, currentTaxRate, selectedCountryInfo } = useCountryTax();
     
     const subtotal = getTotalPrice();
     const selectedShippingMethod = shippingMethods.find(method => method.id == selectedShipping);
@@ -710,9 +769,9 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
         }
     }
     
+    const taxRate = parseFloat(appSettings?.tax_rate?.tax_rate) / 100 || 0.00;
     const tax = subtotal * taxRate;
     const total = subtotal + shipping + tax;
-
     return (
         <div className="bg-gray-50 rounded-2xl p-6 sticky top-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Récapitulatif de commande</h2>
@@ -817,7 +876,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                     </div>
                 )}
                 <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">TVA ({(taxRate * 100).toFixed(0)}%)</span>
+                    <span className="text-gray-600">TVA ({(tax).toFixed(1)}%) {selectedCountryInfo?.flag}</span>
                     <span className="font-medium">{formatPriceWithCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-3">
@@ -829,12 +888,14 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
     );
 };
 
-function Checkout({ shippingMethods = [], paymentMethods = [] }) {
+function Checkout({ shippingMethods = [], paymentMethods = [], availableCountries = {}, defaultCountry = 'FR', isInternationalShippingEnabled = true }) {
     const [selectedShipping, setSelectedShipping] = useState(shippingMethods[0]?.id || '');
     
     console.log('Checkout props received:', { 
         shippingMethods: shippingMethods,
         paymentMethods: paymentMethods,
+        availableCountries: availableCountries,
+        defaultCountry: defaultCountry,
         shippingCount: shippingMethods.length,
         paymentCount: paymentMethods.length
     });
@@ -865,6 +926,8 @@ function Checkout({ shippingMethods = [], paymentMethods = [] }) {
                             paymentMethods={paymentMethods}
                             selectedShipping={selectedShipping}
                             setSelectedShipping={setSelectedShipping}
+                            availableCountries={availableCountries}
+                            defaultCountry={defaultCountry}
                         />
                     </div>
 

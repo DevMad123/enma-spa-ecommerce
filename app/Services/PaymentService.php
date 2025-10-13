@@ -31,19 +31,27 @@ class PaymentService
     }
 
     /**
-     * Valider un paiement et mettre à jour les statuts
+     * Valider un paiement et traiter la commande complètement
      */
-    public function validatePayment(Payment $payment)
+    public function validatePayment(Payment $payment, $validatedBy = null)
     {
-        return DB::transaction(function () use ($payment) {
+        return DB::transaction(function () use ($payment, $validatedBy) {
             // Marquer le paiement comme réussi
             $payment->update([
                 'status' => 'success',
+                'paid_at' => now(),
             ]);
 
             // Mettre à jour les statuts de la commande
             if ($payment->sell_id) {
-                $this->updateOrderPaymentStatus($payment->sell_id);
+                $sell = $this->updateOrderPaymentStatus($payment->sell_id);
+                
+                // Si la commande est entièrement payée, effectuer les actions post-paiement
+                if ($sell->payment_status == 1) {
+                    $sell->markAsPaid($validatedBy ?? auth()->id());
+                    
+                    Log::info("Commande {$sell->id} marquée comme payée avec invoice_id: {$sell->invoice_id}");
+                }
             }
 
             return $payment;
@@ -112,6 +120,8 @@ class PaymentService
             return $payment;
         });
     }
+
+
 
     /**
      * Rembourser un paiement

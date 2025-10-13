@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Sell;
 use App\Models\Sell_details;
+use App\Models\SellOrderAddress;
 use App\Models\Shipping;
 use App\Models\PaymentMethod;
 use App\Models\Ecommerce_customer;
@@ -42,6 +43,9 @@ class CartController extends Controller
         return Inertia::render('Frontend/Cart/Checkout', [
             'shippingMethods' => $shippingMethods,
             'paymentMethods' => $paymentMethods,
+            'availableCountries' => \App\Models\TaxRule::getCountriesWithTaxRates(),
+            'defaultCountry' => \App\Models\TaxRule::getDefaultCountryCode(),
+            'isInternationalShippingEnabled' => true, // Simplifié, basé sur les TaxRules actives
         ]);
     }
 
@@ -164,15 +168,21 @@ class CartController extends Controller
             $shippingMethod = Shipping::findOrFail($request->shipping_method_id);
             $shippingCost = $shippingMethod->price;
 
-            // Calculs finaux
-            $taxRate = floatval(\App\Services\AppSettingsService::getTaxRate());
-            $totalVat = $subtotal * $taxRate; // Calculer la TVA correctement
+            // Calculs finaux avec TVA dynamique selon le pays
+            $shippingCountryCode = $this->getCountryCodeFromName($request->shipping_country);
+            
+            // Utiliser les TaxRules au lieu des settings
+            $taxRule = \App\Models\TaxRule::getByCountryCode($shippingCountryCode) ?? \App\Models\TaxRule::getDefault();
+            $totalVat = $taxRule ? $taxRule->calculateTax($subtotal) : 0;
+            $taxRate = $taxRule ? $taxRule->tax_rate : 0;
             $totalDiscount = 0; // À implémenter selon vos règles
             $totalPayable = $subtotal + $shippingCost + $totalVat - $totalDiscount;
 
             Log::info('Order calculations:', [
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingCost,
+                'shipping_country' => $request->shipping_country,
+                'shipping_country_code' => $shippingCountryCode,
                 'tax_rate' => $taxRate,
                 'total_vat' => $totalVat,
                 'total_payable' => $totalPayable,
@@ -216,11 +226,18 @@ class CartController extends Controller
 
             Log::info('Customer created/found:', ['customer_id' => $customer->id]);
 
+            // Récupérer la méthode de livraison pour le nom
+            $shippingMethodName = $shippingMethod->name ?? null;
+
             // Créer la commande (Sell)
             $sell = Sell::create([
                 'customer_id' => $customer->id,
                 'order_reference' => $this->generateInvoiceNumber(),
+                'invoice_id' => null, // Sera généré après validation du paiement
+                'sell_type' => 2, // 2 = ecommerce_sell
+                'sell_by' => null, // Sera défini après validation du paiement
                 'shipping_cost' => $shippingCost,
+                'shipping_method' => $shippingMethodName,
                 'total_vat_amount' => $totalVat,
                 'total_discount' => $totalDiscount,
                 'total_payable_amount' => $totalPayable,
@@ -228,15 +245,64 @@ class CartController extends Controller
                 'total_paid' => 0, // Sera mis à jour après paiement
                 'total_due' => $totalPayable,
                 'payment_status' => 0, // En attente
-                'order_status' => 0, // 0=pending (integer)
+                'order_status' => 0, // 0=pending 
                 'shipping_status' => 'pending',
                 'shipping_id' => $request->shipping_method_id,
                 'payment_method_id' => $request->payment_method_id,
-                'shipping_address' => $request->shipping_address,
-                'shipping_phone' => $request->shipping_phone,
                 'notes' => $request->order_notes,
+                'date' => now(),
                 'created_by' => Auth::id(),
             ]);
+
+            Log::info('Sell created:', ['sell_id' => $sell->id]);
+
+            // Créer l'adresse de livraison
+            SellOrderAddress::create([
+                'sell_id' => $sell->id,
+                'user_id' => Auth::id(),
+                'type' => 'shipping',
+                'first_name' => $request->shipping_first_name,
+                'last_name' => $request->shipping_last_name,
+                'email' => $request->email,
+                'phone' => $request->shipping_phone,
+                'address' => $request->shipping_address . ($request->shipping_address_2 ? ', ' . $request->shipping_address_2 : ''),
+                'city' => $request->shipping_city,
+                'zip' => $request->shipping_postal_code,
+                'country' => $request->shipping_country,
+                'note' => $request->order_notes,
+            ]);
+
+            // Créer l'adresse de facturation (si différente)
+            if (!$request->billing_same_as_shipping) {
+                SellOrderAddress::create([
+                    'sell_id' => $sell->id,
+                    'user_id' => Auth::id(),
+                    'type' => 'billing',
+                    'first_name' => $request->billing_first_name,
+                    'last_name' => $request->billing_last_name,
+                    'email' => $request->email,
+                    'phone' => $request->shipping_phone, // ou billing_phone si disponible
+                    'address' => $request->billing_address . ($request->billing_address_2 ? ', ' . $request->billing_address_2 : ''),
+                    'city' => $request->billing_city,
+                    'zip' => $request->billing_postal_code,
+                    'country' => $request->billing_country,
+                ]);
+            } else {
+                // Dupliquer l'adresse de livraison pour la facturation
+                SellOrderAddress::create([
+                    'sell_id' => $sell->id,
+                    'user_id' => Auth::id(),
+                    'type' => 'billing',
+                    'first_name' => $request->shipping_first_name,
+                    'last_name' => $request->shipping_last_name,
+                    'email' => $request->email,
+                    'phone' => $request->shipping_phone,
+                    'address' => $request->shipping_address . ($request->shipping_address_2 ? ', ' . $request->shipping_address_2 : ''),
+                    'city' => $request->shipping_city,
+                    'zip' => $request->shipping_postal_code,
+                    'country' => $request->shipping_country,
+                ]);
+            }
 
             Log::info('Sell created:', ['sell_id' => $sell->id]);
 
@@ -361,7 +427,14 @@ class CartController extends Controller
                 abort(403, 'Accès non autorisé.');
             }
 
-            $sell = Sell::with(['customer', 'sellDetails.product', 'paymentMethod'])
+            $sell = Sell::with([
+                'customer', 
+                'sellDetails.product', 
+                'paymentMethod',
+                'shipping',
+                'shippingAddress',
+                'billingAddress'
+            ])
                 ->where('customer_id', $customer->id) // Vérifier la propriété
                 ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
                 ->findOrFail($sellId);
@@ -388,15 +461,20 @@ class CartController extends Controller
         $shippingCost = floatval($sell->shipping_cost ?? 0);
         $tax = floatval($sell->total_vat_amount ?? 0);
 
-        // Si la TVA est 0 mais qu'on a des paramètres de TVA, calculer la TVA
+        // Si la TVA est 0 mais qu'on a une règle de TVA, calculer la TVA
         if ($tax == 0 && $subtotal > 0) {
-            $taxRate = floatval(\App\Services\AppSettingsService::getTaxRate());
-            if ($taxRate > 0) {
-                $tax = $subtotal * $taxRate; // getTaxRate() retourne déjà un décimal (0.18), pas un pourcentage
+            // Utiliser les TaxRules au lieu des settings
+            $defaultTaxRule = \App\Models\TaxRule::getDefault();
+            if ($defaultTaxRule) {
+                $tax = $defaultTaxRule->calculateTax($subtotal);
             }
         }
 
         $total = floatval($sell->total_payable_amount ?? ($subtotal + $shippingCost + $tax));
+
+        // Récupérer les adresses de livraison et facturation
+        $shippingAddress = $sell->shippingAddress;
+        $billingAddress = $sell->billingAddress;
 
         $formattedOrder = [
             'id' => $sell->id,
@@ -409,19 +487,28 @@ class CartController extends Controller
             'tax' => $tax,
             'notes' => $sell->notes,
 
-            // Adresse de livraison
-            'shipping_first_name' => $sell->customer->first_name ?? '',
-            'shipping_last_name' => $sell->customer->last_name ?? '',
-            'shipping_address' => $sell->shipping_address ?? $sell->customer->present_address ?? '',
+            // Adresse de livraison depuis sell_order_addresses
+            'shipping_first_name' => $shippingAddress->first_name ?? $sell->customer->first_name ?? '',
+            'shipping_last_name' => $shippingAddress->last_name ?? $sell->customer->last_name ?? '',
+            'shipping_address' => $shippingAddress->address ?? $sell->customer->present_address ?? '',
             'shipping_address_2' => null,
-            'shipping_postal_code' => '',
-            'shipping_city' => '',
-            'shipping_country' => 'France',
-            'shipping_phone' => $sell->shipping_phone ?? $sell->customer->phone_one ?? '',
+            'shipping_postal_code' => $shippingAddress->zip ?? '',
+            'shipping_city' => $shippingAddress->city ?? '',
+            'shipping_country' => $shippingAddress->country ?? 'France',
+            'shipping_phone' => $shippingAddress->phone ?? $sell->customer->phone_one ?? '',
+
+            // Adresse de facturation depuis sell_order_addresses
+            'billing_first_name' => $billingAddress->first_name ?? $shippingAddress->first_name ?? '',
+            'billing_last_name' => $billingAddress->last_name ?? $shippingAddress->last_name ?? '',
+            'billing_address' => $billingAddress->address ?? $shippingAddress->address ?? '',
+            'billing_postal_code' => $billingAddress->zip ?? $shippingAddress->zip ?? '',
+            'billing_city' => $billingAddress->city ?? $shippingAddress->city ?? '',
+            'billing_country' => $billingAddress->country ?? $shippingAddress->country ?? 'France',
+            'billing_phone' => $billingAddress->phone ?? $shippingAddress->phone ?? '',
 
             // Méthodes
-            'payment_method' => $sell->paymentMethod, // Utilise maintenant la relation
-            'shipping_method' => $shippingMethod,
+            'payment_method' => $sell->paymentMethod,
+            'shipping_method' => $sell->shipping ?? $shippingMethod,
 
             // Articles commandés
             'items' => $sell->sellDetails->map(function ($detail) {
@@ -500,5 +587,24 @@ class CartController extends Controller
 
         Log::info('Admin notifications created for ' . $adminUsers->count() . ' users');
         return $adminUsers->count();
+    }
+
+    /**
+     * Convertir le nom du pays en code ISO
+     */
+    private function getCountryCodeFromName($countryName)
+    {
+        $countryMap = [
+            'Côte D\'Ivoire' => 'CI',
+            'France' => 'FR',
+            'Belgique' => 'BE',
+            'Suisse' => 'CH',
+            'Luxembourg' => 'LU',
+            'Allemagne' => 'DE',
+            'Italie' => 'IT',
+            'Espagne' => 'ES',
+        ];
+
+        return $countryMap[$countryName] ?? 'CI'; // Fallback sur Côte D'Ivoire
     }
 }

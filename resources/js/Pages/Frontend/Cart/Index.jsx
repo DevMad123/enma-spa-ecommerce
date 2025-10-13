@@ -244,8 +244,7 @@ function Cart({ recommendedProducts = [] }) {
     const { cartItems, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useCart();
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
-    const taxRate = appSettings?.tax_rate || 0.18;
-    
+    const taxRate = parseFloat(appSettings?.tax_rate?.tax_rate) / 100 || 0.00;
     const subtotal = getTotalPrice();
     const tax = subtotal * taxRate;
     const total = subtotal + tax;

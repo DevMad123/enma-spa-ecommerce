@@ -88,6 +88,9 @@ class ProfileController extends Controller
         $order = Sell::with([
             'customer',
             'shipping',
+            'shippingAddress',
+            'billingAddress',
+            'paymentMethod',
             'sellDetails.product.brand',
             'sellDetails.color',
             'sellDetails.size',

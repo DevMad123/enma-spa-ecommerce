@@ -474,7 +474,37 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/delete-file', [SettingController::class, 'deleteFile'])->name('delete-file');
         Route::get('/test-messages', [SettingController::class, 'testMessages'])->name('test-messages');
     });
+
+    // Routes Règles de TVA
+    Route::prefix('tax-rules')->name('tax-rules.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\TaxRuleController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\TaxRuleController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\TaxRuleController::class, 'store'])->name('store');
+        Route::get('/export', [App\Http\Controllers\Admin\TaxRuleController::class, 'export'])->name('export');
+        Route::get('/{taxRule}', [App\Http\Controllers\Admin\TaxRuleController::class, 'show'])->name('show');
+        Route::get('/{taxRule}/edit', [App\Http\Controllers\Admin\TaxRuleController::class, 'edit'])->name('edit');
+        Route::put('/{taxRule}', [App\Http\Controllers\Admin\TaxRuleController::class, 'update'])->name('update');
+        Route::delete('/{taxRule}', [App\Http\Controllers\Admin\TaxRuleController::class, 'destroy'])->name('destroy');
+        Route::patch('/{taxRule}/set-default', [App\Http\Controllers\Admin\TaxRuleController::class, 'setDefault'])->name('set-default');
+        Route::patch('/{taxRule}/toggle-active', [App\Http\Controllers\Admin\TaxRuleController::class, 'toggleActive'])->name('toggle-active');
+        
+        // Actions en lot
+        Route::post('/bulk-activate', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkActivate'])->name('bulk-activate');
+        Route::post('/bulk-deactivate', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkDeactivate'])->name('bulk-deactivate');
+        Route::delete('/bulk-delete', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+});
+
+// Routes API pour les règles de TVA (publiques)
+Route::prefix('api/tax')->name('api.tax.')->group(function () {
+    Route::get('/info/{countryCode}', [App\Http\Controllers\Admin\TaxRuleController::class, 'getTaxInfo'])->name('info');
+    Route::post('/calculate', [App\Http\Controllers\Admin\TaxRuleController::class, 'calculateTax'])->name('calculate');
 });
 
 // Auth routes (login, register, etc.)
 require __DIR__ . '/auth.php';
+
+// Routes de test (à supprimer en production)
+if (app()->environment(['local', 'staging'])) {
+    require __DIR__ . '/test.php';
+}

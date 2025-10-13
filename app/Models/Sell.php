@@ -94,6 +94,21 @@ class Sell extends Model
         return $this->belongsTo(Shipping::class, 'shipping_id');
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(SellOrderAddress::class, 'sell_id');
+    }
+
+    public function shippingAddress()
+    {
+        return $this->hasOne(SellOrderAddress::class, 'sell_id')->where('type', 'shipping');
+    }
+
+    public function billingAddress()
+    {
+        return $this->hasOne(SellOrderAddress::class, 'sell_id')->where('type', 'billing');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -239,21 +254,21 @@ class Sell extends Model
         };
     }
 
-    public function markAsShipped(): bool
-    {
-        return $this->update([
-            'shipping_status' => 'in_progress',
-            'shipped_at' => now(),
-        ]);
-    }
+    // public function markAsShipped(): bool
+    // {
+    //     return $this->update([
+    //         'shipping_status' => 'in_progress',
+    //         'shipped_at' => now(),
+    //     ]);
+    // }
 
-    public function markAsDelivered(): bool
-    {
-        return $this->update([
-            'shipping_status' => 'delivered',
-            'delivered_at' => now(),
-        ]);
-    }
+    // public function markAsDelivered(): bool
+    // {
+    //     return $this->update([
+    //         'shipping_status' => 'delivered',
+    //         'delivered_at' => now(),
+    //     ]);
+    // }
 
     public function cancelShipping(string $reason = null): bool
     {
@@ -298,5 +313,57 @@ class Sell extends Model
                 throw $e;
             }
         });
+    }
+
+    /**
+     * Marquer la commande comme payée et générer invoice_id
+     */
+    public function markAsPaid($sellBy = null)
+    {
+        $this->payment_status = 1;
+        $this->total_paid = $this->total_payable_amount;
+        $this->total_due = 0;
+        
+        // Générer invoice_id si pas encore défini
+        if (!$this->invoice_id) {
+            $this->invoice_id = 'INV-' . date('Ym', strtotime($this->created_at)) . '-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
+        }
+        
+        // Assigner vendeur si fourni
+        if ($sellBy) {
+            $this->sell_by = $sellBy;
+        }
+        
+        $this->save();
+        return $this;
+    }
+
+    /**
+     * Marquer la commande comme expédiée
+     */
+    public function markAsShipped($notes = null)
+    {
+        $this->shipping_status = 'in_progress';
+        $this->shipped_at = now();
+        if ($notes) {
+            $this->shipping_notes = $notes;
+        }
+        $this->save();
+        return $this;
+    }
+
+    /**
+     * Marquer la commande comme livrée
+     */
+    public function markAsDelivered($notes = null)
+    {
+        $this->shipping_status = 'delivered';
+        $this->delivered_at = now();
+        $this->order_status = 6; // Commande terminée
+        if ($notes) {
+            $this->shipping_notes = $notes;
+        }
+        $this->save();
+        return $this;
     }
 }

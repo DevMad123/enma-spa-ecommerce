@@ -60,7 +60,7 @@ class AppSettingsService
 
     public static function getAddress()
     {
-        return self::get('address', '123 Rue de la République, 75001 Paris, France');
+        return self::get('address', '123 Rue de la République, 75001 Cocody, Côte d\'Ivoire');
     }
 
     /**
@@ -102,9 +102,14 @@ class AppSettingsService
         return self::get('show_decimals', 'false') === 'true';
     }
 
+    /**
+     * @deprecated Utiliser TaxRule::getDefault()->tax_rate à la place
+     */
     public static function getTaxRate()
     {
-        return floatval(self::get('tax_rate', '0.18'));
+        $defaultRule = \App\Models\TaxRule::getDefault();
+        error_log($defaultRule);
+        return $defaultRule ? ($defaultRule->tax_rate / 100) : 0.00; // Conversion en décimal pour compatibilité
     }
 
     public static function getShippingThreshold()
@@ -125,6 +130,89 @@ class AppSettingsService
     public static function getMaxPriceDefault()
     {
         return floatval(self::get('max_price_default', '500000'));
+    }
+
+    // ================================
+    // NOUVEAUX METHODS PAYS & TVA
+    // ================================
+
+    /**
+     * Obtenir le pays par défaut
+     */
+    public static function getDefaultCountry()
+    {
+        return self::get('default_country', 'Côte D\'Ivoire');
+    }
+
+    /**
+     * Obtenir le code pays par défaut
+     * Utilise d'abord les TaxRules, sinon fallback sur les settings
+     */
+    public static function getDefaultCountryCode()
+    {
+        $defaultFromTaxRule = \App\Models\TaxRule::getDefaultCountryCode();
+        return $defaultFromTaxRule ?: self::get('default_country_code', 'CI');
+    }
+
+    /**
+     * Obtenir la liste des pays de livraison autorisés
+     */
+    public static function getAllowedShippingCountries()
+    {
+        $countries = self::get('allowed_shipping_countries', 'CI,FR,BE,CH,LU');
+        return array_filter(explode(',', $countries));
+    }
+
+    /**
+     * Vérifier si la livraison internationale est activée
+     */
+    public static function isInternationalShippingEnabled()
+    {
+        return self::get('international_shipping_enabled', 'true') === 'true';
+    }
+
+    /**
+     * @deprecated Utiliser TaxRule::getByCountryCode() ou TaxRule::calculateTax() à la place
+     */
+    public static function calculateTax($amount, $countryCode = null)
+    {
+        $countryCode = $countryCode ?? self::getDefaultCountryCode();
+        
+        // Utiliser les TaxRules
+        $taxRule = \App\Models\TaxRule::getByCountryCode($countryCode) ?? \App\Models\TaxRule::getDefault();
+        
+        return $taxRule ? $taxRule->calculateTax($amount) : 0;
+    }
+
+    /**
+     * @deprecated Utiliser TaxRule::getByCountryCode()->tax_rate à la place
+     */
+    public static function getTaxRateByCountry($countryCode)
+    {
+        $taxRule = \App\Models\TaxRule::getByCountryCode($countryCode) ?? \App\Models\TaxRule::getDefault();
+        
+        return $taxRule ? ($taxRule->tax_rate / 100) : 0; // Conversion en décimal pour compatibilité
+    }
+
+    /**
+     * Vérifier si un pays est autorisé pour la livraison
+     */
+    public static function isCountryAllowedForShipping($countryCode)
+    {
+        if (!self::isInternationalShippingEnabled() && $countryCode !== self::getDefaultCountryCode()) {
+            return false;
+        }
+        
+        $allowedCountries = self::getAllowedShippingCountries();
+        return in_array($countryCode, $allowedCountries);
+    }
+
+    /**
+     * @deprecated Utiliser TaxRule::getCountriesWithTaxRates() à la place
+     */
+    public static function getCountriesWithTaxRates()
+    {
+        return \App\Models\TaxRule::getCountriesWithTaxRates();
     }
 
     /**

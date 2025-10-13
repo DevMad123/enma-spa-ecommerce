@@ -2,6 +2,8 @@ import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage } from '@inertiajs/react';
 import { usePriceSettings } from '@/Utils/priceFormatter';
+import { useAppSettings } from '@/Hooks/useAppSettings';
+import { getDeliveryMessage, calculateDeliveryDate } from '@/Utils/deliveryDateUtils';
 import {
     CheckCircleIcon,
     PrinterIcon,
@@ -14,6 +16,7 @@ import {
 export default function CheckoutSuccess({ order }) {
     const { appSettings } = usePage().props;
     const { formatPriceWithCurrency } = usePriceSettings(appSettings);
+    const { locale } = useAppSettings();
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -87,6 +90,7 @@ export default function CheckoutSuccess({ order }) {
                     </div>
 
                     {/* Content */}
+                    {console.log(order)}
                     <div className="p-8">
                         <div className="grid md:grid-cols-2 gap-8">
                             {/* Informations de livraison */}
@@ -115,22 +119,45 @@ export default function CheckoutSuccess({ order }) {
                                 </div>
                             </div>
 
-                            {/* Informations de paiement */}
+                            {/* Informations de facturation */}
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                                     <CreditCardIcon className="w-5 h-5 mr-2 text-amber-600" />
-                                    Paiement
+                                    Adresse de facturation
                                 </h3>
                                 <div className="bg-gray-50 rounded-lg p-4">
                                     <p className="font-medium text-gray-900">
-                                        {order.payment_method?.name || 'A la livraison (COD)'}
+                                        {order.billing_first_name} {order.billing_last_name}
                                     </p>
-                                    <p className="text-gray-700 mt-1">
-                                        Montant: <span className="font-semibold">{formatPriceWithCurrency(order.total)}</span>
+                                    <p className="text-gray-700 mt-1">{order.billing_address}</p>
+                                    <p className="text-gray-700">
+                                        {order.billing_postal_code} {order.billing_city}
                                     </p>
-                                    <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        ✓ Commande confirmé
-                                    </div>
+                                    <p className="text-gray-700">{order.billing_country}</p>
+                                    {order.billing_phone && (
+                                        <p className="text-gray-700 mt-2">
+                                            📞 {order.billing_phone}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Informations de paiement */}
+                        <div className="mt-8">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <CreditCardIcon className="w-5 h-5 mr-2 text-amber-600" />
+                                Paiement
+                            </h3>
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                <p className="font-medium text-gray-900">
+                                    {order.payment_method?.name || 'A la livraison (COD)'}
+                                </p>
+                                <p className="text-gray-700 mt-1">
+                                    Montant: <span className="font-semibold">{formatPriceWithCurrency(order.total)}</span>
+                                </p>
+                                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Commande confirmé
                                 </div>
                             </div>
                         </div>
@@ -144,6 +171,14 @@ export default function CheckoutSuccess({ order }) {
                                         <div>
                                             <p className="font-medium text-gray-900">{order.shipping_method.name}</p>
                                             <p className="text-sm text-gray-600">{order.shipping_method.description}</p>
+                                            {order.shipping_method.estimated_days && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm font-medium text-blue-600 flex items-center">
+                                                        <TruckIcon className="w-4 h-4 mr-1" />
+                                                        {getDeliveryMessage(order.shipping_method.estimated_days, locale, order.shipping_method.name)}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                         <span className="font-medium text-gray-900">
                                             {parseFloat(order.shipping_method.price) === 0 ? 'Gratuit' : formatPriceWithCurrency(order.shipping_method.price)}
@@ -250,7 +285,10 @@ export default function CheckoutSuccess({ order }) {
                             </div>
                             <h3 className="font-semibold text-gray-900 mb-2">Livraison</h3>
                             <p className="text-sm text-gray-600">
-                                Votre commande sera livrée à l'adresse indiquée sous 2-5 jours ouvrés.
+                                {order.shipping_method?.estimated_days 
+                                    ? `Votre colis vous sera livré ${getDeliveryMessage(order.shipping_method.estimated_days, locale).toLowerCase()}`
+                                    : 'Votre commande sera livrée à l\'adresse indiquée sous 2-5 jours ouvrés.'
+                                }
                             </p>
                         </div>
                     </div>

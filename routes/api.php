@@ -161,3 +161,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->name('api.products.wishlist-toggle')
         ->where('productId', '[0-9]+');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Routes publiques pour les règles de TVA
+|--------------------------------------------------------------------------
+*/
+Route::prefix('countries')->name('api.countries.')->group(function () {
+    Route::get('/tax-rules', function () {
+        return \App\Models\TaxRule::active()
+            ->deliveryAllowed()
+            ->orderBy('country_name')
+            ->get(['country_code', 'country_name', 'tax_rate', 'delivery_allowed', 'min_order_amount', 'is_active', 'is_default']);
+    })->name('tax-rules');
+});

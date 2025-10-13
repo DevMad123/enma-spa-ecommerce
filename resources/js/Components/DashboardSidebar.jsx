@@ -83,6 +83,15 @@ const navigationLinks = [
     icon: HiOutlineUsers,
     color: "text-pink-600"
   },
+  {
+    label: "Configuration",
+    icon: HiOutlineCog,
+    color: "text-gray-600",
+    submenu: [
+      { route: "admin.settings.index", label: "Paramètres", icon: HiOutlineCog },
+      { route: "admin.tax-rules.index", label: "Règles de TVA", icon: HiOutlineCash },
+    ]
+  },
 ];
 
 export default function DashboardSidebar() {

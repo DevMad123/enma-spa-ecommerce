@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { initLocale } from '@/Utils/LocaleUtils';
 import {
@@ -115,7 +115,6 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
         ecommerce: {
             default_shipping_cost: parseFloat(getSetting('shipping_cost')) || 0,
             free_shipping_threshold: parseFloat(getSetting('free_shipping_threshold')) || 0,
-            tax_rate: parseFloat(getSetting('tax_rate')) || 0,
             allow_guest_checkout: getSetting('allow_guest_checkout') === '1' || getSetting('allow_guest_checkout') === true,
         }
     });
@@ -639,21 +638,6 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Taux de TVA (%)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="0.01"
-                                                value={data.ecommerce.tax_rate}
-                                                onChange={(e) => setData('ecommerce', { ...data.ecommerce, tax_rate: parseFloat(e.target.value) || 0 })}
-                                                className="block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-
-                                        <div>
                                             <label className="flex items-center">
                                                 <input
                                                     type="checkbox"
@@ -666,6 +650,33 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
                                             <p className="mt-1 ml-6 text-xs text-gray-500">
                                                 Les clients peuvent passer commande sans s'inscrire
                                             </p>
+                                        </div>
+
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0">
+                                                    <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div className="ml-3">
+                                                    <h3 className="text-sm font-medium text-blue-800">
+                                                        Gestion de la TVA
+                                                    </h3>
+                                                    <div className="mt-2 text-sm text-blue-700">
+                                                        <p>
+                                                            La TVA est maintenant gérée via les{' '}
+                                                            <Link 
+                                                                href={route('admin.tax-rules.index')} 
+                                                                className="font-medium underline hover:text-blue-600"
+                                                            >
+                                                                Règles de TVA
+                                                            </Link>
+                                                            . Vous pouvez configurer des taux différents par pays et gérer les règles de livraison.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
