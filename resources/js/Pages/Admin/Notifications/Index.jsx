@@ -330,15 +330,13 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                                         </button>
                                                     )}
                                                     
-                                                    {notification.action_url && (
-                                                        <Link
-                                                            href={route('admin.notifications.show', notification.id)}
-                                                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                                                            title="Voir"
-                                                        >
-                                                            <HiOutlineEye className="h-4 w-4" />
-                                                        </Link>
-                                                    )}
+                                                    <Link
+                                                        href={route('admin.notifications.show', notification.id)}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                                        title="Voir"
+                                                    >
+                                                        <HiOutlineEye className="h-4 w-4" />
+                                                    </Link>
                                                 </div>
                                             </div>
                                         </div>

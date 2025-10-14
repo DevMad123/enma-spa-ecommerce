@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { useForm } from '@inertiajs/react';
+import { useAppSettings } from '@/Hooks/useAppSettings';
 import { 
     MapPinIcon,
     PhoneIcon,
@@ -98,14 +99,31 @@ const AlertMessage = ({ type, message, onClose }) => {
 
 export default function Contact({ flash }) {
     const [alertMessage, setAlertMessage] = useState(null);
-    
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { appSettings, formatDate } = useAppSettings();
+
+    const { data, setData, processing, errors, post, clearErrors } = useForm({
         name: '',
         email: '',
         phone: '',
         subject: '',
-        message: '',
+        message: ''
     });
+    console.log('App Settings:', appSettings);
+    // Informations de contact depuis les settings
+    const contactInfo = {
+        email: appSettings?.contact_email || 'contact@enmaspa.com',
+        phone: appSettings?.phone || '+225 0505050505',
+        address: appSettings?.contact_address || 'Abidjan, Côte d\'Ivoire',
+        hours: appSettings?.business_hours || 'Lun - Ven : 8h00 - 18h00'
+    };
+    
+    // const { data, setData, post, processing, errors, reset } = useForm({
+    //     name: '',
+    //     email: '',
+    //     phone: '',
+    //     subject: '',
+    //     message: '',
+    // });
 
     const subjects = [
         'Question sur un produit',
@@ -116,33 +134,33 @@ export default function Contact({ flash }) {
         'Autre'
     ];
 
-    const contactInfo = [
+    const contactCards = [
         {
             icon: MapPinIcon,
             title: "Adresse",
-            content: "123 Rue de la Paix",
-            description: "75001 Paris, France",
+            content: contactInfo.address,
+            description: "Visitez notre magasin",
             gradient: "from-blue-500 to-indigo-600"
         },
         {
             icon: PhoneIcon,
             title: "Téléphone",
-            content: "+33 1 23 45 67 89",
-            description: "Lun-Ven: 9h-18h",
+            content: contactInfo.phone,
+            description: contactInfo.hours,
             gradient: "from-green-500 to-teal-600"
         },
         {
             icon: EnvelopeIcon,
             title: "Email",
-            content: "contact@enma-spa.com",
+            content: contactInfo.email,
             description: "Réponse sous 24h",
             gradient: "from-amber-500 to-orange-600"
         },
         {
             icon: ClockIcon,
             title: "Horaires",
-            content: "Lun-Ven: 9h-18h",
-            description: "Sam: 10h-16h",
+            content: contactInfo.hours,
+            description: "Fermé dimanche",
             gradient: "from-purple-500 to-pink-600"
         }
     ];
@@ -178,7 +196,7 @@ export default function Contact({ flash }) {
     };
 
     return (
-        <FrontendLayout title="Contact - ENMA SPA">
+        <FrontendLayout title={`Contact`}>
             {/* Hero Section */}
             <section className="relative py-20 overflow-hidden">
                 {/* Background */}
@@ -219,7 +237,7 @@ export default function Contact({ flash }) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-                        {contactInfo.map((info, index) => (
+                        {contactCards.map((info, index) => (
                             <ContactCard 
                                 key={index}
                                 icon={info.icon}
@@ -289,7 +307,7 @@ export default function Contact({ flash }) {
                                     value={data.phone}
                                     onChange={(e) => setData('phone', e.target.value)}
                                     error={errors.phone}
-                                    placeholder="+33 1 23 45 67 89"
+                                    placeholder="+2250505022402"
                                 />
 
                                 <div className="space-y-2">

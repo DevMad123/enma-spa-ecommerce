@@ -11,7 +11,8 @@ import {
   HiOutlineMenu,
   HiOutlineMail,
   HiOutlineShoppingCart,
-  HiOutlineUser
+  HiOutlineUser,
+  HiOutlineExternalLink
 } from "react-icons/hi";
 import { FiChevronDown } from "react-icons/fi";
 import defaultUser from "../../assets/front/imgs/default-user.png";
@@ -73,7 +74,19 @@ export default function DashboardHeader({
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
       });
-      loadNotifications();
+      
+      // Mettre à jour immédiatement l'état local
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId 
+            ? { ...notif, is_read: true }
+            : notif
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      // Recharger les notifications pour être sûr
+      setTimeout(loadNotifications, 500);
     } catch (error) {
       console.error('Erreur lors du marquage comme lu:', error);
     }
@@ -89,7 +102,15 @@ export default function DashboardHeader({
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
       });
-      loadNotifications();
+      
+      // Mettre à jour immédiatement l'état local
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, is_read: true }))
+      );
+      setUnreadCount(0);
+      
+      // Recharger les notifications pour être sûr
+      setTimeout(loadNotifications, 500);
     } catch (error) {
       console.error('Erreur lors du marquage de toutes comme lues:', error);
     }
@@ -250,17 +271,21 @@ export default function DashboardHeader({
                     notifications.map((notification) => {
                       const IconComponent = getNotificationIcon(notification.type);
                       return (
-                        <div
+                        <Link
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${
+                          href={route('admin.notifications.show', notification.id)}
+                          onClick={() => setNotificationOpen(false)}
+                          className={`block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${
                             !notification.is_read ? 'bg-blue-50' : ''
                           }`}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                               notification.color === 'blue' ? 'bg-blue-100 text-blue-600' :
                               notification.color === 'green' ? 'bg-green-100 text-green-600' :
                               notification.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                              notification.color === 'red' ? 'bg-red-100 text-red-600' :
+                              notification.color === 'yellow' ? 'bg-yellow-100 text-yellow-600' :
                               'bg-gray-100 text-gray-600'
                             }`}>
                               <IconComponent className="h-4 w-4" />
@@ -270,7 +295,7 @@ export default function DashboardHeader({
                                 <p className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
                                   {notification.title}
                                 </p>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2 flex-shrink-0">
                                   {!notification.is_read && (
                                     <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
                                   )}
@@ -279,31 +304,28 @@ export default function DashboardHeader({
                                   </span>
                                 </div>
                               </div>
-                              <p className="mt-1 text-sm text-gray-600">
+                              <p className="mt-1 text-sm text-gray-600 line-clamp-2">
                                 {notification.message}
                               </p>
-                              <div className="mt-2 flex items-center space-x-2">
-                                {notification.action_url && (
-                                  <Link
-                                    href={notification.action_url}
-                                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                                    onClick={() => setNotificationOpen(false)}
-                                  >
-                                    Voir
-                                  </Link>
-                                )}
-                                {!notification.is_read && (
+                              {notification.action_url && (
+                                <div className="mt-2">
                                   <button
-                                    onClick={() => markAsRead(notification.id)}
-                                    className="text-xs text-gray-500 hover:text-gray-700"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setNotificationOpen(false);
+                                      window.location.href = route('admin.notifications.redirect', notification.id);
+                                    }}
+                                    className="text-xs text-green-600 hover:text-green-700 font-medium inline-flex items-center"
                                   >
-                                    Marquer comme lu
+                                    <HiOutlineExternalLink className="h-3 w-3 mr-1" />
+                                    Aller à l'élément
                                   </button>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       );
                     })
                   )}
@@ -423,6 +445,12 @@ export default function DashboardHeader({
             opacity: 1; 
             transform: none; 
           } 
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </header>

@@ -58,7 +58,24 @@ export default function List({ users, roles, filters, currentUserId }) {
     };
 
     const handleDelete = (user) => {
-        if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ?`)) {
+        // Empêcher la suppression de l'utilisateur actuel
+        if (user.id === currentUserId) {
+            alert('Vous ne pouvez pas supprimer votre propre compte.');
+            return;
+        }
+
+        // Empêcher la suppression des super administrateurs
+        const hasAdminRole = user.roles && user.roles.some(role => 
+            role.name === 'super_admin' || role.name === 'admin'
+        );
+        
+        if (hasAdminRole) {
+            if (!confirm(`ATTENTION: Vous tentez de supprimer un administrateur "${user.name}". Cette action est irréversible et peut affecter le fonctionnement du système. Êtes-vous absolument sûr ?`)) {
+                return;
+            }
+        }
+
+        if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ? Cette action est irréversible.`)) {
             router.delete(route('admin.users.destroy', user.id));
         }
     };
@@ -193,10 +210,13 @@ export default function List({ users, roles, filters, currentUserId }) {
                     </Link>
                     <button
                         onClick={() => toggleStatus(user)}
+                        disabled={user.id === currentUserId}
                         className={`p-2 rounded-lg transition-colors hover:bg-opacity-50 ${
-                            (user.status == 1 || user.status === '1') 
-                                ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' 
-                                : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                            user.id === currentUserId 
+                                ? 'text-gray-400 cursor-not-allowed bg-gray-100' 
+                                : ((user.status == 1 || user.status === '1') 
+                                    ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' 
+                                    : 'text-green-600 hover:text-green-900 hover:bg-green-50')
                         }`}
                         title={(user.status == 1 || user.status === '1') ? 'Désactiver' : 'Activer'}
                     >
@@ -208,8 +228,13 @@ export default function List({ users, roles, filters, currentUserId }) {
                     </button>
                     <button
                         onClick={() => handleDelete(user)}
-                        className="p-2 rounded-lg transition-colors text-red-600 hover:text-red-900 hover:bg-red-50"
-                        title="Supprimer"
+                        disabled={user.id === currentUserId}
+                        className={`p-2 rounded-lg transition-colors ${
+                            user.id === currentUserId 
+                                ? 'text-gray-400 cursor-not-allowed bg-gray-100' 
+                                : 'text-red-600 hover:text-red-900 hover:bg-red-50'
+                        }`}
+                        title={user.id === currentUserId ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer'}
                     >
                         <TrashIcon className="h-4 w-4" />
                     </button>

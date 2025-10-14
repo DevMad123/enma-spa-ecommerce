@@ -1,5 +1,6 @@
 import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
+import { useAppSettings } from '@/Hooks/useAppSettings';
 import { 
     HeartIcon,
     ShieldCheckIcon,
@@ -51,6 +52,10 @@ const TeamMember = ({ name, position, image, description }) => {
 };
 
 export default function About() {
+    const { appSettings } = useAppSettings();
+    const appName = appSettings?.app_name || 'ENMA SPA';
+    const companyDescription = appSettings?.company_description || 'Votre destination e-commerce de confiance';
+    
     const values = [
         {
             icon: HeartIcon,
@@ -80,22 +85,22 @@ export default function About() {
 
     const teamMembers = [
         {
-            name: "Marie Dubois",
-            position: "Fondatrice & CEO",
-            image: "/images/team/marie.jpg",
-            description: "Passionnée par l'innovation et le service client, Marie a créé ENMA SPA avec la vision d'offrir une expérience d'achat unique."
+            name: "Équipe Direction",
+            position: "Fondateurs",
+            image: "/images/team/team.jpg",
+            description: `L'équipe dirigeante de ${appName} est passionnée par l'innovation et le service client d'excellence.`
         },
         {
-            name: "Pierre Martin",
-            position: "Directeur Technique",
-            image: "/images/team/pierre.jpg",
-            description: "Expert en e-commerce, Pierre s'assure que notre plateforme reste à la pointe de la technologie pour votre confort d'utilisation."
+            name: "Équipe Technique",
+            position: "Développement",
+            image: "/images/team/tech.jpg",
+            description: `Notre équipe technique s'assure que ${appName} reste à la pointe de la technologie e-commerce.`
         },
         {
-            name: "Sophie Laurent",
-            position: "Responsable Produits",
-            image: "/images/team/sophie.jpg",
-            description: "Sophie veille à la qualité et à la diversité de notre catalogue, dénichant les meilleures tendances pour nos clients."
+            name: "Équipe Produits",
+            position: "Curation",
+            image: "/images/team/products.jpg",
+            description: `Nos experts produits veillent à la qualité et à la diversité du catalogue ${appName}.`
         }
     ];
 
@@ -123,7 +128,7 @@ export default function About() {
     ];
 
     return (
-        <FrontendLayout title="À Propos - ENMA SPA">
+        <FrontendLayout title={`À Propos`}>
             {/* Hero Section */}
             <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
                 {/* Background */}
@@ -138,12 +143,12 @@ export default function About() {
                         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                             À Propos de
                             <span className="block bg-gradient-to-r from-yellow-300 to-white bg-clip-text text-transparent">
-                                ENMA SPA
+                                {appName}
                             </span>
                         </h1>
                         
                         <p className="text-xl md:text-2xl mb-8 text-gray-100 max-w-3xl mx-auto">
-                            Depuis 2020, nous nous engageons à vous offrir une expérience d'achat exceptionnelle 
+                            {companyDescription}. Nous nous engageons à vous offrir une expérience d'achat exceptionnelle 
                             avec des produits de qualité supérieure et un service client irréprochable.
                         </p>
 
@@ -155,9 +160,9 @@ export default function About() {
                                 description="Au service de nos clients"
                             />
                             <StatCard 
-                                number="10k+" 
+                                number="5k+" 
                                 label="Clients satisfaits" 
-                                description="Dans toute la France"
+                                description="En Côte d'Ivoire"
                             />
                             <StatCard 
                                 number="500+" 

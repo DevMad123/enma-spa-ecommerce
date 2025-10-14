@@ -135,7 +135,7 @@ const FrontendLayout = ({ children, title }) => {
     const firstLetter = appName.charAt(0).toUpperCase();
 
     const navigation = [
-        { name: 'Accueil', href: route('home') },
+        // { name: 'Accueil', href: route('home') },
         { name: 'Boutique', href: route('frontend.shop.index') },
         { name: 'À propos', href: route('a-propos-de-nous') },
         { name: 'Contact', href: route('contact') },
@@ -395,10 +395,9 @@ const FrontendLayout = ({ children, title }) => {
                             <div>
                                 <h3 className="text-lg font-semibold mb-4">Service Client</h3>
                                 <ul className="space-y-2">
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200">Aide & FAQ</a></li>
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200">Retours</a></li>
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200">Livraison</a></li>
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200">Conditions générales</a></li>
+                                    <li><Link href={route('faq')} className="text-gray-300 hover:text-white transition-colors duration-200">Aide & FAQ</Link></li>
+                                    {/* <li><Link href={route('livraison')} className="text-gray-300 hover:text-white transition-colors duration-200">Livraison</Link></li> */}
+                                    <li><Link href={route('conditions-generales')} className="text-gray-300 hover:text-white transition-colors duration-200">Conditions générales</Link></li>
                                 </ul>
                             </div>
                         </div>

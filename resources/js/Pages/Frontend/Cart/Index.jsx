@@ -260,7 +260,7 @@ function Cart({ recommendedProducts = [] }) {
     if (cartItems.length === 0) {
         return (
             <FrontendLayout title="Panier - ENMA SPA">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="max-w-7xl min-h-[calc(100vh_-_449px)] mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="text-center">
                         <div className="w-24 h-24 mx-auto mb-6 text-gray-400">
                             <ShoppingBagIcon className="w-full h-full" />

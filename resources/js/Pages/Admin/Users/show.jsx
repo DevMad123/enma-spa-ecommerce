@@ -15,9 +15,26 @@ import {
     UserGroupIcon
 } from '@heroicons/react/24/outline';
 
-export default function ShowUser({ user, flash }) {
+export default function ShowUser({ user, currentUserId, flash }) {
     const handleDelete = (userId) => {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+        // Empêcher la suppression de l'utilisateur actuel
+        if (userId === currentUserId) {
+            alert('Vous ne pouvez pas supprimer votre propre compte.');
+            return;
+        }
+
+        // Empêcher la suppression des super administrateurs
+        const hasAdminRole = user.roles && user.roles.some(role => 
+            role.name === 'super_admin' || role.name === 'admin'
+        );
+        
+        if (hasAdminRole) {
+            if (!confirm(`ATTENTION: Vous tentez de supprimer un administrateur "${user.name}". Cette action est irréversible et peut affecter le fonctionnement du système. Êtes-vous absolument sûr ?`)) {
+                return;
+            }
+        }
+
+        if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ? Cette action est irréversible.`)) {
             router.delete(route('admin.users.destroy', userId));
         }
     };
@@ -97,10 +114,16 @@ export default function ShowUser({ user, flash }) {
                         </Link>
                         <button
                             onClick={() => handleDelete(user.id)}
-                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700"
+                            disabled={user.id === currentUserId}
+                            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs uppercase tracking-widest ${
+                                user.id === currentUserId 
+                                    ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                                    : 'bg-red-600 text-white hover:bg-red-700'
+                            }`}
+                            title={user.id === currentUserId ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer cet utilisateur'}
                         >
                             <TrashIcon className="w-4 h-4 mr-2" />
-                            Supprimer
+                            {user.id === currentUserId ? 'Suppression interdite' : 'Supprimer'}
                         </button>
                     </div>
                 </div>

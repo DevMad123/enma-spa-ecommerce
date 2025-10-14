@@ -55,7 +55,7 @@ class AppSettingsService
 
     public static function getPhone()
     {
-        return self::get('phone', '+33 1 23 45 67 89');
+        return self::get('site_phone', '+33 1 23 45 67 89');
     }
 
     public static function getAddress()
@@ -288,7 +288,7 @@ class AppSettingsService
             'from_name' => self::getMailFromName(),
             'noreply_address' => self::getNoReplyEmail(),
             'admin_email' => self::getAdminEmail(),
-            'contact_email' => self::getContactEmail(),
+            'contact_email' => self::getSiteEmail(),
         ];
     }
 
@@ -299,8 +299,8 @@ class AppSettingsService
     {
         return [
             'app_name' => self::getAppName(),
-            'contact_email' => self::getContactEmail(),
-            'phone' => self::getPhone(),
+            'contact_email' => self::getSiteEmail(),
+            'site_phone' => self::getPhone(),
             'address' => self::getAddress(),
             'currency_symbol' => self::getCurrencySymbol(),
             'primary_color' => self::getPrimaryColor(),

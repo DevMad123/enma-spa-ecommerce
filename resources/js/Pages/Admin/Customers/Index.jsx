@@ -96,6 +96,7 @@ export default function CustomersList() {
         }
         router.visit(route('admin.customers.show', customerId));
     };
+    console.log(customerList);
 
     // Configuration des colonnes
     const columns = [
@@ -174,11 +175,11 @@ export default function CustomersList() {
                     <div className="text-gray-900 font-medium">
                         {customer.total_orders || 0} commande{(customer.total_orders || 0) > 1 ? 's' : ''}
                     </div>
-                    {customer.total_amount && (
+                    {/* {customer.total_amount && (
                         <div className="text-gray-500">
                             {parseFloat(customer.total_amount).toFixed(2)}€
                         </div>
-                    )}
+                    )} */}
                 </div>
             )
         },

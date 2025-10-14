@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
                 'shipping_cost' => AppSettingsService::getShippingCost(),
                 'max_price_default' => AppSettingsService::getMaxPriceDefault(),
                 'language' => AppSettingsService::getLanguage(),
-                'contact_email' => AppSettingsService::getContactEmail(),
+                'contact_email' => AppSettingsService::getSiteEmail(),
                 'admin_email' => AppSettingsService::getAdminEmail(),
                 'phone' => AppSettingsService::getPhone(),
             ],

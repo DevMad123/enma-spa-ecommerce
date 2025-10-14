@@ -124,15 +124,79 @@ class NotificationController extends Controller
             abort(403);
         }
 
+        // Marquer automatiquement comme lue si ce n'est pas déjà fait
+        if (!$notification->is_read) {
+            $notification->markAsRead();
+        }
+
+        return Inertia::render('Admin/Notifications/Show', [
+            'notification' => [
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'data' => $notification->data,
+                'action_url' => $notification->action_url,
+                'color' => $notification->color,
+                'is_read' => $notification->is_read,
+                'created_at_formatted' => $notification->created_at->format('d/m/Y à H:i'),
+                'time_ago' => $notification->time_ago,
+            ]
+        ]);
+    }
+
+    /**
+     * Redirect to notification action URL and mark as read.
+     */
+    public function redirect(Notification $notification)
+    {
+        // Vérifier que l'utilisateur peut accéder à cette notification
+        if ($notification->user_id && $notification->user_id !== auth()->id()) {
+            abort(403);
+        }
+
         // Marquer comme lue
         $notification->markAsRead();
 
         // Rediriger vers l'URL d'action si elle existe
         if ($notification->action_url) {
-            return redirect($notification->action_url);
+            try {
+                $actionUrl = $notification->action_url;
+                
+                // Corriger les URLs incorrectes
+                if (str_contains($actionUrl, '/admin/sells/')) {
+                    // Convertir /admin/sells/ID vers admin.orders.show
+                    $orderId = str_replace('/admin/sells/', '', $actionUrl);
+                    if (is_numeric($orderId)) {
+                        return redirect()->route('admin.orders.show', $orderId);
+                    }
+                } elseif (str_contains($actionUrl, '/admin/contact-messages/')) {
+                    // Convertir vers admin.contact-messages.show
+                    $messageId = str_replace('/admin/contact-messages/', '', $actionUrl);
+                    if (is_numeric($messageId)) {
+                        return redirect()->route('admin.contact-messages.show', $messageId);
+                    }
+                } elseif (str_contains($actionUrl, '/admin/users/')) {
+                    // Convertir vers admin.users.show
+                    $userId = str_replace('/admin/users/', '', $actionUrl);
+                    if (is_numeric($userId)) {
+                        return redirect()->route('admin.users.show', $userId);
+                    }
+                }
+                
+                // Vérifier si l'URL est valide telle quelle
+                if (filter_var($actionUrl, FILTER_VALIDATE_URL) || str_starts_with($actionUrl, '/')) {
+                    return redirect($actionUrl);
+                }
+            } catch (\Exception $e) {
+                // En cas d'erreur, rediriger vers la liste avec un message
+                return redirect()->route('admin.notifications.index')
+                    ->with('error', 'L\'action demandée n\'est plus disponible.');
+            }
         }
 
-        return redirect()->route('admin.notifications.index');
+        return redirect()->route('admin.notifications.index')
+            ->with('info', 'Cette notification n\'a pas d\'action associée.');
     }
 
     /**

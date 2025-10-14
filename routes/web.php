@@ -97,6 +97,19 @@ Route::get('/a-propos', function () {
 Route::get('/contact', [FrontendContactController::class, 'index'])->name('contact');
 Route::post('/contact', [FrontendContactController::class, 'store'])->name('contact.store');
 
+// Pages légales et informatives
+Route::get('/aide-faq', function () {
+    return Inertia::render('Frontend/FAQ');
+})->name('faq');
+
+Route::get('/livraison', function () {
+    return Inertia::render('Frontend/Delivery');
+})->name('livraison');
+
+Route::get('/conditions-generales', function () {
+    return Inertia::render('Frontend/Terms');
+})->name('conditions-generales');
+
 // Routes Newsletter
 Route::prefix('newsletter')->name('newsletter.')->group(function () {
     Route::post('/subscribe', [NewsletterController::class, 'subscribe'])->name('subscribe');
@@ -442,6 +455,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/header', [NotificationController::class, 'getForHeader'])->name('header');
         Route::get('/{notification}/details', [NotificationController::class, 'details'])->name('details');
         Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
+        Route::get('/{notification}/redirect', [NotificationController::class, 'redirect'])->name('redirect');
         Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
         Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
         Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');

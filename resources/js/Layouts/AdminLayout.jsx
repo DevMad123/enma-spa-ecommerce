@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, usePage, Link, router } from '@inertiajs/react';
 import DashboardSidebar from '@/Components/DashboardSidebar';
 import DashboardHeader from '@/Components/DashboardHeader';
@@ -77,23 +77,46 @@ export default function AdminLayout({ title, children }) {
   const { url } = usePage();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Gérer la détection de la taille d'écran
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+
+    // Vérifier la taille initiale
+    checkScreenSize();
+
+    // Écouter les changements de taille
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const pageTitle = title || getPageTitle(url);
   const appName = appSettings?.app_name || 'ENMA SPA';
   const fullTitle = `${pageTitle} - ${appName}`;
 
   const handleSidebarToggle = () => {
-    if (window.innerWidth < 1024) {
+    if (!isDesktop) {
       setMobileOpen(!mobileOpen);
     } else {
       setSidebarCollapsed(!sidebarCollapsed);
     }
   };
 
+  // Calculer la marge gauche
+  const getMainContentStyle = () => {
+    if (!isDesktop) return { marginLeft: '0' };
+    return {
+      marginLeft: sidebarCollapsed ? '5rem' : '18rem'
+    };
+  };
+
   return (
     <>
       <Head title={fullTitle} />
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50">
         {/* Sidebar */}
         <DashboardSidebar 
           collapsed={sidebarCollapsed}
@@ -103,7 +126,10 @@ export default function AdminLayout({ title, children }) {
         />
         
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div 
+          className="flex flex-col min-h-screen transition-all duration-300"
+          style={getMainContentStyle()}
+        >
           {/* Header */}
           <DashboardHeader 
             user={{

@@ -90,6 +90,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users/show', [
             'user' => $user,
+            'currentUserId' => auth()->id(),
         ]);
     }
 
@@ -101,6 +102,7 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/edit', [
             'user' => $user,
             'roles' => $roles,
+            'currentUserId' => auth()->id(),
         ]);
     }
 

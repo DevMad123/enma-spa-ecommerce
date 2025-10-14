@@ -223,7 +223,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
 
     const tabs = [
         { id: 'general', name: 'Général', icon: HiOutlineGlobe },
-        { id: 'appearance', name: 'Apparence', icon: HiOutlineColorSwatch },
+        // { id: 'appearance', name: 'Apparence', icon: HiOutlineColorSwatch },
         { id: 'ecommerce', name: 'E-commerce', icon: HiOutlineShoppingCart },
     ];
 
