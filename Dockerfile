@@ -1,44 +1,50 @@
-# ===============================
-# Étape 1 : Builder les assets (React / Inertia)
-# ===============================
-FROM node:18 AS node_builder
+# Étape 1 : image de base PHP pour servir Laravel
+FROM php:8.2-fpm AS php_base
+
+# Installer les dépendances nécessaires pour Laravel, ext, etc.
+RUN apt-get update && apt-get install -y \
+    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Installer Composer (le binaire) dans l’image
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# Copier tout le code source
+COPY . .
+
+# Installer les dépendances backend avec Composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Générer le key, cacher config, etc.
+RUN php artisan key:generate
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache
+
+# Étape 2 : build du frontend (React / Inertia)
+FROM node:18 AS node_build
+
 WORKDIR /app
+# Copier les fichiers package.json, etc.
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-# ===============================
-# Étape 2 : Serveur PHP + Apache
-# ===============================
-FROM php:8.2-apache
+# Étape finale : relier frontend + backend
+FROM php_base AS final
 
-# Installer les extensions nécessaires à Laravel
-RUN apt-get update && apt-get install -y \
-    git unzip zip libzip-dev libpng-dev libonig-dev libxml2-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd
+# Copier les fichiers du build frontend vers le dossier public de Laravel
+COPY --from=node_build /app/public /var/www/html/public
 
-# Installer Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Permissions (si besoin)
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
-# Copier le code du projet
-WORKDIR /var/www/html
-COPY . .
-
-# Copier les assets compilés depuis l'étape Node
-COPY --from=node_builder /app/public /var/www/html/public
-
-# Donner les permissions à Laravel
-RUN chown -R www-data:www-data storage bootstrap/cache
-
-# Activer mod_rewrite d’Apache
-RUN a2enmod rewrite
-
-# Exposer le port 80
+# Exposer le port HTTP
 EXPOSE 80
 
-# Générer la clé Laravel et lancer le serveur
-CMD composer install --no-dev --optimize-autoloader && \
-    php artisan key:generate && \
-    php artisan migrate --force && \
-    apache2-foreground
+# Commande de démarrage (ici PHP-FPM, tu peux adapter selon ton setup)
+CMD ["php-fpm"]
