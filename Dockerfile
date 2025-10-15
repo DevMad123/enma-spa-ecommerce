@@ -37,8 +37,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Définir l’entrypoint
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# Exposer le port HTTP
-EXPOSE 80
+# Exposer le port 9000
+EXPOSE 9000
 
 # Commande par défaut (lancée après l’entrypoint)
 CMD ["php-fpm"]
