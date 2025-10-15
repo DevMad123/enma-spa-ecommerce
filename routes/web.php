@@ -213,7 +213,7 @@ Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->na
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard admin
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Routes de test (à supprimer en production)
     Route::get('/test-notifications', function () {
         // Créer une notification de test
@@ -221,7 +221,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             'sender_name' => 'Test Utilisateur',
             'message' => 'Ceci est une notification de test créée via l\'URL /test-notifications'
         ]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Notification de test créée avec succès !',
@@ -230,7 +230,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             'unread_count' => \App\Models\Notification::unread()->count(),
         ]);
     });
-    
+
     Route::get('/test-api', function () {
         return response()->json([
             'status' => 'success',
@@ -291,7 +291,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-delete', [BrandController::class, 'bulkDelete'])->name('bulk-delete');
-        
+
         // Routes legacy pour compatibilité (temporaires)
         Route::get('/list', [BrandController::class, 'index'])->name('list');
         Route::post('/store', [BrandController::class, 'store'])->name('storeBrands');
@@ -308,7 +308,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/{supplier}/edit', [SupplierController::class, 'edit'])->name('edit');
         Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
         Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
-        
+
         // Routes legacy pour compatibilité (temporaires)
         Route::get('/list', [SupplierController::class, 'index'])->name('list');
         Route::post('/store', [SupplierController::class, 'store'])->name('storeSuppliers');
@@ -453,7 +453,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::get('/header', [NotificationController::class, 'getForHeader'])->name('header');
-        Route::get('/{notification}/details', [NotificationController::class, 'details'])->name('details');
         Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
         Route::get('/{notification}/redirect', [NotificationController::class, 'redirect'])->name('redirect');
         Route::put('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
@@ -473,7 +472,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/{paymentMethod}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'destroy'])->name('destroy');
         Route::patch('/{paymentMethod}/toggle', [App\Http\Controllers\Admin\PaymentMethodController::class, 'toggleStatus'])->name('toggle');
         Route::put('/update-order', [App\Http\Controllers\Admin\PaymentMethodController::class, 'updateOrder'])->name('updateOrder');
-        
+
         // Routes pour les actions groupées
         Route::post('/bulk-delete', [App\Http\Controllers\Admin\PaymentMethodController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-activate', [App\Http\Controllers\Admin\PaymentMethodController::class, 'bulkActivate'])->name('bulk-activate');
@@ -502,7 +501,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/{taxRule}', [App\Http\Controllers\Admin\TaxRuleController::class, 'destroy'])->name('destroy');
         Route::patch('/{taxRule}/set-default', [App\Http\Controllers\Admin\TaxRuleController::class, 'setDefault'])->name('set-default');
         Route::patch('/{taxRule}/toggle-active', [App\Http\Controllers\Admin\TaxRuleController::class, 'toggleActive'])->name('toggle-active');
-        
+
         // Actions en lot
         Route::post('/bulk-activate', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkActivate'])->name('bulk-activate');
         Route::post('/bulk-deactivate', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkDeactivate'])->name('bulk-deactivate');
