@@ -5,12 +5,12 @@ RUN apt-get update && apt-get install -y \
     git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Copier le binaire Composer depuis image composer officielle
+# Copier le binaire Composer depuis l’image Composer officielle
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copier tout le code (y compris docker-entrypoint.sh, .env.example, etc.)
+# Copier tout le code source
 COPY . .
 
 # Installer les dépendances backend
@@ -24,21 +24,17 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Étape finale : assembler backend + frontend + entrypoint
+# Étape finale : assembler backend + frontend
 FROM base AS final
 
 # Copier le build frontend vers le dossier public de Laravel
 COPY --from=node_build /app/public /var/www/html/public
 
-# Copier le script entrypoint dans l’image
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Donner les bonnes permissions à Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Définir l’entrypoint
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Exposer le port utilisé par Render
+EXPOSE 10000
 
-# Exposer le port 9000
-EXPOSE 9000
-
-# Commande par défaut (lancée après l’entrypoint)
-CMD ["php-fpm"]
+# Démarrer Laravel sur le port assigné par Render
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
