@@ -2,8 +2,8 @@
 FROM php:8.2-fpm AS base
 
 RUN apt-get update && apt-get install -y \
-    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
 # Copier le binaire Composer depuis l’image Composer officielle
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -33,7 +33,6 @@ COPY --from=node_build /app/public /var/www/html/public
 # Donner les bonnes permissions à Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exposer le port utilisé par Render
 EXPOSE 10000
 
 # Démarrer Laravel sur le port assigné par Render
