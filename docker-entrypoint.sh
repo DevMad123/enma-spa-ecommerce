@@ -15,6 +15,11 @@ if ! grep -q "APP_KEY=" /var/www/html/.env || [ -z "$(grep 'APP_KEY=' /var/www/h
   php artisan key:generate --force
 fi
 
+# --- Build Vite (important pour Render production) ---
+echo "⚙️ Installation des dépendances et build Vite..."
+npm ci
+npm run build
+
 # --- 3️⃣ Attendre que la base de données soit prête ---
 echo "⏳ Attente de la base de données..."
 until php -r "try { new PDO(getenv('DB_CONNECTION').':host='.getenv('DB_HOST').';port='.getenv('DB_PORT').';dbname='.getenv('DB_DATABASE'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); echo '✅ DB OK'; } catch (Exception \$e) { echo '⏳ En attente...'; exit(1); }"; do
