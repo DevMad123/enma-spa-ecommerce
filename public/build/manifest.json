@@ -1,0 +1,17 @@
+{
+  "resources/assets/front/imgs/default-user.png": {
+    "file": "assets/default-user-BaRCfHss.png",
+    "src": "resources/assets/front/imgs/default-user.png"
+  },
+  "resources/js/app.jsx": {
+    "assets": [
+      "assets/default-user-BaRCfHss.png"
+    ],
+    "css": [
+      "assets/app-a531lEKr.css"
+    ],
+    "file": "assets/app-bqEMjrbL.js",
+    "isEntry": true,
+    "src": "resources/js/app.jsx"
+  }
+}
