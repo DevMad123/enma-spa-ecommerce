@@ -22,6 +22,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
+COPY --from=node_build /app/public/build /var/www/html/public/build
 
 # Étape 3 : image finale (Render)
 FROM php:8.2-fpm AS final
