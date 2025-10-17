@@ -61,7 +61,7 @@ chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # --- 8️⃣ Démarrer Laravel ---
-RENDER_PORT=${PORT:-8000}
+RENDER_PORT=${PORT:-10000}
 echo "🚀 Démarrage du serveur Laravel sur 0.0.0.0:${RENDER_PORT}"
 
 exec php artisan serve --host=0.0.0.0 --port="${RENDER_PORT}"
