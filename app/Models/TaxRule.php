@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class TaxRule extends Model
 {
@@ -64,6 +65,9 @@ class TaxRule extends Model
      */
     public static function getDefault(): ?self
     {
+        if (!Schema::hasTable('tax_rules')) {
+            return null;
+        }
         return Cache::remember(
             'tax_rule_default',
             now()->addHours(24),
