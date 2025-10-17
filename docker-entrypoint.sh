@@ -17,20 +17,36 @@ fi
 
 # --- 3️⃣ Attendre que la base soit prête ---
 echo "⏳ Attente de la base de données..."
-until php -r "try { new PDO(getenv('DB_CONNECTION').':host='.getenv('DB_HOST').';port='.getenv('DB_PORT').';dbname='.getenv('DB_DATABASE'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); echo '✅ DB OK'; } catch (Exception \$e) { echo '⏳ En attente...'; exit(1); }"; do
+until php -r "try {
+    new PDO(getenv('DB_CONNECTION').':host='.getenv('DB_HOST').';port='.getenv('DB_PORT').';dbname='.getenv('DB_DATABASE'), getenv('DB_USERNAME'), getenv('DB_PASSWORD'));
+    echo '✅ DB OK';
+} catch (Exception \$e) {
+    echo '⏳ En attente...';
+    exit(1);
+}"; do
   sleep 2
 done
 
 # --- 4️⃣ Exécuter les migrations ---
 echo "⚙️ Exécution des migrations..."
-php artisan migrate --force || true
-
-# --- 5️⃣ Build Vite (⚠️ IMPORTANT : après migrations et .env créé) ---
-echo "⚙️ Build du frontend avec Vite..."
-if [ ! -f /var/www/html/public/build/manifest.json ]; then
-  echo "⚠️ Aucun build détecté, le frontend peut ne pas s'afficher."
+# Si c’est la première exécution Render, on fait un fresh pour tout recréer proprement
+if [ ! -f /var/www/html/storage/initialized.flag ]; then
+  echo "🆕 Première exécution : réinitialisation complète de la base..."
+  php artisan migrate:fresh --force
+  touch /var/www/html/storage/initialized.flag
 else
-  echo "✅ Build Vite détecté."
+  echo "🔁 Migration incrémentale..."
+  php artisan migrate --force || true
+fi
+
+# --- 5️⃣ Build du frontend avec Vite ---
+echo "⚙️ Vérification du build Vite..."
+if [ ! -f /var/www/html/public/build/manifest.json ]; then
+  echo "⚙️ Aucun build détecté — lancement de npm run build..."
+  npm ci || npm install
+  npm run build
+else
+  echo "✅ Build déjà présent."
 fi
 
 # --- 6️⃣ Cache Laravel ---
