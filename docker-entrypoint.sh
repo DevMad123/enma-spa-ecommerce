@@ -7,13 +7,13 @@ if [ ! -f /var/www/html/.env ]; then
   echo ".env créé depuis .env.example"
 fi
 
-# Générer la clé, forcer l’override si nécessaire
+# Générer la clé d'application (si non présente)
 php artisan key:generate --force
 
-# Lancer les migrations automatiquement
-php artisan migrate --force
+# Appliquer les migrations automatiquement (important pour Render)
+php artisan migrate --force || true
 
-# Mettre en cache la config, les routes, les vues (si possible)
+# Mettre en cache la configuration, routes et vues
 php artisan config:cache
 php artisan route:cache || true
 php artisan view:cache || true
@@ -22,5 +22,8 @@ php artisan view:cache || true
 chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exécuter la commande par défaut du container (ex: php-fpm ou artisan serve)
-exec "$@"
+# Démarrer le serveur Laravel
+RENDER_PORT=${PORT:-8000}
+echo "🚀 Démarrage du serveur Laravel sur 0.0.0.0:${RENDER_PORT}"
+
+exec php artisan serve --host=0.0.0.0 --port="${RENDER_PORT}"
