@@ -27,9 +27,11 @@ php artisan migrate --force || true
 
 # --- 5️⃣ Build Vite (⚠️ IMPORTANT : après migrations et .env créé) ---
 echo "⚙️ Build du frontend avec Vite..."
-rm -rf public/build
-npm ci
-npm run build
+if [ ! -f /var/www/html/public/build/manifest.json ]; then
+  echo "⚠️ Aucun build détecté, le frontend peut ne pas s'afficher."
+else
+  echo "✅ Build Vite détecté."
+fi
 
 # --- 6️⃣ Cache Laravel ---
 echo "🧩 Mise en cache Laravel..."
