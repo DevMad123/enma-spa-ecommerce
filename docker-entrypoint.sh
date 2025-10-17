@@ -55,6 +55,14 @@ php artisan config:cache
 php artisan route:cache || true
 php artisan view:cache || true
 
+# --- 6️⃣ bis : forcer le HTTPS en production ---
+if [ "$APP_ENV" = "production" ]; then
+  php artisan config:clear
+  php artisan route:clear
+  php artisan optimize
+  php artisan storage:link || true
+fi
+
 # --- 7️⃣ Fixer les permissions ---
 echo "🛠️ Fixation des permissions..."
 chown -R www-data:www-data /var/www/html
