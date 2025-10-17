@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class Setting extends Model
 {
@@ -62,6 +63,9 @@ class Setting extends Model
     // Static methods
     public static function get($key, $default = null)
     {
+        if (!Schema::hasTable('settings')) {
+            return $default;
+        }
         $cacheKey = "setting.{$key}";
         
         return Cache::remember($cacheKey, 3600, function () use ($key, $default) {
