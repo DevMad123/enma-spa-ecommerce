@@ -29,7 +29,6 @@ done
 
 # --- 4️⃣ Exécuter les migrations ---
 echo "⚙️ Exécution des migrations..."
-# Si c’est la première exécution Render, on fait un fresh pour tout recréer proprement
 if [ ! -f /var/www/html/storage/initialized.flag ]; then
   echo "🆕 Première exécution : réinitialisation complète de la base..."
   php artisan migrate:fresh --force
@@ -39,14 +38,14 @@ else
   php artisan migrate --force || true
 fi
 
-# --- 5️⃣ Build du frontend avec Vite ---
+# --- 5️⃣ Vérification du build Vite ---
 echo "⚙️ Vérification du build Vite..."
-if [ ! -f /var/www/html/public/build/manifest.json ]; then
-  echo "⚙️ Aucun build détecté — lancement de npm run build..."
-  npm ci || npm install
-  npm run build
+if [ -f /var/www/html/public/build/manifest.json ]; then
+  echo "✅ Build Vite déjà présent."
 else
-  echo "✅ Build déjà présent."
+  echo "⚠️ Aucun build détecté dans /public/build/"
+  echo "   → Vérifie que ton Dockerfile copie bien :"
+  echo "     COPY --from=node_build /app/public/build /var/www/html/public/build"
 fi
 
 # --- 6️⃣ Cache Laravel ---
