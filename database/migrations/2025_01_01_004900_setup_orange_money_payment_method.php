@@ -28,7 +28,7 @@ return new class extends Migration
                     'mode' => 'sandbox',
                     'webhook_secret' => ''
                 ]),
-                'status' => 1,
+                'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

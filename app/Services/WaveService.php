@@ -25,7 +25,7 @@ class WaveService
      */
     private function loadConfig()
     {
-        $paymentMethod = PaymentMethod::where('code', 'wave')->where('status', 1)->first();
+        $paymentMethod = PaymentMethod::where('code', 'wave')->where('is_active', true)->first();
         
         if (!$paymentMethod || !$paymentMethod->config) {
             throw new \Exception('Wave non configuré ou désactivé');
@@ -301,7 +301,7 @@ class WaveService
     public static function isConfigured()
     {
         try {
-            $paymentMethod = PaymentMethod::where('code', 'wave')->where('status', 1)->first();
+            $paymentMethod = PaymentMethod::where('code', 'wave')->where('is_active', true)->first();
             
             if (!$paymentMethod || !$paymentMethod->config) {
                 return false;

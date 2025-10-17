@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: enma-spa-ecommerce
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: QUEUE_CONNECTION
+        value: sync
+      # Database settings wired from the managed Postgres below
+      - key: DB_HOST
+        fromDatabase:
+          name: enma-spa-ecommerce-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: enma-spa-ecommerce-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: enma-spa-ecommerce-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: enma-spa-ecommerce-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: enma-spa-ecommerce-db
+          property: password
+    # Run migrations after each deploy and ensure storage symlink exists
+    postDeployCommand: |
+      php artisan migrate --force
+      php artisan storage:link || true
+
+databases:
+  - name: enma-spa-ecommerce-db
+    plan: free
