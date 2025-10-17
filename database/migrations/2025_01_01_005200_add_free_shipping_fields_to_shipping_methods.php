@@ -11,10 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            // $table->boolean('supports_free_shipping')->default(false)->after('price');
-            // $table->decimal('free_shipping_threshold', 10, 2)->nullable()->after('supports_free_shipping');
-        });
+        // No-op: fields are created in 2025_01_01_005100_create_shipping_methods_table.php
     }
 
     /**
@@ -22,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->dropColumn(['supports_free_shipping', 'free_shipping_threshold']);
-        });
+        // No-op.
     }
 };

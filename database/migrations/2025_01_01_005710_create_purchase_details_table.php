@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('purchase_details', function (Blueprint $table) {
             $table->id();
             // Relations
-            $table->foreignId('purchase_id')->constrained('purchases')->onDelete('cascade');
+            $table->foreignId('purchase_id')->constrained('purchase_product_lists')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             // Coûts
             $table->decimal('unit_cost', 11, 2);

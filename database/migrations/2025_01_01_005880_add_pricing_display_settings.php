@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('false', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // No-op: intentionally left blank.
+        // Pricing settings are handled by 2025_01_01_005870_add_price_display_settings.php
     }
 
     /**
@@ -22,6 +20,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('false');
+        // No-op.
     }
 };
