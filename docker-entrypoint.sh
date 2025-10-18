@@ -32,6 +32,7 @@ echo "⚙️ Exécution des migrations..."
 if [ ! -f /var/www/html/storage/initialized.flag ]; then
   echo "🆕 Première exécution : réinitialisation complète de la base..."
   php artisan migrate:fresh --force
+  php artisan db:seed --force
   touch /var/www/html/storage/initialized.flag
 else
   echo "🔁 Migration incrémentale..."
