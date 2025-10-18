@@ -2,7 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Brand;
+use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Shipping;
+use App\Models\TaxRule;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -14,39 +18,43 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
 
         User::factory()->create([
             'id' => 1,
-            'name' => 'Zura',
-            'email' => 'zura@example.com',
-            'password' => bcrypt('123.321A'),
+            'name' => 'Admin',
+            'email' => 'admin@test.com',
+            'password' => bcrypt('admin123'),
             'email_verified_at' => time()
         ]);
         User::factory()->create([
             'id' => 2,
-            'name' => 'John Smith',
+            'name' => 'John Doe',
             'email' => 'john@example.com',
             'password' => bcrypt('123.321A'),
             'email_verified_at' => time()
         ]);
 
-        // Project::factory()
-        //     ->count(30)
-        //     ->hasTasks(30)
-        //     ->create();
         $this->call([
-            // RoleSeeder::class,
-            // UserRoleSeeder::class,
-            // BannerSeeder::class,
-            // ProductCategorySeeder::class,
-            // ProductSubCategorySeeder::class,
-            // ProductColorSeeder::class,
-            // ProductSizeSeeder::class,
-            // SupplierSeeder::class,
-            // ProductSeeder::class,
-            // ProductImageSeeder::class,
-            // CustomerSeeder::class,
+            AdminDashboardSeeder::class,
+            SettingSeeder::class,
+            BrandSeeder::class,
+            ContactMessageSeeder::class,
+            RoleSeeder::class,
+            UserRoleSeeder::class,
+            BannerSeeder::class,
+            ProductCategorySeeder::class,
+            ProductSubCategorySeeder::class,
+            ProductColorSeeder::class,
+            ProductSizeSeeder::class,
+            SupplierSeeder::class,
+            ProductSeeder::class,
+            ProductImageSeeder::class,
+            CustomerSeeder::class,
+            PaymentSeeder::class,
+            PaymentMethodSeeder::class,
+            ShippingSeeder::class,
+            TaxRuleSeeder::class,
+            UserRoleSeeder::class,
         ]);
     }
 }
