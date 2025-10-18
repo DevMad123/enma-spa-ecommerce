@@ -38,7 +38,7 @@ return new class extends Migration
             // Foreign keys (à adapter selon tes tables)
             $table->foreign('customer_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('sell_by')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('bank_id')->references('id')->on('banks')->onDelete('set null');
+            $table->foreign('bank_id')->references('id')->on('bank_accounts')->onDelete('set null');
         });
     }
 

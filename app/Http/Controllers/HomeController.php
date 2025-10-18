@@ -8,11 +8,22 @@ use App\Models\Brand;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
     public function index()
     {
+        if (!Schema::hasTable('products')) {
+            return inertia('Frontend/Home', [
+                'featuredProducts' => [],
+                'newProducts' => [],
+                'bestSellers' => [],
+                'categories' => [],
+                'brands' => [],
+                'wishlist' => [],
+            ]);
+        }
         // Produits mis en avant
         $featuredProducts = Product::with(['category', 'brand'])
             ->where('status', 1)

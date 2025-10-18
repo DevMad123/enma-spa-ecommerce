@@ -48,7 +48,7 @@ La méthode de paiement Orange Money doit exister dans votre table `payment_meth
 SELECT * FROM payment_methods WHERE code = 'orange_money';
 
 -- Si nécessaire, l'ajouter
-INSERT INTO payment_methods (name, code, description, config, status) 
+INSERT INTO payment_methods (name, code, description, config, is_active) 
 VALUES (
     'Orange Money', 
     'orange_money', 

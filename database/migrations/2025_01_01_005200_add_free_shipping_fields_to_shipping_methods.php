@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ecommerce_customers', function (Blueprint $table) {
-            //
-        });
+        // No-op: fields are created in 2025_01_01_005100_create_shipping_methods_table.php
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ecommerce_customers', function (Blueprint $table) {
-            //
-        });
+        // No-op.
     }
 };

@@ -24,7 +24,7 @@ class OrangeMoneyService
      */
     private function loadConfig()
     {
-        $paymentMethod = PaymentMethod::where('code', 'orange_money')->where('status', 1)->first();
+        $paymentMethod = PaymentMethod::where('code', 'orange_money')->where('is_active', true)->first();
         
         if (!$paymentMethod || !$paymentMethod->config) {
             throw new \Exception('Orange Money non configuré ou désactivé');
@@ -282,7 +282,7 @@ class OrangeMoneyService
     public static function isConfigured()
     {
         try {
-            $paymentMethod = PaymentMethod::where('code', 'orange_money')->where('status', 1)->first();
+            $paymentMethod = PaymentMethod::where('code', 'orange_money')->where('is_active', true)->first();
             
             if (!$paymentMethod || !$paymentMethod->config) {
                 return false;

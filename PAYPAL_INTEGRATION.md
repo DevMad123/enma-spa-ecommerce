@@ -41,7 +41,7 @@ PAYPAL_LOCALE=fr_FR                    # Locale pour l'interface PayPal
 Assurez-vous d'avoir une méthode de paiement PayPal dans votre table `payment_methods` :
 
 ```sql
-INSERT INTO payment_methods (name, code, description, config, status) 
+INSERT INTO payment_methods (name, code, description, config, is_active) 
 VALUES (
     'PayPal', 
     'paypal', 
