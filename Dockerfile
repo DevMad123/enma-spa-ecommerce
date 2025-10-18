@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
+RUN php -m | grep zip || echo "❌ ZIP extension not loaded!"
 # Copier Composer depuis son image officielle
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
