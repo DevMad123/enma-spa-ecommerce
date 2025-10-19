@@ -219,7 +219,10 @@ class AdminDashboardSeeder extends Seeder
         ];
 
         foreach ($settings as $setting) {
-            Setting::create($setting);
+            Setting::updateOrCreate(
+                ['key' => $setting['key']],
+                $setting
+            );
         }
 
         $this->command->info('✅ Données de test créées avec succès !');
