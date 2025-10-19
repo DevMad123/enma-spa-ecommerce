@@ -19,20 +19,24 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
 
-        User::factory()->create([
-            'id' => 1,
-            'name' => 'Admin',
-            'email' => 'admin@test.com',
-            'password' => bcrypt('admin123'),
-            'email_verified_at' => time()
-        ]);
-        User::factory()->create([
-            'id' => 2,
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => bcrypt('123.321A'),
-            'email_verified_at' => time()
-        ]);
+        User::updateOrCreate(
+            ['id' => 1],
+            [
+                'name' => 'Admin',
+                'email' => 'admin@test.com',
+                'password' => bcrypt('admin123'),
+                'email_verified_at' => now(),
+            ]
+        );
+        User::updateOrCreate(
+            ['id' => 2],
+            [
+                'name' => 'John Doe',
+                'email' => 'john@example.com',
+                'password' => bcrypt('123.321A'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         $this->call([
             AdminDashboardSeeder::class,
@@ -58,3 +62,4 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
+
