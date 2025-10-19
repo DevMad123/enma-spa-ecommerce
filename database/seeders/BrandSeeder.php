@@ -47,7 +47,10 @@ class BrandSeeder extends Seeder
         ];
 
         foreach ($brands as $brandData) {
-            Brand::create($brandData);
+            Brand::updateOrCreate(
+                ['name' => $brandData['name']],
+                $brandData
+            );
         }
     }
 }

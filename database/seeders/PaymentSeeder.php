@@ -15,6 +15,13 @@ class PaymentSeeder extends Seeder
      */
     public function run(): void
     {
+        // Skip if payments already seeded to avoid duplicates
+        if (\App\Models\Payment::query()->exists()) {
+            if (isset($this->command)) {
+                $this->command->info('Payments already exist, skipping PaymentSeeder');
+            }
+            return;
+        }
         // Récupérer quelques commandes existantes
         $sells = Sell::with('customer')->take(5)->get();
         

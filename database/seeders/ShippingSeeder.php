@@ -65,7 +65,10 @@ class ShippingSeeder extends Seeder
         ];
 
         foreach ($shippingMethods as $method) {
-            Shipping::create($method);
+            Shipping::updateOrCreate(
+                ['name' => $method['name']],
+                $method
+            );
         }
 
         $this->command->info('Méthodes de livraison créées avec succès !');

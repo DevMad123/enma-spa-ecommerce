@@ -117,7 +117,10 @@ class TaxRuleSeeder extends Seeder
         ];
 
         foreach ($taxRules as $taxRule) {
-            TaxRule::create($taxRule);
+            TaxRule::updateOrCreate(
+                ['country_code' => $taxRule['country_code']],
+                $taxRule
+            );
         }
     }
 }

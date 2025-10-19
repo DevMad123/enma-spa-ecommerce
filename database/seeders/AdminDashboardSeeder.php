@@ -78,7 +78,10 @@ class AdminDashboardSeeder extends Seeder
         ];
 
         foreach ($notifications as $notification) {
-            Notification::create($notification);
+            Notification::updateOrCreate(
+                ['type' => $notification['type'], 'title' => $notification['title']],
+                $notification
+            );
         }
 
         // Créer des paramètres par défaut

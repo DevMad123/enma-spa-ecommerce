@@ -60,7 +60,10 @@ class ContactMessageSeeder extends Seeder
         ];
 
         foreach ($contactMessages as $message) {
-            ContactMessage::create($message);
+            ContactMessage::updateOrCreate(
+                ['email' => $message['email'], 'subject' => $message['subject']],
+                $message
+            );
         }
 
         // Abonnements newsletter de test
@@ -75,7 +78,10 @@ class ContactMessageSeeder extends Seeder
         ];
 
         foreach ($newsletters as $newsletter) {
-            Newsletter::create($newsletter);
+            Newsletter::updateOrCreate(
+                ['email' => $newsletter['email']],
+                $newsletter
+            );
         }
     }
 }
