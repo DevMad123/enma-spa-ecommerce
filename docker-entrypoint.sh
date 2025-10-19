@@ -1,22 +1,30 @@
 #!/bin/sh
 set -e
 
-echo "[init] Vérification du fichier .env..."
+echo "[init] Checking .env file"
 
-# 1) Créer .env si absent
+# 1) Ensure .env exists
 if [ ! -f /var/www/html/.env ]; then
   cp /var/www/html/.env.example /var/www/html/.env
-  echo "[init] .env créé depuis .env.example"
+  echo "[init] .env created from .env.example"
 fi
 
-# 2) Générer la clé Laravel si manquante
+# 2) Generate APP_KEY if missing
 if ! grep -q "APP_KEY=" /var/www/html/.env || [ -z "$(grep 'APP_KEY=' /var/www/html/.env | cut -d '=' -f2)" ]; then
-  echo "[init] Génération de la clé d'application..."
+  echo "[init] Generating APP_KEY"
   php artisan key:generate --force
 fi
 
-# 3) Attendre que la base soit prête (supporte DATABASE_URL)
-echo "[init] Attente de la base de données..."
+# 3) Start HTTP server immediately so Render detects the port
+RENDER_PORT=${PORT:-10000}
+echo "[init] Starting HTTP server on 0.0.0.0:${RENDER_PORT} (background)"
+php artisan serve --host=0.0.0.0 --port="${RENDER_PORT}" &
+SERVER_PID=$!
+
+# 4) Wait for the database with timeout (supports DATABASE_URL)
+WAIT_SECONDS=${WAIT_FOR_DB_TIMEOUT:-45}
+echo "[init] Waiting for database (max ${WAIT_SECONDS}s)"
+ITER=0
 until php -r '
 $dsn = null; $user = null; $pass = null;
 $url = getenv("DATABASE_URL");
@@ -41,42 +49,41 @@ if (!$dsn) {
     $pass = getenv("DB_PASSWORD") ?: "";
     $dsn = $scheme . ":host=" . $host . ";port=" . $port . ";dbname=" . $db;
 }
-try {
-    new PDO($dsn, $user, $pass);
-    echo "DB OK";
-} catch (Exception $e) {
-    echo "waiting...";
-    exit(1);
-}
+try { new PDO($dsn, $user, $pass); } catch (Exception $e) { exit(1); }
 '; do
-  sleep 2
+  ITER=$((ITER+1))
+  if [ "$ITER" -ge "$WAIT_SECONDS" ]; then
+    echo "[init] DB not ready after ${WAIT_SECONDS}s — continuing without blocking"
+    break
+  fi
+  sleep 1
 done
 
-# 4) Migrer (et éventuellement seed si vide ou forcé)
-echo "[init] Préparation de la base (migrate + seed si vide/forcé)..."
+# 5) Run migrations (and seed if empty/forced)
+echo "[init] Running migrate/seed"
 if ! php artisan app:init; then
-  echo "[init] Commande app:init indisponible, fallback sur migrate --force"
+  echo "[init] app:init not available, running migrate --force"
   php artisan migrate --force || true
 fi
 
-# 5) Vérification du build Vite
-echo "[init] Vérification du build Vite..."
+# 6) Check Vite build presence
+echo "[init] Checking Vite build"
 if [ -f /var/www/html/public/build/manifest.json ]; then
-  echo "[init] Build Vite déjà présent."
+  echo "[init] Vite build present"
 else
-  echo "[init] Aucun build détecté dans /public/build/"
-  echo "       Vérifie que le Dockerfile copie bien:"
+  echo "[init] No build detected in /public/build/"
+  echo "       Ensure Dockerfile copies:"
   echo "       COPY --from=node_build /app/public/build /var/www/html/public/build"
 fi
 
-# 6) Cache Laravel
-echo "[init] Mise en cache Laravel..."
+# 7) Cache Laravel
+echo "[init] Caching Laravel"
 php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache || true
 php artisan view:cache || true
 
-# 6 bis) production: optimisations + stockage
+# 7b) Production extras
 if [ "$APP_ENV" = "production" ]; then
   php artisan config:clear
   php artisan route:clear
@@ -84,13 +91,12 @@ if [ "$APP_ENV" = "production" ]; then
   php artisan storage:link || true
 fi
 
-# 7) Permissions
-echo "[init] Fixation des permissions..."
+# 8) Permissions
+echo "[init] Fixing permissions"
 chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 8) Démarrer Laravel (Render utilise $PORT)
-RENDER_PORT=${PORT:-10000}
-echo "[init] Démarrage du serveur Laravel sur 0.0.0.0:${RENDER_PORT}"
-exec php artisan serve --host=0.0.0.0 --port="${RENDER_PORT}"
+# 9) Keep container alive by waiting on the HTTP server
+echo "[init] HTTP server running (pid=${SERVER_PID}), waiting..."
+wait ${SERVER_PID}
 
