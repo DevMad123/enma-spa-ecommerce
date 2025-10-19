@@ -9,9 +9,15 @@ if [ ! -f /var/www/html/.env ]; then
   echo "[init] .env created from .env.example"
 fi
 
-# 2) Generate APP_KEY if missing
-if ! grep -q "APP_KEY=" /var/www/html/.env || [ -z "$(grep 'APP_KEY=' /var/www/html/.env | cut -d '=' -f2)" ]; then
-  echo "[init] Generating APP_KEY"
+# 2) Ensure APP_KEY (log source: env vs .env)
+ENV_HAS_APP_KEY=$(php -r 'echo getenv("APP_KEY") ? "1" : "";')
+FILE_HAS_APP_KEY=$(grep -E "^APP_KEY=" /var/www/html/.env 2>/dev/null | cut -d '=' -f2-)
+if [ -n "$ENV_HAS_APP_KEY" ]; then
+  echo "[init] APP_KEY found in environment"
+elif [ -n "$FILE_HAS_APP_KEY" ]; then
+  echo "[init] APP_KEY found in .env"
+else
+  echo "[init] APP_KEY missing - generating via artisan"
   php artisan key:generate --force
 fi
 
@@ -53,7 +59,7 @@ try { new PDO($dsn, $user, $pass); } catch (Exception $e) { exit(1); }
 '; do
   ITER=$((ITER+1))
   if [ "$ITER" -ge "$WAIT_SECONDS" ]; then
-    echo "[init] DB not ready after ${WAIT_SECONDS}s â€” continuing without blocking"
+    echo "[init] DB not ready after ${WAIT_SECONDS}s — continuing without blocking"
     break
   fi
   sleep 1
