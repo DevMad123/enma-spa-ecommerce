@@ -2,8 +2,8 @@
 FROM php:8.2-fpm AS base
 
 RUN apt-get update && apt-get install -y \
-    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Copier le binaire Composer depuis image composer officielle
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
