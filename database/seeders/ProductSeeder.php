@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductSubCategory;
 use App\Models\Brand;
+use App\Models\Supplier;
 
 class ProductSeeder extends Seeder
 {
@@ -20,17 +20,43 @@ class ProductSeeder extends Seeder
         $products = json_decode(file_get_contents($file), true);
 
         foreach ($products as $p) {
-            Product::firstOrCreate(
-                ['code' => $p['code']], // unique code comme clé
+            // Catégorie obligatoire: fallback sur la première catégorie si l'ID indiqué est invalide
+            $catId = $p['category_id'] ?? null;
+            if ($catId && !ProductCategory::find($catId)) {
+                $catId = ProductCategory::query()->value('id');
+            }
+            if (!$catId) {
+                if (isset($this->command)) {
+                    $this->command->warn("[ProductSeeder] Catégorie introuvable pour le produit {$p['name']}, ignoré.");
+                }
+                continue;
+            }
+
+            // Sous-catégorie optionnelle: la supprimer si l'ID n'existe pas
+            $subcatId = $p['subcategory_id'] ?? null;
+            if ($subcatId && !ProductSubCategory::find($subcatId)) {
+                $subcatId = null;
+            }
+
+            // Marque et fournisseur: ignorer si IDs invalides
+            $brandId = $p['brand_id'] ?? null;
+            if ($brandId && !Brand::find($brandId)) {
+                $brandId = null;
+            }
+            $supplierId = $p['supplier_id'] ?? null;
+            if ($supplierId && !Supplier::find($supplierId)) {
+                $supplierId = null;
+            }
+
+            Product::updateOrCreate(
+                ['code' => $p['code']],
                 [
                     'name' => $p['name'],
-                    'category_id' => $p['category_id'] ?? null,
-                    'subcategory_id' => $p['subcategory_id'] ?? null,
-                    'brand_id' => $p['brand_id'] ?? null,
-                    'supplier_id' => $p['supplier_id'] ?? null,
+                    'category_id' => $catId,
+                    'subcategory_id' => $subcatId,
+                    'brand_id' => $brandId,
+                    'supplier_id' => $supplierId,
                     'image_path' => $p['image_path'] ?? null,
-                    'color_id' => $p['color_id'] ?? null,
-                    'size_id' => $p['size_id'] ?? null,
                     'current_purchase_cost' => $p['current_purchase_cost'] ?? 0,
                     'current_sale_price' => $p['current_sale_price'] ?? null,
                     'previous_purchase_cost' => $p['previous_purchase_cost'] ?? null,
@@ -52,5 +78,5 @@ class ProductSeeder extends Seeder
             );
         }
     }
-
 }
+

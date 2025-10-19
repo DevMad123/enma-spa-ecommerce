@@ -58,7 +58,6 @@ class DatabaseSeeder extends Seeder
             PaymentMethodSeeder::class,
             ShippingSeeder::class,
             TaxRuleSeeder::class,
-            UserRoleSeeder::class,
         ]);
     }
 }
