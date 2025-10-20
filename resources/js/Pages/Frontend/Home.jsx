@@ -14,6 +14,7 @@ import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
 import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
 import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
+import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
 import FeaturesCarousel from '@/Components/Features/FeaturesCarousel';
 import useCustomizations from '@/Hooks/useCustomizations';
 
@@ -328,9 +329,9 @@ function HomeContent({
                 </section>
             )}
 
-            {/* Categories Section */}
-            {console.log('categories:', categories)}
-            {categories.length > 0 && (
+            {/* Categories Carousel */}
+            <CategoryCarousel categories={categories || []} title="Catégories" />
+            {false && (
                 <section className="py-20 bg-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">

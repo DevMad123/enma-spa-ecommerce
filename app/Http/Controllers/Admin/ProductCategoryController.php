@@ -254,7 +254,8 @@ class ProductCategoryController extends Controller
             // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name,' . $id,
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                // Utiliser file + mimetypes pour une meilleure compatibilite (Windows/WebP)
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png|max:4096',
                 'image_deleted' => 'nullable',
                 'note' => 'nullable|string',
                 'is_popular' => 'nullable',

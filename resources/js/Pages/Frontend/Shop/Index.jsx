@@ -15,6 +15,7 @@ import { useCart } from '@/Layouts/FrontendLayout';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
 import { useNotification } from '@/Components/Notifications/NotificationProvider';
+import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
 
 // Wrapper sécurisé pour les liens
 const SafeLink = ({ href, children, ...props }) => {
@@ -564,6 +565,10 @@ function Shop(props = {}) {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Catégories populaires */}
+                <div className="mb-8">
+                    <CategoryCarousel categories={safeCategories || []} title="Catégories populaires" />
+                </div>
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Filters */}
                     <div className="lg:w-80 flex-shrink-0">
