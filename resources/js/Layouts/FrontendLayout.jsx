@@ -10,7 +10,9 @@ import {
     ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
+import useMenuCategories from '@/Hooks/useMenuCategories';
 import { WishlistProvider, useWishlist } from '@/Contexts/WishlistContext';
+import useCustomizations from '@/Hooks/useCustomizations';
 
 // Contexte du panier
 const CartContext = createContext();
@@ -122,10 +124,12 @@ export const CartProvider = ({ children }) => {
 
 const FrontendLayout = ({ children, title }) => {
     const { auth, appSettings } = usePage().props;
+    const { customizations } = useCustomizations();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const { getTotalItems } = useCart();
     const { getTotalItems: getWishlistTotalItems } = useWishlist();
+    const { categories } = useMenuCategories();
 
     // Valeurs dynamiques depuis les settings
     const appName = appSettings?.app_name || 'ENMA SPA';
@@ -133,6 +137,7 @@ const FrontendLayout = ({ children, title }) => {
     const phone = appSettings?.phone || '+33 1 23 45 67 89';
     const currencySymbol = appSettings?.currency_symbol || 'F CFA';
     const firstLetter = appName.charAt(0).toUpperCase();
+    const themeColor = customizations?.theme_color || null;
 
     const navigation = [
         // { name: 'Accueil', href: route('home') },
@@ -151,11 +156,11 @@ const FrontendLayout = ({ children, title }) => {
     return (
         <>
             <Head title={`${title} - ${appName}`} />
-            <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
+            <div className="min-h-screen bg-white">
                 {/* Header */}
                 <header className="bg-white shadow-lg sticky top-0 z-50">
                     {/* Top Bar */}
-                    <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white py-2">
+                    <div className="w-full text-center text-xs md:text-sm py-2 bg-gray-900 text-white">{appSettings?.announcement_text || `10 offerts sur votre 1ère commande avec le code FIRST10`}
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center space-x-4">
@@ -176,17 +181,23 @@ const FrontendLayout = ({ children, title }) => {
                             {/* Logo */}
                             <div className="flex-shrink-0">
                                 <Link href={route('home')} className="flex items-center">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                                        {firstLetter}
-                                    </div>
-                                    <span className="ml-2 text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                                        {appName}
-                                    </span>
+                                    {customizations?.logo_image ? (
+                                        <img src={customizations.logo_image} alt={appName} className="h-8 w-auto max-w-[160px] object-contain" />
+                                    ) : (
+                                        <>
+                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                                                {firstLetter}
+                                            </div>
+                                            <span className="ml-2 text-2xl font-bold" style={ themeColor ? { color: themeColor } : {} }>
+                                                {appName}
+                                            </span>
+                                        </>
+                                    )}
                                 </Link>
                             </div>
 
                             {/* Navigation Desktop */}
-                            <nav className="hidden md:flex space-x-8">
+                            <nav className="ml-5 hidden md:flex space-x-3">
                                 {navigation.map((item) => (
                                     <Link
                                         key={item.name}
@@ -206,7 +217,7 @@ const FrontendLayout = ({ children, title }) => {
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Rechercher des produits..."
+                                            placeholder="Rechercher une marque, un modèle..."
                                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                         />
                                         <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -299,7 +310,7 @@ const FrontendLayout = ({ children, title }) => {
                                 {/* Mobile menu button */}
                                 <button
                                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="md:hidden p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200"
+                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200"
                                 >
                                     {mobileMenuOpen ? (
                                         <XMarkIcon className="h-6 w-6" />
@@ -311,35 +322,29 @@ const FrontendLayout = ({ children, title }) => {
                         </div>
                     </div>
 
-                    {/* Mobile Menu */}
+                                        {/* Mobile Drawer Menu */}
                     {mobileMenuOpen && (
-                        <div className="md:hidden border-t border-gray-200 bg-white">
-                            <div className="px-2 pt-2 pb-3 space-y-1">
-                                {navigation.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50 rounded-md"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                                
-                                {/* Mobile Search */}
-                                <div className="px-3 py-2">
-                                    <form onSubmit={handleSearch}>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Rechercher..."
-                                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                            />
-                                            <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                        </div>
-                                    </form>
+                        <div className="fixed inset-0 z-50">
+                            <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+                            <div className="absolute inset-y-0 left-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold">Nos Produits</h3>
+                                    <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer">
+                                        <XMarkIcon className="h-6 w-6" />
+                                    </button>
+                                </div>
+                                <div className="mb-3">
+                                    <Link href={route('frontend.shop.index')} className="text-sm font-medium text-black" onClick={() => setMobileMenuOpen(false)}>Tout voir</Link>
+                                </div>
+                                <div className="space-y-3">
+                                                                        {categories.map(cat => (
+                                        <Link key={cat.id} href={cat.slug ? route('frontend.shop.category', cat.slug) : route('frontend.shop.index')} onClick={() => setMobileMenuOpen(false)} className="block">
+                                            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                                                <img src={cat.image} alt={cat.name} className="h-12 w-12 rounded object-cover border" loading="lazy" />
+                                                <span className="font-medium text-gray-900">{cat.name}</span>
+                                            </div>
+                                        </Link>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -429,3 +434,10 @@ const LayoutWithProviders = ({ children, title, wishlistItems = [] }) => {
 };
 
 export default LayoutWithProviders;
+
+
+
+
+
+
+

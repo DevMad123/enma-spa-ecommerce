@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\ProductSubcategoryController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\CustomizationController;
+use App\Http\Controllers\Api\MenuController;
 
 // Authentification publique
 // Route::post('/signup', [AuthController::class, 'signup']);
@@ -175,3 +177,8 @@ Route::prefix('countries')->name('api.countries.')->group(function () {
             ->get(['country_code', 'country_name', 'tax_rate', 'delivery_allowed', 'min_order_amount', 'is_active', 'is_default']);
     })->name('tax-rules');
 });
+
+// Public API: front customizations
+Route::get('/customizations', [CustomizationController::class, 'show'])->name('api.customizations.show');
+// Public API: menu categories
+Route::get('/menu/categories', [MenuController::class, 'categories'])->name('api.menu.categories');

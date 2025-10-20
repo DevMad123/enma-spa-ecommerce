@@ -90,6 +90,7 @@ const navigationLinks = [
     submenu: [
       { route: "admin.settings.index", label: "Paramètres", icon: HiOutlineCog },
       { route: "admin.tax-rules.index", label: "Règles de TVA", icon: HiOutlineCash },
+      { route: "admin.customizations.edit", label: "Personnalisation du site", icon: HiOutlineColorSwatch },
     ]
   },
 ];

@@ -31,6 +31,7 @@ class ShareAppSettings
                     'show_decimals' => AppSettingsService::getShowDecimals(),
                     'tax_rate' => AppSettingsService::getTaxRate(),
                     'free_shipping_threshold' => AppSettingsService::getFreeShippingThreshold(),
+                    'announcement_text' => AppSettingsService::getAnnouncementText(),
                 ];
             }
         ]);

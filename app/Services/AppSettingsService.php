@@ -233,6 +233,11 @@ class AppSettingsService
         return self::get('logo', '');
     }
 
+    public static function getAnnouncementText()
+    {
+        return self::get('announcement_text', '10€ offerts sur votre 1ère commande avec le code FIRST10');
+    }
+
     /**
      * Paramètres de localisation
      */

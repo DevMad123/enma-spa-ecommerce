@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sells', function (Blueprint $table) {
-            $table->unsignedBigInteger('shipping_id')->nullable()->after('shipping_method');
+            // Remove column positioning dependency to avoid failures when column order differs
+            $table->unsignedBigInteger('shipping_id')->nullable();
             $table->enum('shipping_status', ['pending', 'in_progress', 'delivered', 'cancelled'])
                   ->default('pending')
                   ->after('shipping_id');

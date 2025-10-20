@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\FrontCustomizationController;
 
 // Contrôleurs paiement
 use App\Http\Controllers\OrangeMoneyPaymentController;
@@ -487,6 +488,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::post('/upload-file', [SettingController::class, 'uploadFile'])->name('upload-file');
         Route::delete('/delete-file', [SettingController::class, 'deleteFile'])->name('delete-file');
         Route::get('/test-messages', [SettingController::class, 'testMessages'])->name('test-messages');
+    });
+
+    // Routes Personnalisation du front
+    Route::prefix('customizations')->name('customizations.')->group(function () {
+        Route::get('/edit', [FrontCustomizationController::class, 'edit'])->name('edit');
+        // Accepter PUT et POST pour éviter les soucis de FormData selon le client
+        Route::match(['put', 'post'], '/', [FrontCustomizationController::class, 'update'])->name('update');
     });
 
     // Routes Règles de TVA
