@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\CustomizationController;
+use App\Http\Controllers\Api\ProductController as ApiProductController;
 use App\Http\Controllers\Api\MenuController;
 
 // Authentification publique
@@ -182,3 +183,6 @@ Route::prefix('countries')->name('api.countries.')->group(function () {
 Route::get('/customizations', [CustomizationController::class, 'show'])->name('api.customizations.show');
 // Public API: menu categories
 Route::get('/menu/categories', [MenuController::class, 'categories'])->name('api.menu.categories');
+
+// Public API: products helpers
+Route::get('/products/{product}/min-price', [ApiProductController::class, 'minPrice'])->name('api.products.min-price');

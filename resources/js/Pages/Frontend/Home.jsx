@@ -330,6 +330,9 @@ function HomeContent({
                 </section>
             )}
 
+            {/* Slide 1: Features Carousel */}
+            <FeaturesCarousel />
+
             {/* Categories Carousel */}
             <CategoryCarousel categories={categories || []} title="Catégories" />
             {false && (
@@ -362,9 +365,16 @@ function HomeContent({
                     </div>
                 </section>
             )}
-
-                        {/* Slide 1: Features Carousel */}
-            <FeaturesCarousel />
+            {/* New In Carousel */}
+            {console.log(newProducts)}
+            {newProducts.length > 0 && (
+                <ProductCarousel
+                    products={newProducts}
+                    title="Nouveautés"
+                    viewMoreHref={route('nouveautes')}
+                    currencySymbol={currencySymbol}
+                />
+            )}
 
 {/* Featured Products Section */}
             {featuredProducts.length > 0 && (customizations?.featured_section_enabled !== false) && (
@@ -397,16 +407,7 @@ function HomeContent({
                     </div>
                 </section>
             )}
-
-            {/* New In Carousel */}
-{newProducts.length > 0 && (
-    <ProductCarousel
-        products={newProducts}
-        title="New In"
-        viewMoreHref={route('nouveautes')}
-        currencySymbol={currencySymbol}
-    />
-)}{/* Newsletter Section (toggle) */}
+            {/* Newsletter Section (toggle) */}
             {customizations?.newsletter_enabled !== false && (
                 <NewsletterSection
                     title="Restez informé de nos nouveautés"

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
-import { 
-    PlusIcon, 
-    XMarkIcon, 
+import {
+    PlusIcon,
+    XMarkIcon,
     MagnifyingGlassIcon,
     CubeIcon,
     TagIcon,
@@ -17,7 +17,7 @@ import {
 
 export default function CreateProduct() {
     const { categories = [], suppliers = [], brands = [], colors = [], sizes = [], subcategories: initialSubcategories = [], localeConfig } = usePage().props;
-    
+
     // État pour gérer l'initialisation de la locale
     const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
     const [subcategories, setSubcategories] = useState(initialSubcategories);
@@ -67,7 +67,7 @@ export default function CreateProduct() {
         if (data.category_id) {
             // Utiliser la nouvelle route dans le contrôleur ProductController
             const url = route("admin.products.subcategories.byCategory", data.category_id);
-            
+
             fetch(url, {
                 method: 'GET',
                 headers: {
@@ -86,7 +86,7 @@ export default function CreateProduct() {
                     if (!contentType || !contentType.includes('application/json')) {
                         throw new Error(`Expected JSON, got ${contentType}`);
                     }
-                    
+
                     return res.json();
                 })
                 .then((subs) => {
@@ -94,7 +94,7 @@ export default function CreateProduct() {
                 })
                 .catch(error => {
                     // Fallback: essayer de récupérer toutes les sous-catégories depuis les props initiales
-                    const filteredSubs = initialSubcategories.filter(sub => 
+                    const filteredSubs = initialSubcategories.filter(sub =>
                         sub.category_id === parseInt(data.category_id)
                     );
                     setSubcategories(filteredSubs);
@@ -109,7 +109,7 @@ export default function CreateProduct() {
     const handleTypeChange = (newType) => {
         setProductType(newType);
         setData('type', newType);
-        
+
         if (newType === 'simple') {
             setVariants([]);
             setShowVariantSection(false);
@@ -202,7 +202,7 @@ export default function CreateProduct() {
         const files = Array.from(e.target.files);
         const currentImages = data.product_images || [];
         setData('product_images', [...currentImages, ...files]);
-        
+
         // Créer les previews
         files.forEach(file => {
             const reader = new FileReader();
@@ -349,7 +349,7 @@ export default function CreateProduct() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Colonne principale - Informations du produit */}
                     <div className="lg:col-span-2 space-y-6">
 
@@ -576,7 +576,7 @@ export default function CreateProduct() {
                                 <SwatchIcon className="h-5 w-5 mr-2" />
                                 Couleurs et tailles
                             </h3>
-                            
+
                             {/* Couleurs */}
                             <div className="mb-6">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -672,7 +672,7 @@ export default function CreateProduct() {
                                                             <option value="">Sélectionner une couleur</option>
                                                             {colors?.map((color) => (
                                                                 <option key={color.id} value={color.id}>
-                                                                    {color.color_name}
+                                                                    {color.name}
                                                                 </option>
                                                             ))}
                                                         </select>
@@ -690,7 +690,7 @@ export default function CreateProduct() {
                                                             <option value="">Sélectionner une taille</option>
                                                             {sizes?.map((size) => (
                                                                 <option key={size.id} value={size.id}>
-                                                                    {size.size_name}
+                                                                    {size.size}
                                                                 </option>
                                                             ))}
                                                         </select>
@@ -831,7 +831,7 @@ export default function CreateProduct() {
                                             ))}
                                         </div>
                                     )}
-                                    
+
                                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                                         <label className="cursor-pointer">
                                             <span className="text-blue-600 hover:text-blue-500">
@@ -856,7 +856,7 @@ export default function CreateProduct() {
 
                     {/* Colonne latérale - Catégories et options */}
                     <div className="space-y-6">
-                        
+
                         {/* Classification */}
                         <div className="bg-white shadow rounded-lg p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Classification</h3>

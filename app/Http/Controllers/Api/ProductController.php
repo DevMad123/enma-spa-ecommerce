@@ -9,9 +9,33 @@ use App\Models\ProductColor;
 use App\Models\ProductSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
+    /**
+     * Return minimal sale price for a product based on variants/attributes.
+     */
+    public function minPrice(Product $product)
+    {
+        $minVariant = $product->variants()->min('sale_price');
+        $minAttr = $product->attributes()->min('price');
+        // Log::info('Product variant data: '. $minVariant);
+        $candidates = array_values(array_filter([
+            $minVariant,
+            $minAttr,
+            $product->current_sale_price,
+        ], function ($v) {
+            return $v !== null && $v !== '' && $v >= 0;
+        }));
+        // Log::info('Product variant data: ', $candidates);
+        $min = !empty($candidates) ? min($candidates) : 0;
+        // Log::info('Product variant min: '. $min);
+        return response()->json([
+            'product_id' => $product->id,
+            'min_price' => $minVariant ? (float) $minVariant : 0,
+        ]);
+    }
     public function homeTrendingProduct()
     {
         return ProductResource::collection(Product::where('is_trending', 1)->paginate(8));

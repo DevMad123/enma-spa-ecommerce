@@ -1,14 +1,15 @@
-<?php
+﻿<?php
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Product;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Commande d'initialisation pour Render: migre + seed si la table users est vide
+// Commande d'initialisation: migrations + seed si nécessaire
 Artisan::command('app:init', function () {
     $this->info('[app:init] Exécution des migrations...');
     Artisan::call('migrate', ['--force' => true]);
@@ -43,3 +44,47 @@ Artisan::command('app:init', function () {
 
     return 0;
 })->purpose('Préparer la base (migrate + seed si vide)');
+
+// Recalcul global des prix/stock des produits variables
+Artisan::command('recalc:variable-prices {--dry-run}', function () {
+    $dryRun = (bool) $this->option('dry-run');
+    $this->info('Recalcul des prix pour les produits variables' . ($dryRun ? ' (dry-run)' : ''));
+
+    $count = 0;
+    $updated = 0;
+    Product::query()
+        ->where('type', 'variable')
+        ->with(['variants', 'attributes'])
+        ->chunkById(200, function ($products) use (&$count, &$updated, $dryRun) {
+            foreach ($products as $product) {
+                $count++;
+                $minVariantPrice = $product->variants->min('sale_price');
+                $sumVariantQty   = $product->variants->sum('available_quantity');
+                $minAttrPrice    = $product->attributes->min('price');
+
+                $candidates = array_values(array_filter([
+                    $minVariantPrice,
+                    $minAttrPrice,
+                ], function ($v) {
+                    return $v !== null && $v !== '' && $v >= 0;
+                }));
+                $newPrice = !empty($candidates) ? min($candidates) : 0;
+
+                $newQty = $sumVariantQty ?: (int) $product->attributes->sum('stock');
+
+                $dirty = ((float)$product->current_sale_price !== (float)$newPrice) || ((int)$product->available_quantity !== (int)$newQty);
+                if ($dirty) {
+                    $updated++;
+                    $this->line("#{$product->id} price {$product->current_sale_price} -> {$newPrice} | qty {$product->available_quantity} -> {$newQty}");
+                    if (!$dryRun) {
+                        $product->update([
+                            'current_sale_price' => $newPrice,
+                            'available_quantity' => $newQty,
+                        ]);
+                    }
+                }
+            }
+        });
+
+    $this->info("Traité {$count} produits variables. {$updated} mis à jour.");
+})->purpose('Recalculer current_sale_price et le stock agrégé des produits variables');

@@ -162,7 +162,7 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
-            \Log::info('Product store request data: ', $request->all());
+            Log::info('Product store request data: ', $request->all());
 
             // Décoder les JSON strings en tableaux PHP si nécessaire
             foreach (['attributes', 'variants'] as $field) {
@@ -294,6 +294,23 @@ class ProductController extends Controller
                         'available_quantity' => $variant['available_quantity'],
                     ]);
                 }
+
+                // Mettre à jour les champs agrégés du produit parent
+                $minVariantPrice = $product->variants()->min('sale_price');
+                $sumVariantQty   = $product->variants()->sum('available_quantity');
+
+                // Fallback: si aucune variante ou prix nul, tenter via attributes.price
+                if (empty($minVariantPrice)) {
+                    $attrMin = $product->attributes()->min('price');
+                    if (!empty($attrMin)) {
+                        $minVariantPrice = $attrMin;
+                    }
+                }
+
+                $product->update([
+                    'current_sale_price' => $minVariantPrice ?? 0,
+                    'available_quantity' => $sumVariantQty ?? 0,
+                ]);
             }
 
             // Gestion des attributs (maintenant que la requête a été corrigée)
@@ -324,11 +341,11 @@ class ProductController extends Controller
 
         } catch (ValidationException $e) {
             DB::rollBack();
-            \Log::error('Validation failed during product creation: ' . json_encode($e->errors()));
+            Log::error('Validation failed during product creation: ' . json_encode($e->errors()));
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erreur lors de la création du produit : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
+            Log::error('Erreur lors de la création du produit : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
             return back()->withErrors(['error' => 'Erreur lors de la création du produit. Veuillez réessayer.'])->withInput();
         }
     }
@@ -345,9 +362,9 @@ class ProductController extends Controller
             }
 
             foreach (['attributes', 'variants'] as $field) {
-                $value = $request->input($field);                
+                $value = $request->input($field);
                 if (!empty($value) && is_string($value)) {
-                    $decoded = json_decode($value, true);                    
+                    $decoded = json_decode($value, true);
                     if (json_last_error() === JSON_ERROR_NONE) {
                         $request->merge([$field => $decoded]);
                     } else {
@@ -418,11 +435,11 @@ class ProductController extends Controller
                 'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id',
                 'description', 'unit_type', 'discount', 'discount_type'
             ]);
-            
+
             // Convertir les booléens explicitement pour éviter les erreurs MySQL
             $productData['is_popular'] = $request->boolean('is_popular');
             $productData['is_trending'] = $request->boolean('is_trending');
-            
+
             $product->fill($productData);
             $product->type = $request->type;
             if (empty($request->code) && !$product->code) {
@@ -443,10 +460,26 @@ class ProductController extends Controller
                 foreach ($request->variants as $variant) {
                     $product->variants()->create($variant);
                 }
+
+                // Recalculer le prix minimal et le stock agrégé
+                $minVariantPrice = $product->variants()->min('sale_price');
+                $sumVariantQty   = $product->variants()->sum('available_quantity');
+
+                if (empty($minVariantPrice)) {
+                    $attrMin = $product->attributes()->min('price');
+                    if (!empty($attrMin)) {
+                        $minVariantPrice = $attrMin;
+                    }
+                }
+
+                $product->update([
+                    'current_sale_price' => $minVariantPrice ?? 0,
+                    'available_quantity' => $sumVariantQty ?? 0,
+                ]);
             }
             // Récupérer les attributs décodés (déjà traités par le merge() ci-dessus)
             $decodedAttributes = $request->input('attributes', []);
-            
+
             if (!empty($decodedAttributes)) {
                 $product->attributes()->delete();
                 foreach ($decodedAttributes as $attr) {
@@ -458,7 +491,7 @@ class ProductController extends Controller
                     ]);
                 }
             } else {
-                \Log::info('⚠️ Aucun attribut à traiter');
+                Log::info('⚠️ Aucun attribut à traiter');
             }
 
             DB::commit();
@@ -468,11 +501,11 @@ class ProductController extends Controller
 
         } catch (ValidationException $e) {
             DB::rollBack();
-            \Log::error('Validation failed during product update: ' . json_encode($e->errors()));
+            Log::error('Validation failed during product update: ' . json_encode($e->errors()));
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erreur update product : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
+            Log::error('Erreur update product : ' . $e->getMessage() . ' - Ligne: ' . $e->getLine());
             return back()->withErrors(['error' => 'Erreur lors de la mise à jour du produit.'])->withInput();
         }
     }
@@ -492,12 +525,12 @@ class ProductController extends Controller
             try {
                 $img = $imageManager->read($image);
             } catch (\Throwable $e) {
-                \Log::warning('GD failed to read product image, trying Imagick: ' . $e->getMessage());
+                Log::warning('GD failed to read product image, trying Imagick: ' . $e->getMessage());
                 try {
                     $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
                     $img = $imageManager->read($image);
                 } catch (\Throwable $e2) {
-                    \Log::error('Imagick failed to read product image: ' . $e2->getMessage());
+                    Log::error('Imagick failed to read product image: ' . $e2->getMessage());
                     throw ValidationException::withMessages([
                         'main_image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
                     ]);
@@ -613,7 +646,7 @@ class ProductController extends Controller
                 ->with('flash', ['success' => 'Produit supprimé avec succès !']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression du produit: ' . $e->getMessage());
-            
+
             return redirect()
                 ->back()
                 ->with('flash', ['error' => 'Erreur lors de la suppression du produit.']);
@@ -646,7 +679,7 @@ class ProductController extends Controller
                 ->whereNull('deleted_at')
                 ->select('id', 'name', 'category_id')
                 ->get();
-            
+
             return response()->json($subcategories);
         } catch (\Exception $e) {
             Log::error('Erreur lors du chargement des sous-catégories: ' . $e->getMessage());
