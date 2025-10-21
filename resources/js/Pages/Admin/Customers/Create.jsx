@@ -418,13 +418,13 @@ export default function CreateCustomer() {
                                                                     id="image"
                                                                     type="file"
                                                                     className="sr-only"
-                                                                    accept="image/*"
+                                                                    accept=".jpg,.jpeg,.png,.gif,.webp,.avif"
                                                                     onChange={handleImageChange}
                                                                 />
                                                             </label>
                                                             <p className="pl-1">ou glisser-déposer</p>
                                                         </div>
-                                                        <p className="text-xs text-gray-500">PNG, JPG, WEBP jusqu'à 2MB</p>
+                                                        <p className="text-xs text-gray-500">JPG, PNG, GIF, WEBP, AVIF — 2 Mo max</p>
                                                     </div>
                                                 </div>
                                             )}

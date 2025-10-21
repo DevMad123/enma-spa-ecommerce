@@ -34,8 +34,8 @@ class HomeController extends Controller
         // Nouveautés
         $newProducts = Product::with(['category', 'brand'])
             ->where('status', 1)
-            ->where('is_trending', 1)
-            ->limit(4)
+            ->orderBy('created_at', 'desc')
+            ->limit(12)
             ->get();
 
         // Meilleures ventes

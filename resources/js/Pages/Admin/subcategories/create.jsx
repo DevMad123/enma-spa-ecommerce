@@ -187,13 +187,13 @@ export default function CreateSubcategory({ categories }) {
                                                         Cliquez pour ajouter une image
                                                     </span>
                                                     <span className="mt-1 block text-xs text-gray-500">
-                                                        PNG, JPG, WEBP jusqu'à 2MB
+                                                        JPG, PNG, WEBP, AVIF — 2 Mo max
                                                     </span>
                                                 </label>
                                                 <input
                                                     id="image-upload"
                                                     type="file"
-                                                    accept="image/*"
+                                                    accept=".jpg,.jpeg,.png,.webp,.avif"
                                                     onChange={handleImageChange}
                                                     className="hidden"
                                                 />

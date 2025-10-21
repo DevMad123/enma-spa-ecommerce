@@ -32,7 +32,7 @@ class StoreCustomerRequest extends FormRequest
             'permanent_address' => ['nullable', 'string', 'max:1000'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'status' => ['required', 'integer', 'in:0,1'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'image' => ['nullable', 'file', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream', 'mimes:jpg,jpeg,png,gif,webp,avif', 'max:2048'],
         ];
     }
 

@@ -422,7 +422,7 @@ export default function EditSupplier({ supplier }) {
                                                             </label>
                                                             <p className="pl-1">ou glisser-déposer</p>
                                                         </div>
-                                                        <p className="text-xs text-gray-500">PNG, JPG, WEBP jusqu'à 2MB</p>
+                                                        <p className="text-xs text-gray-500">JPG, PNG, GIF, WEBP, AVIF � 2 Mo max</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -431,7 +431,7 @@ export default function EditSupplier({ supplier }) {
                                             <input
                                                 id="image"
                                                 type="file"
-                                                accept="image/*"
+                                                accept=".jpg,.jpeg,.png,.gif,.webp,.avif"
                                                 onChange={handleImageChange}
                                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                             />
@@ -530,3 +530,6 @@ export default function EditSupplier({ supplier }) {
         </AdminLayout>
     );
 }
+
+
+

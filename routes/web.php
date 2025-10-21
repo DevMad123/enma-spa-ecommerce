@@ -87,6 +87,10 @@ Route::get('/simulate-upload-to-settings', function () {
 })->name('simulate-upload-to-settings');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Redirection conviviale pour les nouveautés (tri par plus récents)
+Route::get('/nouveautes', function () {
+    return redirect()->route('frontend.shop.index', ['sort' => 'newest']);
+})->name('nouveautes');
 Route::get('/home-2', [HomeController::class, 'index2'])->name('home-2');
 Route::get('/home-3', [HomeController::class, 'index3'])->name('home-3');
 Route::get('/realisations', [RealisationsController::class, 'index'])->name('realisations');
@@ -494,7 +498,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::prefix('customizations')->name('customizations.')->group(function () {
         Route::get('/edit', [FrontCustomizationController::class, 'edit'])->name('edit');
         // Accepter PUT et POST pour éviter les soucis de FormData selon le client
-        Route::match(['put', 'post'], '/', [FrontCustomizationController::class, 'update'])->name('update');
+        Route::match(['put', 'post'], '/update', [FrontCustomizationController::class, 'update'])->name('update');
     });
 
     // Routes Règles de TVA

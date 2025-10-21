@@ -94,7 +94,7 @@ class BrandController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'description' => 'nullable|string|max:1000',
                 'status' => 'nullable',
             ]);
@@ -164,7 +164,7 @@ class BrandController extends Controller
             \Log::info('Brand update request data: ', $request->all());
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'description' => 'nullable|string|max:1000',
                 'status' => 'nullable',
             ]);
@@ -248,7 +248,20 @@ class BrandController extends Controller
             $filePath = 'brand_icons/' . $fileName;
 
             $imageManager = new ImageManager(new GdDriver());
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read brand image, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read brand image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
             $img->resize(200, 200);
             $encodedImageContent = $img->toWebp(70);
 

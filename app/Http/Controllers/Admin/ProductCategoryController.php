@@ -127,7 +127,7 @@ class ProductCategoryController extends Controller
             // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'note' => 'nullable|string',
                 'is_popular' => 'nullable',
                 'status' => 'nullable'
@@ -189,7 +189,20 @@ class ProductCategoryController extends Controller
             $imageManager = new ImageManager(new GdDriver());
             
             // Charger l'image téléchargée pour la manipulation
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read image, attempting Imagick fallback: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick fallback failed to read image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté par le serveur. Utilisez JPG/PNG/WEBP ou activez le support AVIF."
+                    ]);
+                }
+            }
             
             // Redimensionner et optimiser l'image
             $img->resize(400, 400);
@@ -221,12 +234,24 @@ class ProductCategoryController extends Controller
                 mkdir($filePath, 666, true);
             }
 
-            $logo_image = Image::make(file_get_contents($image))->resize(400, 400);
-            $logo_image->brightness(8);
-            $logo_image->contrast(11);
-            $logo_image->sharpen(5);
-            $logo_image->encode('webp', 70);
-            $logo_image->save($logo_path);
+            $imageManager = new ImageManager(new GdDriver());
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read category icon, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read category icon: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
+            $img->resize(400, 400);
+            $encoded = $img->toWebp(70);
+            file_put_contents($logo_path, $encoded);
 
             return $db_media_img_path;
 
@@ -248,14 +273,26 @@ class ProductCategoryController extends Controller
         try {
             \Log::info('Product category update request data: ', $request->all());
 
+            // Debug MIME/extension pour diagnostic
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                \Log::info('Product category update image debug', [
+                    'getMimeType' => $file->getMimeType(),
+                    'getClientMimeType' => $file->getClientMimeType(),
+                    'getClientOriginalExtension' => $file->getClientOriginalExtension(),
+                ]);
+            } else {
+                \Log::info('Product category update image debug: no file detected via hasFile("image")');
+            }
+
             // Trouver la catégorie
             $category = ProductCategory::findOrFail($id);
 
             // Validation - utiliser des règles compatibles avec FormData
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:product_categories,name,' . $id,
-                // Utiliser file + mimetypes pour une meilleure compatibilite (Windows/WebP)
-                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png|max:4096',
+                // Règle unifiée: image + mimes (meilleure compatibilité Windows)
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:4096',
                 'image_deleted' => 'nullable',
                 'note' => 'nullable|string',
                 'is_popular' => 'nullable',

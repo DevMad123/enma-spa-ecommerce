@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\FrontCustomizationRequest;
 use App\Models\FrontCustomization;
 use App\Models\Product;
 use App\Models\FrontCustomizationSlide;
@@ -54,7 +53,7 @@ class FrontCustomizationController extends Controller
         ]);
     }
 
-    public function update(FrontCustomizationRequest $request)
+    public function update(Request $request)
     {
         Log::info('Requests received for front customization update:', [
             'all' => $request->all(),
@@ -62,7 +61,11 @@ class FrontCustomizationController extends Controller
             'content_type' => $request->header('Content-Type')
         ]);
         $this->authorize('manage-customizations');
-        $validated = $request->validated();
+        // Validation manuelle et agrégation d'erreurs lisibles côté front
+        $errors = $this->validateCustomization($request);
+        if (!empty($errors)) {
+            return back()->withErrors($errors)->withInput();
+        }
 
         // Construire une payload robuste: ne pas dépendre uniquement de validated() si vide
         $data = [];
@@ -80,10 +83,6 @@ class FrontCustomizationController extends Controller
                 $data[$b] = $request->boolean($b);
             }
         }
-
-        // Fusionner avec validated (priorité aux données spécifiques)
-        $data = array_merge($validated, $data);
-
         Log::info('Data received for front customization update:', $data);
 
         $customization = FrontCustomization::first();
@@ -123,28 +122,53 @@ class FrontCustomizationController extends Controller
         $customization->fill($data);
         $customization->save();
 
-                // Handle slides (up to 3)
+        // Handle slides (up to 3)
         $slides = $request->input('slides', []);
+        $slideFiles = $request->file('slides', []);
         foreach ([1,2,3] as $position) {
             $payload = collect($slides)->firstWhere('order', $position) ?? ($slides[$position-1] ?? null);
             $slide = FrontCustomizationSlide::firstOrNew(['order' => $position]);
             if (!$payload) {
                 continue;
             }
-            $slide->enabled = array_key_exists('enabled', $payload) ? (bool)$payload['enabled'] : ($slide->exists ? $slide->enabled : false);
-            $slide->product_id = $payload['product_id'] ?? null;
-            $slide->tagline = $payload['tagline'] ?? null;
+
+            // Enabled: convertir correctement les valeurs 'true'/'false', '1'/'0'
+            if (array_key_exists('enabled', $payload)) {
+                $enabled = filter_var($payload['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                $slide->enabled = is_null($enabled) ? false : $enabled;
+            } elseif (!$slide->exists) {
+                $slide->enabled = false;
+            }
+
+            // Product: normaliser chaîne vide -> null
+            if (array_key_exists('product_id', $payload)) {
+                $slide->product_id = ($payload['product_id'] === '' || is_null($payload['product_id']))
+                    ? null
+                    : (int) $payload['product_id'];
+            }
+
+            if (array_key_exists('tagline', $payload)) {
+                $slide->tagline = (string) $payload['tagline'];
+            }
+
             $fileKey = 'slides.' . ($position-1) . '.background_image';
+            $uploaded = null;
             if ($request->hasFile($fileKey)) {
+                $uploaded = $request->file($fileKey);
+            } elseif (isset($slideFiles[$position-1]['background_image'])) {
+                $uploaded = $slideFiles[$position-1]['background_image'];
+            }
+            if ($uploaded) {
                 if ($slide->background_image) {
                     $this->deletePublicFileIfExists($slide->background_image);
                 }
-                $path = $request->file($fileKey)->store('customizations', 'public');
+                $path = $uploaded->store('customizations', 'public');
                 $slide->background_image = '/' . ltrim('storage/' . $path, '/');
             }
             $slide->order = $position;
             $slide->save();
-        }Cache::forget('front_customizations');
+        }
+        Cache::forget('front_customizations');
 
         return back()->with('success', 'Personnalisation mise à jour avec succès.');
     }
@@ -157,7 +181,89 @@ class FrontCustomizationController extends Controller
             Storage::disk('public')->delete($relative);
         }
     }
+
+    private function validateCustomization(Request $request): array
+    {
+        $errors = [];
+        $allowedMimes = [
+            'image/jpeg','image/png','image/webp','image/avif','image/jpg','image/pjpeg','image/x-png',
+        ];
+
+        $checkFile = function($file, $maxBytes, $key) use (&$errors, $allowedMimes) {
+            if (!$file) return;
+            // Vérifier fichier valide pour éviter exception sur gros fichiers
+            if (!($file instanceof \Illuminate\Http\UploadedFile) && !($file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile)) {
+                $errors[$key][] = "Le fichier n'a pas été téléversé correctement.";
+                return;
+            }
+            if (method_exists($file, 'isValid') && !$file->isValid()) {
+                $err = method_exists($file, 'getError') ? $file->getError() : null;
+                if (in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                    $errors[$key][] = "L'image est trop volumineuse (limite serveur).";
+                } else {
+                    $errors[$key][] = "Le fichier n'a pas été téléversé correctement.";
+                }
+                return;
+            }
+            $path = method_exists($file, 'getPathname') ? $file->getPathname() : null;
+            if (!$path || !@is_file($path) || !@is_readable($path)) {
+                $errors[$key][] = "Le fichier est illisible (réessayez).";
+                return;
+            }
+            $mime = $file->getMimeType();
+            if ($mime && !in_array($mime, $allowedMimes, true)) {
+                $errors[$key][] = "Format non supporté (JPG, PNG, WEBP, AVIF).";
+            }
+            $size = (int) $file->getSize();
+            if ($size > $maxBytes) {
+                $mb = (int) round($maxBytes / (1024*1024));
+                $errors[$key][] = "L'image est trop lourde (max {$mb} Mo).";
+            }
+        };
+
+        // Hero & logo (3 Mo)
+        if ($request->hasFile('hero_background_image')) {
+            $checkFile($request->file('hero_background_image'), 3*1024*1024, 'hero_background_image');
+        }
+        if ($request->hasFile('logo_image')) {
+            $checkFile($request->file('logo_image'), 3*1024*1024, 'logo_image');
+        }
+
+        // Slides (0..2) – 4 Mo
+        $slideFiles = $request->file('slides', []);
+        for ($i = 0; $i < 3; $i++) {
+            $fileKey = 'slides.' . $i . '.background_image';
+            $uploaded = null;
+            if ($request->hasFile($fileKey)) {
+                $uploaded = $request->file($fileKey);
+            } elseif (isset($slideFiles[$i]['background_image'])) {
+                $uploaded = $slideFiles[$i]['background_image'] ?? null;
+            }
+            if ($uploaded) {
+                $checkFile($uploaded, 4*1024*1024, 'slides.' . $i . '.background_image');
+            }
+            // Product ID existe si fourni
+            $pid = $request->input('slides.' . $i . '.product_id');
+            if ($pid !== null && $pid !== '' && !Product::where('id', $pid)->exists()) {
+                $errors['slides.' . $i . '.product_id'][] = "Produit de slide invalide.";
+            }
+            // Tagline longueur
+            $tag = $request->input('slides.' . $i . '.tagline');
+            if ($tag !== null && mb_strlen((string)$tag) > 255) {
+                $errors['slides.' . $i . '.tagline'][] = "Le texte d'accroche ne doit pas dépasser 255 caractères.";
+            }
+        }
+
+        // Hero product id
+        $hpid = $request->input('hero_product_id');
+        if ($hpid !== null && $hpid !== '' && !Product::where('id', $hpid)->exists()) {
+            $errors['hero_product_id'][] = "Produit hero invalide.";
+        }
+
+        return $errors;
+    }
 }
+
 
 
 

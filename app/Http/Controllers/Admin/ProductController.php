@@ -203,7 +203,7 @@ class ProductController extends Controller
                 'subcategory_id' => 'nullable|exists:product_sub_categories,id',
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
-                'main_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'main_image' => 'required|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
 
                 'purchase_cost' => 'required_if:type,simple|nullable|numeric',
                 'sale_price' => 'required_if:type,simple|nullable|numeric',
@@ -234,7 +234,7 @@ class ProductController extends Controller
                 'is_trending' => 'nullable|boolean',
 
                 'product_images' => 'nullable|array',
-                'product_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+                'product_images.*' => 'file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
             ]);
 
             $productData = $request->only([
@@ -356,7 +356,7 @@ class ProductController extends Controller
                 }
             }
 
-           $rules = [
+            $rules = [
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:product_categories,id',
@@ -384,13 +384,13 @@ class ProductController extends Controller
                 'main_image' => 'nullable|string',
                 'main_image_deleted' => 'nullable|boolean',
                 'product_images' => 'nullable|array',
-                'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'product_images.*' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'existing_images' => 'nullable|array',
                 'existing_images.*' => 'nullable|string',
             ];
 
             if ($request->hasFile('main_image')) {
-                $rules['main_image'] = 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048';
+                $rules['main_image'] = 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048';
             }
             $validated = $request->validate($rules);
 
@@ -489,7 +489,20 @@ class ProductController extends Controller
             // ✅ Créez l'instance du gestionnaire d'image
             $imageManager = new ImageManager(new GdDriver());
             // ✅ Chargez l'image téléchargée pour la manipulation
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read product image, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read product image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'main_image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
             // ✅ Redimensionnez et encodez l'image
             $img->resize(400, 400);
 

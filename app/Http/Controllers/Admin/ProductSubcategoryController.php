@@ -153,7 +153,7 @@ class ProductSubcategoryController extends Controller
                 'category_id' => 'required|exists:product_categories,id',
                 'note' => 'nullable|string',
                 'status' => 'required|in:0,1',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048'
             ]);
 
             $imagePath = null;
@@ -218,7 +218,7 @@ class ProductSubcategoryController extends Controller
                 'category_id' => 'required|exists:product_categories,id',
                 'note' => 'nullable|string',
                 'status' => 'nullable',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'image_deleted' => 'nullable'
             ]);
 
@@ -299,7 +299,20 @@ class ProductSubcategoryController extends Controller
             $imageManager = new ImageManager(new GdDriver());
 
             // Charger l'image téléchargée pour la manipulation
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read subcategory image, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read subcategory image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
 
             // Redimensionner et optimiser l'image
             $img->resize(400, 400);

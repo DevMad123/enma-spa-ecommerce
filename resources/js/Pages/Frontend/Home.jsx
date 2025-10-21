@@ -16,6 +16,7 @@ import { NotificationProvider } from '@/Components/Notifications/NotificationPro
 import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
 import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
 import FeaturesCarousel from '@/Components/Features/FeaturesCarousel';
+import ProductCarousel from '@/Components/Frontend/ProductCarousel';
 import useCustomizations from '@/Hooks/useCustomizations';
 
 const ProductCard = ({ product, appSettings }) => {
@@ -397,29 +398,15 @@ function HomeContent({
                 </section>
             )}
 
-            {/* New Products Section */}
-            {newProducts.length > 0 && (
-                <section className="py-20 bg-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                                Nouveautés
-                            </h2>
-                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                                Les derniers arrivages de notre collection
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {newProducts.slice(0, 4).map((product) => (
-                                <ProductCard key={product.id} product={product} appSettings={appSettings} />
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* Newsletter Section (toggle) */}
+            {/* New In Carousel */}
+{newProducts.length > 0 && (
+    <ProductCarousel
+        products={newProducts}
+        title="New In"
+        viewMoreHref={route('nouveautes')}
+        currencySymbol={currencySymbol}
+    />
+)}{/* Newsletter Section (toggle) */}
             {customizations?.newsletter_enabled !== false && (
                 <NewsletterSection
                     title="Restez informé de nos nouveautés"
@@ -444,3 +431,10 @@ export default function Home({ wishlistItems, ...props }) {
         </FrontendLayout>
     );
 }
+
+
+
+
+
+
+

@@ -795,14 +795,12 @@ export default function CreateProduct() {
                                                 <input
                                                     type="file"
                                                     className="hidden"
-                                                    accept="image/*"
+                                                    accept=".jpg,.jpeg,.png,.webp,.avif"
                                                     onChange={handleMainImageChange}
                                                 />
                                             </label>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            PNG, JPG, JPEG jusqu'à 10MB
-                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP, AVIF — 2 Mo max</p>
                                     </div>
                                 )}
                             </div>
@@ -842,7 +840,7 @@ export default function CreateProduct() {
                                             <input
                                                 type="file"
                                                 className="hidden"
-                                                accept="image/*"
+                                                accept=".jpg,.jpeg,.png,.webp,.avif"
                                                 multiple
                                                 onChange={handleAdditionalImagesChange}
                                             />

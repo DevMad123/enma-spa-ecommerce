@@ -29,7 +29,7 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'status' => ['required', Rule::in([1, 0, '1', '0'])],
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'avatar' => ['nullable', 'file', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream', 'mimes:jpg,jpeg,png,gif,webp,avif', 'max:2048'],
             'roles' => ['array'],
             'roles.*' => ['exists:roles,id'],
         ];
@@ -51,7 +51,7 @@ class UpdateUserRequest extends FormRequest
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut doit être actif ou inactif.',
             'avatar.image' => 'Le fichier doit être une image.',
-            'avatar.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
+            'avatar.mimes' => 'L\'image doit être au format JPEG, PNG, JPG, GIF ou WEBP.',
             'avatar.max' => 'L\'image ne doit pas dépasser 2 Mo.',
             'roles.array' => 'Les rôles doivent être un tableau.',
             'roles.*.exists' => 'L\'un des rôles sélectionnés n\'existe pas.',

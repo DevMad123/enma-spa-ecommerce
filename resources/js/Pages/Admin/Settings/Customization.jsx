@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Head, useForm, usePage, Link } from '@inertiajs/react';
+import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function CustomizationPage({ customization = null, products = [] }) {
@@ -19,6 +19,7 @@ export default function CustomizationPage({ customization = null, products = [] 
   }, [{ order: 1, enabled: false, product_id: '', tagline: '', background_image: null, preview: null }, { order: 2, enabled: false, product_id: '', tagline: '', background_image: null, preview: null }, { order: 3, enabled: false, product_id: '', tagline: '', background_image: null, preview: null }]);
   const [slidePreviews, setSlidePreviews] = useState(initialSlides.map(s => s.preview));
   const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -34,6 +35,20 @@ export default function CustomizationPage({ customization = null, products = [] 
     logo_image: null,
     slides: initialSlides.map(({ order, enabled, product_id, tagline }) => ({ order, enabled, product_id, tagline, background_image: null })),
   });
+
+  // Agréger les erreurs en messages lisibles (Slide X: ...)
+  useEffect(() => {
+    const errs = errors || {};
+    const keys = Object.keys(errs);
+    if (!keys.length) return;
+    const msg = keys.map((k) => {
+      const v = Array.isArray(errs[k]) ? errs[k][0] : String(errs[k] || '');
+      const m = /^slides\.(\d+)\./.exec(k);
+      if (m) return `Slide ${Number(m[1]) + 1}: ${v}`;
+      return v;
+    }).join(' • ');
+    setErrorMessage(msg);
+  }, [errors]);
 
   useEffect(() => {
     if (flash?.success) {
@@ -53,16 +68,29 @@ export default function CustomizationPage({ customization = null, products = [] 
     return products.filter(p => (p.name || '').toLowerCase().includes(debouncedSearch));
   }, [products, debouncedSearch]);
 
-  const toAbsolute = (p) => {
-    if (!p) return null;
-    if (/^https?:\/\//i.test(p)) return p;
-    return `${window.location.origin}/${String(p).replace(/^\/+/, '')}`;
+  const isAllowedImage = (file) => {
+    if (!file) return false;
+    const allowedMime = ['image/jpeg','image/png','image/webp','image/avif'];
+    const allowedExt = ['.jpg','.jpeg','.png','.webp','.avif'];
+    const mimeOk = allowedMime.includes((file.type || '').toLowerCase());
+    const name = (file.name || '').toLowerCase();
+    const extOk = allowedExt.some(ext => name.endsWith(ext));
+    return mimeOk || extOk;
   };
 
   // Resynchroniser l'aperçu après retour/refresh
+  const toAbsolute = (p) => {
+    if (!p) return null;
+    const str = String(p);
+    if (/^(https?:\/\/|blob:|data:)/i.test(str)) return str;
+    if (str.startsWith('/')) return str;
+    return `${window.location.origin}/${str.replace(/^\/+/, '')}`;
+  };
+
+  // Resynchroniser l'aper�u apr�s retour/refresh
   useEffect(() => {
-    setBannerPreview(customization?.hero_background_image ? toAbsolute(customization.hero_background_image) : null);
     setLogoPreview(customization?.logo_image ? toAbsolute(customization.logo_image) : null);
+    setBannerPreview(customization?.hero_background_image ? toAbsolute(customization.hero_background_image) : null);
     const nextPreviews = (customization?.slides || []).reduce((acc, s) => {
       acc[s.order - 1] = s.background_image ? toAbsolute(s.background_image) : null;
       return acc;
@@ -71,51 +99,46 @@ export default function CustomizationPage({ customization = null, products = [] 
   }, [customization]);
 
   const handleSubmit = (e) => {
+    console.log('Submitting form with data:', data);
     e.preventDefault();
     // Omettre les fichiers non sélectionnés pour éviter de nullifier les images existantes
     transform((form) => {
       const f = { ...form };
-      if (!f.hero_background_image) delete f.hero_background_image;
-      if (!f.logo_image) delete f.logo_image;
+      // N'envoyer héros/logo que s'il s'agit de nouveaux fichiers
+      if (!(f.hero_background_image instanceof File)) delete f.hero_background_image;
+      if (!(f.logo_image instanceof File)) delete f.logo_image;
       if (Array.isArray(f.slides)) {
-        f.slides = f.slides.map((s, idx) => {
-          const copy = { ...s };
-          if (!copy.background_image) delete copy.background_image;
-          return copy;
+        f.slides = f.slides.map((s) => {
+          const next = {
+            order: s.order,
+            enabled: !!s.enabled,
+            product_id: s.product_id === '' || s.product_id === null ? null : s.product_id,
+            tagline: s.tagline ?? '',
+          };
+          if (s.background_image instanceof File) {
+            next.background_image = s.background_image;
+          }
+          return next;
         });
       }
       return f;
     });
-    post(route('admin.customizations.update'), {
-      forceFormData: true,
-      onSuccess: () => { try { localStorage.removeItem('front_customizations_cache_v2'); } catch(_) {} },
-    });
+    post(route('admin.customizations.update'), { forceFormData: true, onSuccess: () => { try { localStorage.removeItem('front_customizations_cache_v2'); } catch(_) {} router.reload({ only: ['customization'] }); }, onError: (errs) => { try { const firstKey = Object.keys(errs || {})[0]; const firstVal = firstKey ? (Array.isArray(errs[firstKey]) ? errs[firstKey][0] : String(errs[firstKey])) : null; setErrorMessage(firstVal || "Erreur lors de l'enregistrement. Vérifiez les champs et la taille des images."); } catch(_) { setErrorMessage("Erreur lors de l'enregistrement. Vérifiez les champs et la taille des images."); } } });
   };
 
-  const onFileChange = (field, file) => {
-    setData(field, file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      if (field === 'hero_background_image') setBannerPreview(url);
-      if (field === 'logo_image') setLogoPreview(url);
-    }
-  };
+  const onFileChange = (field, file) => { if (!file) return; const maxKB = 3072; if (!isAllowedImage(file)) { setErrorMessage('Format non support�. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image trop lourde (max 3 Mo).'); return; } setData(field, file); const url = URL.createObjectURL(file); if (field === 'hero_background_image') setBannerPreview(url); if (field === 'logo_image') setLogoPreview(url); };
 
   const onSlideChange = (idx, key, value) => {
     const next = [...data.slides];
-    next[idx] = { ...next[idx], [key]: value };
+    let v = value;
+    if (key === 'product_id') {
+      v = value === '' || value === null ? '' : parseInt(value, 10) || '';
+    }
+    next[idx] = { ...next[idx], [key]: v };
     setData('slides', next);
   };
 
-  const onSlideImage = (idx, file) => {
-    onSlideChange(idx, 'background_image', file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const nextPrev = [...slidePreviews];
-      nextPrev[idx] = url;
-      setSlidePreviews(nextPrev);
-    }
-  };
+  const onSlideImage = (idx, file) => { if (!file) return; const maxKB = 4096; if (!isAllowedImage(file)) { setErrorMessage('Format non support� pour le slide. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image de slide trop lourde (max 2 Mo).'); return; } onSlideChange(idx, 'background_image', file); const url = URL.createObjectURL(file); const nextPrev = [...slidePreviews]; nextPrev[idx] = url; setSlidePreviews(nextPrev); };
 
   return (
     <AdminLayout>
@@ -127,6 +150,11 @@ export default function CustomizationPage({ customization = null, products = [] 
           {message && (
             <div className="mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
               {message}
+            </div>
+          )}
+          {errorMessage && (
+            <div className="mt-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {errorMessage}
             </div>
           )}
         </div>
@@ -167,9 +195,10 @@ export default function CustomizationPage({ customization = null, products = [] 
                     <label className="block text-sm font-medium text-gray-700 mb-1">Image de fond</label>
                     <div className="flex items-center gap-4">
                       <label className="inline-flex items-center px-4 py-2 bg-gray-100 border rounded-lg cursor-pointer hover:bg-gray-200 whitespace-nowrap">
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => onSlideImage(i, e.target.files[0])} />
+                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.avif" onChange={(e) => onSlideImage(i, e.target.files[0])} />
                         <span>Choisir une image</span>
                       </label>
+                      <span className="text-xs text-gray-500">JPG, PNG, WEBP, AVIF — 2 Mo max</span>
                       <div className="relative h-20 w-[360px] max-w-full overflow-hidden rounded-lg border bg-gray-50">
                         {slidePreviews[i] ? (
                           <img src={toAbsolute(slidePreviews[i])} alt={`Slide ${i+1}`} className="h-full w-full object-cover" loading="lazy" />
@@ -251,10 +280,11 @@ export default function CustomizationPage({ customization = null, products = [] 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Image de fond (bannière)</label>
                   <div className="flex items-center gap-4">
-                    <label className="inline-flex items-center px-4 py-2 bg-gray-100 border rounded-lg cursor-pointer hover:bg-gray-200 whitespace-nowrap">
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => onFileChange('hero_background_image', e.target.files[0])} />
-                      <span>Choisir une image</span>
-                    </label>
+                  <label className="inline-flex items-center px-4 py-2 bg-gray-100 border rounded-lg cursor-pointer hover:bg-gray-200 whitespace-nowrap">
+                    <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.avif" onChange={(e) => onFileChange('hero_background_image', e.target.files[0])} />
+                    <span>Choisir une image</span>
+                  </label>
+                  <p className="text-xs text-gray-500">JPG, PNG, WEBP, AVIF — 3 Mo max</p>
                     <div className="relative h-24 w-[420px] max-w-full overflow-hidden rounded-lg border bg-gray-50">
                       {bannerPreview ? (
                         <img src={toAbsolute(bannerPreview)} alt="Hero preview" className="h-full w-full object-cover" loading="lazy" />
@@ -317,7 +347,7 @@ export default function CustomizationPage({ customization = null, products = [] 
                 <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
                 <div className="flex items-center gap-4">
                   <label className="inline-flex items-center px-4 py-2 bg-gray-100 border rounded-lg cursor-pointer hover:bg-gray-200 whitespace-nowrap">
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => onFileChange('logo_image', e.target.files[0])} />
+                    <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.avif" onChange={(e) => onFileChange('logo_image', e.target.files[0])} />
                     <span>Choisir un logo</span>
                   </label>
                   <div className="relative h-16 w-40 max-w-full overflow-hidden rounded-lg border bg-white">
@@ -327,6 +357,7 @@ export default function CustomizationPage({ customization = null, products = [] 
                       <div className="flex h-full w-full items-center justify-center text-xs text-gray-500">Aucun aperçu</div>
                     )}
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP, AVIF � 3 Mo max</p>
                 </div>
                 {errors.logo_image && <p className="text-sm text-red-600 mt-1">{errors.logo_image}</p>}
               </div>
@@ -347,6 +378,15 @@ export default function CustomizationPage({ customization = null, products = [] 
     </AdminLayout>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 

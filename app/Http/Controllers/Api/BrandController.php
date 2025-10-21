@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use Illuminate\Http\Request;
-use Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 class BrandController extends Controller
 {
@@ -50,12 +51,23 @@ class BrandController extends Controller
                 mkdir($filePath, 666, true);
             }
 
-            $logo_image = Image::make(file_get_contents($image))->resize(200, 200);
-            $logo_image->brightness(8);
-            $logo_image->contrast(11);
-            $logo_image->sharpen(5);
-            $logo_image->encode('webp', 70);
-            $logo_image->save($logo_path);
+            $imageManager = new ImageManager(new GdDriver());
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read brand icon (API), trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read brand icon (API): ' . $e2->getMessage());
+                    throw new \Exception("Format d'image non supporté");
+                }
+            }
+
+            $img->resize(200, 200);
+            $encoded = $img->toWebp(70);
+            file_put_contents($logo_path, $encoded);
 
             return $db_media_img_path;
 

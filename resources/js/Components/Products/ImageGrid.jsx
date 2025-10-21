@@ -52,7 +52,7 @@ export default function ImageGrid({ data, setData, errors }) {
         <input
           ref={mainImageInputRef} // Référence pour réinitialiser
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.webp,.avif"
           onChange={(e) => {
             const file = e.target.files[0];
             if (file) setData("main_image", file);
@@ -98,7 +98,7 @@ export default function ImageGrid({ data, setData, errors }) {
           ref={additionalImagesInputRef} // Référence pour réinitialiser
           type="file"
           multiple
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.webp,.avif"
           onChange={handleAddImages}
           className="w-full border rounded px-3 py-2 mt-2"
         />
@@ -127,3 +127,4 @@ export default function ImageGrid({ data, setData, errors }) {
     </div>
   );
 }
+

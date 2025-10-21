@@ -115,7 +115,7 @@ class CustomerController extends Controller
                 'present_address' => 'required|string',
                 'permanent_address' => 'nullable|string',
                 'password' => 'required|string|min:8|confirmed',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,gif,webp,avif|max:2048',
                 'status' => 'nullable',
             ]);
 
@@ -192,7 +192,7 @@ class CustomerController extends Controller
                 'present_address' => 'required|string',
                 'permanent_address' => 'nullable|string',
                 'password' => 'nullable|string|min:8|confirmed',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,gif,webp,avif|max:2048',
                 'status' => 'nullable',
             ]);
 
@@ -278,7 +278,20 @@ class CustomerController extends Controller
             $filePath = 'customer_images/' . $fileName;
 
             $imageManager = new ImageManager(new GdDriver());
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read customer image, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read customer image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
             $img->resize(300, 300);
             $encodedImageContent = $img->toWebp(70);
 
@@ -302,7 +315,20 @@ class CustomerController extends Controller
             $path = 'customers/' . $filename;
 
             // Redimensionner et optimiser l'image
-            $image = $manager->read($file);
+            try {
+                $image = $manager->read($file);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read customer image (handleImageUpload), trying Imagick: ' . $e->getMessage());
+                try {
+                    $manager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $image = $manager->read($file);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read customer image (handleImageUpload): ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
             $image->scale(width: 400); // Redimensionner à 400px de largeur max
             $image->toWebp(90); // Convertir en WebP avec 90% de qualité
 

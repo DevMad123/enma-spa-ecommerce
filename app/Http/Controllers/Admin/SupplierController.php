@@ -96,7 +96,7 @@ class SupplierController extends Controller
         try {
             $validated = $request->validate([
                 'supplier_name' => 'required|string|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,gif,webp,avif|max:2048',
                 'supplier_phone_one' => 'required|string|max:255',
                 'supplier_phone_two' => 'nullable|string|max:255',
                 'company_name' => 'nullable|string|max:255',
@@ -182,7 +182,7 @@ class SupplierController extends Controller
             \Log::info('Supplier update request data: ', $request->all());
             $validated = $request->validate([
                 'supplier_name' => 'required|string|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/gif,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,gif,webp,avif|max:2048',
                 'supplier_phone_one' => 'required|string|max:255',
                 'supplier_phone_two' => 'nullable|string|max:255',
                 'company_name' => 'nullable|string|max:255',
@@ -278,7 +278,20 @@ class SupplierController extends Controller
             $filePath = 'supplier_icons/' . $fileName;
 
             $imageManager = new ImageManager(new GdDriver());
-            $img = $imageManager->read($image);
+            try {
+                $img = $imageManager->read($image);
+            } catch (\Throwable $e) {
+                \Log::warning('GD failed to read supplier image, trying Imagick: ' . $e->getMessage());
+                try {
+                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
+                    $img = $imageManager->read($image);
+                } catch (\Throwable $e2) {
+                    \Log::error('Imagick failed to read supplier image: ' . $e2->getMessage());
+                    throw ValidationException::withMessages([
+                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
+                    ]);
+                }
+            }
             $img->resize(200, 200);
             $encodedImageContent = $img->toWebp(70);
 

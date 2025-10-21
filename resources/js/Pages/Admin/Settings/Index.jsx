@@ -312,14 +312,14 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
                                     {currentImage && currentImage.value ? 'Remplacer l\'image' : 'Cliquez pour uploader'}
                                 </span>
                                 <span className="text-xs text-gray-500 mt-1">
-                                    PNG, JPG, WEBP jusqu'Ã  2MB
+                                    JPG, PNG, WEBP, AVIF — 2 Mo max
                                 </span>
                             </div>
                         )}
                         <input
                             type="file"
                             className="hidden"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png,.webp,.avif"
                             onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
@@ -706,3 +706,4 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
         </AdminLayout>
     );
 }
+

@@ -216,7 +216,7 @@ export default function EditUser({ user, roles }) {
                                         <input
                                             type="file"
                                             id="avatar"
-                                            accept="image/*"
+                                            accept=".jpg,.jpeg,.png,.gif,.webp,.avif"
                                             onChange={(e) => setData('avatar', e.target.files[0])}
                                             className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 ${
                                                 errors.avatar ? 'border-red-300' : 'border-gray-300'
@@ -225,9 +225,7 @@ export default function EditUser({ user, roles }) {
                                         {errors.avatar && (
                                             <p className="mt-1 text-sm text-red-600">{errors.avatar}</p>
                                         )}
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            PNG, JPG, GIF jusqu'à 2MB
-                                        </p>
+                                        <p className="mt-1 text-sm text-gray-500">JPG, PNG, GIF, WEBP, AVIF — 2 Mo max</p>
                                     </div>
                                 </div>
                             </div>
@@ -508,3 +506,5 @@ export default function EditUser({ user, roles }) {
         </AdminLayout>
     );
 }
+
+

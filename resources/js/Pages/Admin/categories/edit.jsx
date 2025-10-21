@@ -247,7 +247,7 @@ export default function EditCategory({ category }) {
                                                             Cliquez pour ajouter une image
                                                         </span>
                                                         <span className="mt-1 block text-xs text-gray-500">
-                                                            PNG, JPG, WEBP jusqu'à 2MB
+                                                            JPG, PNG, WEBP, AVIF — 2 Mo max
                                                         </span>
                                                     </label>
                                                 </div>
@@ -258,7 +258,7 @@ export default function EditCategory({ category }) {
                                         <input
                                             id="image-upload"
                                             type="file"
-                                            accept="image/*"
+                                            accept=".jpg,.jpeg,.png,.webp,.avif"
                                             onChange={handleImageChange}
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         />
@@ -377,3 +377,4 @@ export default function EditCategory({ category }) {
         </AdminLayout>
     );
 }
+

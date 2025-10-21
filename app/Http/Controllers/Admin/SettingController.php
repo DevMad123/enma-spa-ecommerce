@@ -218,8 +218,33 @@ class SettingController extends Controller
      */
     public function uploadFile(Request $request)
     {
+        // Déterminer dynamiquement les types autorisés selon la clé
+        $key = (string) $request->input('key');
+
+        // Liste blanche des clés par type
+        $imageKeys = [
+            'hero_banner',
+            'promo_banner',
+            'site_logo',
+            'favicon',
+        ];
+        $pdfKeys = [
+            'terms_pdf',
+            'privacy_pdf',
+            'legal_notice_pdf',
+        ];
+
+        // Règle par défaut: images uniquement (plus sûr)
+        $mimesRule = 'mimes:jpeg,png,jpg,webp,avif';
+
+        if (in_array($key, $pdfKeys, true)) {
+            $mimesRule = 'mimes:pdf';
+        } elseif (in_array($key, $imageKeys, true) || $key !== '') {
+            $mimesRule = 'mimes:jpeg,png,jpg,webp,avif';
+        }
+
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf|max:2048',
+            'file' => 'required|file|' . $mimesRule . '|max:2048',
             'key' => 'required|string'
         ]);
 
