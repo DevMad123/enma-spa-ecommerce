@@ -60,7 +60,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                                 <span>{item.product.category.name}</span>
                             )}
                         </div>
-
+                        {console.log(item)}
                         {/* Variantes sélectionnées */}
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                             {item.color && (
@@ -68,13 +68,13 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                                     <span>Couleur:</span>
                                     <div 
                                         className="w-4 h-4 rounded-full border border-gray-300"
-                                        style={{ backgroundColor: item.color.hex_code || item.color.name.toLowerCase() }}
+                                        style={{ backgroundColor: item.color.color_code || item.color.name.toLowerCase() }}
                                     />
                                     <span>{item.color.name}</span>
                                 </div>
                             )}
                             {item.size && (
-                                <span>Taille: {item.size.name}</span>
+                                <span>Taille: {item.size.size}</span>
                             )}
                         </div>
                     </div>
@@ -259,7 +259,7 @@ function Cart({ recommendedProducts = [] }) {
 
     if (cartItems.length === 0) {
         return (
-            <FrontendLayout title="Panier - ENMA SPA">
+            <FrontendLayout title="Panier">
                 <div className="max-w-7xl min-h-[calc(100vh_-_449px)] mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="text-center">
                         <div className="w-24 h-24 mx-auto mb-6 text-gray-400">
@@ -286,7 +286,7 @@ function Cart({ recommendedProducts = [] }) {
     }
 
     return (
-        <FrontendLayout title={`Panier (${getTotalItems()}) - ENMA SPA`}>
+        <FrontendLayout title={`Panier (${getTotalItems()})`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">

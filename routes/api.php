@@ -181,8 +181,12 @@ Route::prefix('countries')->name('api.countries.')->group(function () {
 
 // Public API: front customizations
 Route::get('/customizations', [CustomizationController::class, 'show'])->name('api.customizations.show');
+// Theme color only (frontend settings)
+Route::get('/front/settings', [CustomizationController::class, 'theme'])->name('api.front.settings');
 // Public API: menu categories
 Route::get('/menu/categories', [MenuController::class, 'categories'])->name('api.menu.categories');
 
 // Public API: products helpers
 Route::get('/products/{product}/min-price', [ApiProductController::class, 'minPrice'])->name('api.products.min-price');
+// Public API: get variant by attributes (color/size)
+Route::get('/products/{product}/variant', [ApiProductController::class, 'getVariantByAttributes'])->name('api.products.variant');

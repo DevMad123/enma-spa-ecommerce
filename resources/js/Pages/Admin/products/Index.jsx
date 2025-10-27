@@ -220,7 +220,7 @@ export default function ProductsList() {
                         (product.available_quantity || 0) > 10 ? 'text-green-600' : 
                         (product.available_quantity || 0) > 0 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                        {product.available_quantity || 0} unités
+                        {Math.floor(product.available_quantity) || 0} unités
                     </div>
                     <div className="mt-1">
                         {getStockStatusBadge(product.available_quantity || 0)}

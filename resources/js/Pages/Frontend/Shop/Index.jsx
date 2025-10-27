@@ -14,7 +14,10 @@ import {
 import { useCart } from '@/Layouts/FrontendLayout';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
+import ProductCardUnified from '@/Components/Frontend/ProductCard';
 import { useNotification } from '@/Components/Notifications/NotificationProvider';
+import { formatVariablePrice } from '@/Utils/productPrice';
+import { formatCurrency } from '@/Utils/LocaleUtils';
 import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
 
 // Wrapper sécurisé pour les liens
@@ -90,14 +93,22 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
 
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <span className="text-2xl font-bold text-gray-900">
-                                            {product.current_sale_price} {currencySymbol}
-                                        </span>
-                                        {product.price > product.current_sale_price && (
-                                            <span className="ml-2 text-lg text-gray-500 line-through">
-                                                {product.price} {currencySymbol}
-                                            </span>
-                                        )}
+                                        {(() => {
+                                            const fp = formatVariablePrice(product);
+                                            return (
+                                                <>
+                                                    <span className="text-2xl font-bold text-gray-900">
+                                                        {fp.hasRange && <span>À partir de </span>}
+                                                        <span>{formatCurrency(fp.min)}</span>
+                                                    </span>
+                                                    {fp.compareAt && (
+                                                        <span className="ml-2 text-lg text-gray-500 line-through">
+                                                            {formatCurrency(fp.compareAt)}
+                                                        </span>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
@@ -191,14 +202,22 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                 {/* Prix */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <span className="text-xl font-bold text-gray-900">
-                            {product.current_sale_price} {currencySymbol}
-                        </span>
-                        {product.price > product.current_sale_price && (
-                            <span className="ml-2 text-base text-gray-500 line-through">
-                                {product.price} {currencySymbol}
-                            </span>
-                        )}
+                        {(() => {
+                            const fp = formatVariablePrice(product);
+                            return (
+                                <>
+                                    <span className="text-xl font-bold text-gray-900">
+                                        {fp.hasRange && <span>À partir de </span>}
+                                        <span>{formatCurrency(fp.min)}</span>
+                                    </span>
+                                    {fp.compareAt && (
+                                        <span className="ml-2 text-base text-gray-500 line-through">
+                                            {formatCurrency(fp.compareAt)}
+                                        </span>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -681,10 +700,10 @@ function Shop(props = {}) {
                                         : 'space-y-6'
                                 }>
                                     {safeProducts.data.map((product) => (
-                                        <ProductCard 
+                                        <ProductCardUnified 
                                             key={product.id} 
                                             product={product} 
-                                            viewMode={viewMode}
+                                            variant={viewMode === 'grid' ? 'default' : 'compact'}
                                         />
                                     ))}
                                 </div>

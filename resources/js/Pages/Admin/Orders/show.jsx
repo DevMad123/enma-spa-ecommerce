@@ -92,6 +92,7 @@ export default function ShowOrder() {
             </span>
         );
     };
+    console.log(order);
 
     return (
         <AdminLayout>
@@ -238,7 +239,7 @@ export default function ShowOrder() {
                                                     </div>
                                                     {detail.product_variant && (
                                                         <div className="text-sm text-gray-500">
-                                                            Variante: {detail.product_variant.variant_name}
+                                                            Variante: {detail.product_variant.color.name} | {detail.product_variant.size.size}
                                                         </div>
                                                     )}
                                                 </td>

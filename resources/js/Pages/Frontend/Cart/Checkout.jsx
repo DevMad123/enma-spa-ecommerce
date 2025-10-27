@@ -96,6 +96,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             quantity: item.quantity,
             color_id: item.color_id || item.color?.id || null,
             size_id: item.size_id || item.size?.id || null,
+            product_variant_id: item.variant_id || item.product?.selected_variant_id || null,
             price: item.price || item.product?.current_sale_price || 0
         }));
         const formData = {
@@ -790,7 +791,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
                             <p className="text-sm font-medium text-gray-900 truncate">{item.product.name}</p>
                             <div className="flex items-center space-x-2 text-xs text-gray-500">
                                 {item.color && <span>{item.color.name}</span>}
-                                {item.size && <span>{item.size.name}</span>}
+                                {item.size && <span>{item.size.size}</span>}
                             </div>
                         </div>
                         <div className="text-sm">

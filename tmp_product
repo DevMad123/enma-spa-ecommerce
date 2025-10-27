@@ -10,7 +10,7 @@ class Product extends Model
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
 
-    // Mass assignable fields
+    // Champs pouvant être mass assignable
     protected $fillable = [
         'name',
         'category_id',
@@ -30,10 +30,10 @@ class Product extends Model
         'discount',
         'is_popular',
         'is_trending',
-        'status',
+        'status'
     ];
-
-    // Relations
+    
+    // Les relations du modèle
     public function category()
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
@@ -54,91 +54,139 @@ class Product extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    // Variants
+    /**
+     * Un produit peut avoir plusieurs variantes.
+     */
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);
     }
 
-    // Images
+    /**
+     * Un produit peut avoir plusieurs images.
+     */
     public function images()
     {
         return $this->hasMany(ProductImage::class);
     }
-
+    
     public function attributes()
     {
         return $this->hasMany(ProductAttribute::class);
     }
 
-    // Colors available via variants
+    /**
+     * Récupère les couleurs disponibles pour ce produit via les variantes.
+     */
     public function colors()
     {
-        return $this->belongsToMany(ProductColor::class, 'product_variants', 'product_id', 'color_id')->distinct();
+        return $this->belongsToMany(ProductColor::class, 'product_variants', 'product_id', 'color_id')
+                    ->distinct();
     }
 
-    // Sizes available via variants
+    /**
+     * Récupère les tailles disponibles pour ce produit via les variantes.
+     */
     public function sizes()
     {
-        return $this->belongsToMany(ProductSize::class, 'product_variants', 'product_id', 'size_id')->distinct();
+        return $this->belongsToMany(ProductSize::class, 'product_variants', 'product_id', 'size_id')
+                    ->distinct();
     }
 
-    // Accessor for image full URL (or default placeholder)
+    /**
+     * Accesseur pour l'attribut image - retourne l'image_path ou une image par défaut.
+     */
     public function getImageAttribute()
     {
         if ($this->image_path) {
+            // Si l'image_path commence par 'http', c'est une URL complète
             if (str_starts_with($this->image_path, 'http')) {
                 return $this->image_path;
             }
+            // Sinon, on construit l'URL complète
             return asset($this->image_path);
         }
+        
+        // Retourne l'image par défaut
         return asset('images/placeholder.jpg');
     }
 
-    // Wishlists
+    /**
+     * Un produit peut être dans plusieurs wishlists.
+     */
     public function wishlists()
     {
         return $this->hasMany(Wishlist::class);
     }
 
-    // Reviews
+    /**
+     * Un produit peut avoir plusieurs avis.
+     */
     public function reviews()
     {
         return $this->hasMany(ProductReview::class);
     }
 
-    // Approved reviews only
+    /**
+     * Récupère les avis approuvés uniquement.
+     */
     public function approvedReviews()
     {
         return $this->hasMany(ProductReview::class)->where('is_approved', true);
     }
 
-    // Average rating
+    /**
+     * Calcule la note moyenne du produit.
+     */
     public function getAverageRatingAttribute()
     {
         return $this->approvedReviews()->avg('rating') ?? 0;
     }
 
-    // Reviews count
+    /**
+     * Compte le nombre total d'avis approuvés.
+     */
     public function getReviewsCountAttribute()
     {
         return $this->approvedReviews()->count();
     }
 
-    // Helper scope to eager-load variants and their relations
-    public function scopeWithVariants($query)
+    /**
+     * Vérifie si un produit est dans la wishlist d'un utilisateur.
+     */
+    public function isInWishlist($userId = null)
     {
-        return $query->with(['variants.color', 'variants.size', 'variants.images']);
+        if (!$userId) {
+            return false;
+        }
+        
+        return $this->wishlists()->where('user_id', $userId)->exists();
     }
 
-    // Compute price range from variants, fallback to attributes/own price
+    /**
+     * Scope utilitaire pour charger les variantes et leurs relations (color/size/images).
+     */
+    public function scopeWithVariants($query)
+    {
+        return $query->with([
+            'variants.color',
+            'variants.size',
+            'variants.images',
+        ]);
+    }
+
+    /**
+     * Calcule la plage de prix (min, max) à partir des variantes.
+     * Fallback: attributs.price puis current_sale_price du produit.
+     * Retourne un tableau ['min' => float, 'max' => float].
+     */
     public function getPriceRangeAttribute(): array
     {
         $variantPrices = $this->variants()
             ->whereNotNull('sale_price')
             ->pluck('sale_price')
-            ->filter(fn ($v) => $v !== null && $v !== '' && $v >= 0)
-            ->map(fn ($v) => (float) $v)
+            ->filter(fn($v) => $v !== null && $v !== '' && $v >= 0)
+            ->map(fn($v) => (float) $v)
             ->all();
 
         $min = null;
@@ -151,13 +199,13 @@ class Product extends Model
             if (method_exists($this, 'attributes')) {
                 $attrMin = $this->attributes()->min('price');
                 $attrMax = $this->attributes()->max('price');
-                if ($attrMin !== null && $attrMax !== null) {
+                if (!is_null($attrMin) && !is_null($attrMax)) {
                     $min = (float) $attrMin;
                     $max = (float) $attrMax;
                 }
             }
 
-            if ($min === null || $max === null) {
+            if (is_null($min) || is_null($max)) {
                 $price = (float) ($this->current_sale_price ?? 0);
                 $min = $min ?? $price;
                 $max = $max ?? $price;
@@ -170,28 +218,9 @@ class Product extends Model
         ];
     }
 
-    // Appended attributes for frontend
-    protected $appends = [
-        'image',
-        'average_rating',
-        'reviews_count',
-        'price_range',
-        'price_min',
-        'price_max',
-    ];
-
-    // price_min from price_range
-    public function getPriceMinAttribute(): float
-    {
-        $range = $this->price_range;
-        return (float) ($range['min'] ?? 0);
-    }
-
-    // price_max from price_range
-    public function getPriceMaxAttribute(): float
-    {
-        $range = $this->price_range;
-        return (float) ($range['max'] ?? 0);
-    }
+    /**
+     * Accesseur pour les propriétés calculées.
+     */
+    protected $appends = ['image', 'average_rating', 'reviews_count'];
 }
 

@@ -241,4 +241,48 @@ class ProductController extends Controller
         return response()->json($allSize);
 
     }
+
+    /**
+     * Retourne une variante en fonction d'un triplet (product_id, color_id, size_id).
+     * Paramètres via query string: color_id, size_id (optionnels mais au moins un recommandé).
+     * Exemple: GET /api/products/{product}/variant?color_id=1&size_id=2
+     * Retourne un objet de variante normalisé ou null si non trouvée.
+     */
+    public function getVariantByAttributes(Request $request, Product $product)
+    {
+        $colorId = $request->query('color_id');
+        $sizeId = $request->query('size_id');
+
+        $query = $product->variants()->with(['color', 'size', 'images']);
+        if (!is_null($colorId) && $colorId !== '') {
+            $query->where('color_id', $colorId);
+        }
+        if (!is_null($sizeId) && $sizeId !== '') {
+            $query->where('size_id', $sizeId);
+        }
+
+        $variant = $query->first();
+
+        if (!$variant) {
+            return response()->json(null);
+        }
+
+        $firstImage = optional($variant->images->first());
+        $payload = [
+            'id' => $variant->id,
+            'sku' => $variant->sku,
+            'product_id' => $product->id,
+            'color_id' => $variant->color_id,
+            'color' => optional($variant->color)->name,
+            'size_id' => $variant->size_id,
+            'size' => optional($variant->size)->size,
+            'price' => (float) ($variant->price ?? $variant->sale_price ?? 0),
+            'sale_price' => (float) ($variant->sale_price ?? 0),
+            'stock' => (int) ($variant->stock ?? 0),
+            'image_id' => $firstImage?->id,
+            'image' => $firstImage?->image ? asset($firstImage->image) : null,
+        ];
+
+        return response()->json($payload);
+    }
 }

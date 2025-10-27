@@ -87,7 +87,7 @@ export default function CustomizationPage({ customization = null, products = [] 
     return `${window.location.origin}/${str.replace(/^\/+/, '')}`;
   };
 
-  // Resynchroniser l'aper�u apr�s retour/refresh
+  // Resynchroniser l'aperçu après retour/refresh
   useEffect(() => {
     setLogoPreview(customization?.logo_image ? toAbsolute(customization.logo_image) : null);
     setBannerPreview(customization?.hero_background_image ? toAbsolute(customization.hero_background_image) : null);
@@ -126,7 +126,7 @@ export default function CustomizationPage({ customization = null, products = [] 
     post(route('admin.customizations.update'), { forceFormData: true, onSuccess: () => { try { localStorage.removeItem('front_customizations_cache_v2'); } catch(_) {} router.reload({ only: ['customization'] }); }, onError: (errs) => { try { const firstKey = Object.keys(errs || {})[0]; const firstVal = firstKey ? (Array.isArray(errs[firstKey]) ? errs[firstKey][0] : String(errs[firstKey])) : null; setErrorMessage(firstVal || "Erreur lors de l'enregistrement. Vérifiez les champs et la taille des images."); } catch(_) { setErrorMessage("Erreur lors de l'enregistrement. Vérifiez les champs et la taille des images."); } } });
   };
 
-  const onFileChange = (field, file) => { if (!file) return; const maxKB = 3072; if (!isAllowedImage(file)) { setErrorMessage('Format non support�. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image trop lourde (max 3 Mo).'); return; } setData(field, file); const url = URL.createObjectURL(file); if (field === 'hero_background_image') setBannerPreview(url); if (field === 'logo_image') setLogoPreview(url); };
+  const onFileChange = (field, file) => { if (!file) return; const maxKB = 3072; if (!isAllowedImage(file)) { setErrorMessage('Format non supporté. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image trop lourde (max 3 Mo).'); return; } setData(field, file); const url = URL.createObjectURL(file); if (field === 'hero_background_image') setBannerPreview(url); if (field === 'logo_image') setLogoPreview(url); };
 
   const onSlideChange = (idx, key, value) => {
     const next = [...data.slides];
@@ -138,7 +138,7 @@ export default function CustomizationPage({ customization = null, products = [] 
     setData('slides', next);
   };
 
-  const onSlideImage = (idx, file) => { if (!file) return; const maxKB = 4096; if (!isAllowedImage(file)) { setErrorMessage('Format non support� pour le slide. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image de slide trop lourde (max 2 Mo).'); return; } onSlideChange(idx, 'background_image', file); const url = URL.createObjectURL(file); const nextPrev = [...slidePreviews]; nextPrev[idx] = url; setSlidePreviews(nextPrev); };
+  const onSlideImage = (idx, file) => { if (!file) return; const maxKB = 4096; if (!isAllowedImage(file)) { setErrorMessage('Format non supporté pour le slide. Utilisez JPG, PNG, WEBP ou AVIF.'); return; } const sizeKB = Math.ceil((file.size || 0) / 1024); if (sizeKB > maxKB) { setErrorMessage('Image de slide trop lourde (max 2 Mo).'); return; } onSlideChange(idx, 'background_image', file); const url = URL.createObjectURL(file); const nextPrev = [...slidePreviews]; nextPrev[idx] = url; setSlidePreviews(nextPrev); };
 
   return (
     <AdminLayout>
@@ -322,7 +322,7 @@ export default function CustomizationPage({ customization = null, products = [] 
               <h2 className="text-lg font-semibold">Thème & Identité</h2>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Couleur principale (hex)</label>
                 <div className="flex items-center gap-3">
                   <input
@@ -342,7 +342,7 @@ export default function CustomizationPage({ customization = null, products = [] 
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Format attendu: #RGB ou #RRGGBB</p>
                 {errors.theme_color && <p className="text-sm text-red-600 mt-1">{errors.theme_color}</p>}
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
                 <div className="flex items-center gap-4">
@@ -357,7 +357,7 @@ export default function CustomizationPage({ customization = null, products = [] 
                       <div className="flex h-full w-full items-center justify-center text-xs text-gray-500">Aucun aperçu</div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP, AVIF � 3 Mo max</p>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP, AVIF - 3 Mo max</p>
                 </div>
                 {errors.logo_image && <p className="text-sm text-red-600 mt-1">{errors.logo_image}</p>}
               </div>

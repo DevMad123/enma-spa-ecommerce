@@ -84,6 +84,7 @@ class CartController extends Controller
                 'cart_items.*.quantity' => 'required|integer|min:1',
                 'cart_items.*.color_id' => 'nullable|integer',
                 'cart_items.*.size_id' => 'nullable|integer',
+                'cart_items.*.product_variant_id' => 'nullable|integer|exists:product_variants,id',
 
                 // Informations personnelles
                 'email' => 'required|email|max:255',
@@ -151,13 +152,25 @@ class CartController extends Controller
             foreach ($cartItems as $item) {
                 Log::info('Processing item:', $item);
                 $product = Product::findOrFail($item['product_id']);
-                $itemTotal = $product->current_sale_price * $item['quantity'];
+                // Determine unit price based on variant when available
+                $unitPrice = $product->current_sale_price;
+                $variant = null;
+                if (!empty($item['product_variant_id'])) {
+                    $variant = \App\Models\ProductVariant::where('id', $item['product_variant_id'])
+                        ->where('product_id', $product->id)
+                        ->first();
+                    if ($variant) {
+                        $unitPrice = (float) ($variant->sale_price ?? $unitPrice);
+                    }
+                }
+                $itemTotal = $unitPrice * $item['quantity'];
                 $subtotal += $itemTotal;
 
                 $orderItems[] = [
                     'product' => $product,
+                    'variant' => $variant,
                     'quantity' => $item['quantity'],
-                    'unit_price' => $product->current_sale_price,
+                    'unit_price' => $unitPrice,
                     'total_price' => $itemTotal,
                     'color_id' => $item['color_id'] ?? null,
                     'size_id' => $item['size_id'] ?? null,
@@ -312,6 +325,7 @@ class CartController extends Controller
                 Sell_details::create([
                     'sell_id' => $sell->id,
                     'product_id' => $item['product']->id,
+                    'product_variant_id' => $item['variant']->id ?? null,
                     'unit_sell_price' => $item['unit_price'],
                     'sale_quantity' => $item['quantity'],
                     'total_payable_amount' => $item['total_price'],
@@ -321,10 +335,20 @@ class CartController extends Controller
                     'created_by' => Auth::id(),
                 ]);
 
+                // Decrement variant stock if applicable
+                if (!empty($item['variant'])) {
+                    $v = $item['variant'];
+                    $v->available_quantity = max(0, ($v->available_quantity ?? 0) - $item['quantity']);
+                    $v->save();
+                    Log::info('Variant stock decremented', ['variant_id' => $v->id, 'new_available_quantity' => $v->available_quantity]);
+                }
+
                 // Mettre à jour le stock du produit
-                $product = $item['product'];
-                $product->available_quantity -= $item['quantity'];
-                $product->save();
+                // $product = $item['product'];
+                // $product->available_quantity -= $item['quantity'];
+                // $product->save();
+                Product::where('id', $item['product']->id)
+                    ->decrement('available_quantity', $item['quantity']);
 
                 Log::info('Item processed:', ['product_id' => $item['product']->id, 'quantity' => $item['quantity']]);
             }
@@ -428,14 +452,16 @@ class CartController extends Controller
                 abort(403, 'Accès non autorisé.');
             }
 
-            $sell = Sell::with([
-                'customer',
-                'sellDetails.product',
-                'paymentMethod',
-                'shipping',
-                'shippingAddress',
-                'billingAddress'
-            ])
+        $sell = Sell::with([
+            'customer',
+            'sellDetails.product',
+            'sellDetails.productVariant.color',
+            'sellDetails.productVariant.size',
+            'paymentMethod',
+            'shipping',
+            'shippingAddress',
+            'billingAddress'
+        ])
                 ->where('customer_id', $customer->id) // Vérifier la propriété
                 ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
                 ->findOrFail($sellId);
@@ -518,8 +544,8 @@ class CartController extends Controller
                     'product_image' => $detail->product->image ?? '/images/placeholder.jpg',
                     'quantity' => intval($detail->sale_quantity ?? 1),
                     'price' => floatval($detail->unit_sell_price ?? 0),
-                    'color_name' => null,
-                    'size_name' => null,
+                    'color_name' => optional($detail->productVariant?->color)->name,
+                    'size_name' => optional($detail->productVariant?->size)->size,
                 ];
             }),
         ];

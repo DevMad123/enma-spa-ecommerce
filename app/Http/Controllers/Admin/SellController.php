@@ -161,6 +161,8 @@ class SellController extends Controller
             'customer',
             'sellDetails.product',
             'sellDetails.productVariant',
+            'sellDetails.productVariant.color',
+            'sellDetails.productVariant.size',
             'shipping',
             'createdBy',
             'updatedBy',

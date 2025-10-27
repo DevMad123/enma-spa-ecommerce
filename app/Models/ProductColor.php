@@ -15,11 +15,19 @@ class ProductColor extends Model
     ];
 
     /**
-     * Relation avec les produits via la table product_attributes
+     * Variantes liées à cette couleur.
+     */
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class, 'color_id');
+    }
+
+    /**
+     * Produits liés via les variantes.
      */
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_attributes', 'color_id', 'product_id');
+        return $this->belongsToMany(Product::class, 'product_variants', 'color_id', 'product_id')->distinct();
     }
 
     /**

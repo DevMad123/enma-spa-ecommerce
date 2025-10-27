@@ -90,5 +90,19 @@ class CustomizationController extends Controller
 
         return response()->json($data, 200, $headers, JSON_UNESCAPED_UNICODE);
     }
-}
 
+    /**
+     * Minimal settings endpoint returning theme color only.
+     */
+    public function theme()
+    {
+        $theme = Cache::remember('front_theme_color', 600, function () {
+            $c = FrontCustomization::select('theme_color')->first();
+            return [
+                'theme_color' => $c?->theme_color,
+            ];
+        });
+
+        return response()->json($theme);
+    }
+}

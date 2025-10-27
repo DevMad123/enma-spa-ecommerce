@@ -1,5 +1,6 @@
 import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
+import ProductCardNew from '@/Components/Frontend/ProductCard';
 import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowRightIcon,
@@ -12,6 +13,8 @@ import {
 import { useCart } from '@/Layouts/FrontendLayout';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
+import { formatVariablePrice } from '@/Utils/productPrice';
+import { formatCurrency } from '@/Utils/LocaleUtils';
 import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
 import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
 import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
@@ -87,17 +90,25 @@ const ProductCard = ({ product, appSettings }) => {
                     </span>
                 </div>
 
-                {/* Prix */}
+                {/* Prix unifié variable/simple */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <span className="text-2xl font-bold text-gray-900">
-                            {product.current_sale_price} {currencySymbol}
-                        </span>
-                        {product.price > product.current_sale_price && (
-                            <span className="ml-2 text-lg text-gray-500 line-through">
-                                {product.price} {currencySymbol}
-                            </span>
-                        )}
+                        {(() => {
+                            const fp = formatVariablePrice(product);
+                            return (
+                                <>
+                                    <span className="text-2xl font-bold text-gray-900">
+                                        {fp.hasRange && <span>À partir de </span>}
+                                        <span>{formatCurrency(fp.min)}</span>
+                                    </span>
+                                    {fp.compareAt && (
+                                        <span className="ml-2 text-lg text-gray-500 line-through">
+                                            {formatCurrency(fp.compareAt)}
+                                        </span>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -389,9 +400,9 @@ function HomeContent({
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                             {featuredProducts.slice(0, 8).map((product) => (
-                                <ProductCard key={product.id} product={product} appSettings={appSettings} />
+                                <ProductCardNew key={product.id} product={product} variant="default" />
                             ))}
                         </div>
 
@@ -432,8 +443,6 @@ export default function Home({ wishlistItems, ...props }) {
         </FrontendLayout>
     );
 }
-
-
 
 
 

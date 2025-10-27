@@ -14,11 +14,19 @@ class ProductSize extends Model
     ];
 
     /**
-     * Relation avec les produits via la table product_attributes
+     * Variantes liées à cette taille.
+     */
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class, 'size_id');
+    }
+
+    /**
+     * Produits liés via les variantes.
      */
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_attributes', 'size_id', 'product_id');
+        return $this->belongsToMany(Product::class, 'product_variants', 'size_id', 'product_id')->distinct();
     }
 
     /**

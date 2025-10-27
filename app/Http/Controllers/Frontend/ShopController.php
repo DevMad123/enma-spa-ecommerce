@@ -206,6 +206,9 @@ class ShopController extends Controller
             'supplier',
             'colors', 
             'sizes',
+            'variants.color',
+            'variants.size',
+            'variants.images',
             'images'
         ])->findOrFail($productId);
 

@@ -10,6 +10,7 @@ import {
     ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
+import ThemeProvider from '@/Theme/ThemeProvider';
 import useMenuCategories from '@/Hooks/useMenuCategories';
 import { WishlistProvider, useWishlist } from '@/Contexts/WishlistContext';
 import useCustomizations from '@/Hooks/useCustomizations';
@@ -37,34 +38,58 @@ export const CartProvider = ({ children }) => {
     }, []);
 
     const addToCart = (product, quantity = 1, colorId = null, sizeId = null) => {
-        const existingItem = cartItems.find(item => 
-            item.product_id === product.id && 
-            item.color_id === colorId && 
-            item.size_id === sizeId
+        // Try to resolve selected variant/color/size objects from product
+        const resolvedColorId = colorId ?? product?.selectedColor?.id ?? null;
+        const resolvedSizeId = sizeId ?? product?.selectedSize?.id ?? null;
+        const variantId = product?.selected_variant_id ?? null;
+
+        // Color/size objects for display
+        const colorObj = product?.selectedColor
+            || (Array.isArray(product?.colors) ? product.colors.find(c => c.id === resolvedColorId) : null)
+            || null;
+        const sizeObj = product?.selectedSize
+            || (Array.isArray(product?.sizes) ? product.sizes.find(s => s.id === resolvedSizeId) : null)
+            || null;
+
+        // Use current_sale_price already adjusted for variant when possible
+        const unitPrice = typeof product?.current_sale_price === 'number' ? product.current_sale_price : (product?.price ?? 0);
+
+        const existingItem = cartItems.find(item =>
+            item.product_id === product.id &&
+            item.color_id === resolvedColorId &&
+            item.size_id === resolvedSizeId
         );
 
         let newCartItems;
         if (existingItem) {
             newCartItems = cartItems.map(item =>
-                item.product_id === product.id && 
-                item.color_id === colorId && 
-                item.size_id === sizeId
+                item.product_id === product.id &&
+                item.color_id === resolvedColorId &&
+                item.size_id === resolvedSizeId
                     ? { ...item, quantity: item.quantity + quantity }
                     : item
             );
         } else {
-            newCartItems = [...cartItems, {
-                product_id: product.id,
-                product: product,
-                quantity: quantity,
-                color_id: colorId,
-                size_id: sizeId,
-                price: product.current_sale_price
-            }];
+            newCartItems = [
+                ...cartItems,
+                {
+                    product_id: product.id,
+                    product: product,
+                    quantity: quantity,
+                    color_id: resolvedColorId,
+                    size_id: resolvedSizeId,
+                    variant_id: variantId,
+                    color: colorObj,
+                    size: sizeObj,
+                    price: unitPrice,
+                },
+            ];
         }
 
         setCartItems(newCartItems);
         localStorage.setItem('cart', JSON.stringify(newCartItems));
+
+        return true;
     };
 
     const removeFromCart = (productId, colorId = null, sizeId = null) => {
@@ -421,15 +446,17 @@ const FrontendLayout = ({ children, title }) => {
 
 const LayoutWithProviders = ({ children, title, wishlistItems = [] }) => {
     return (
-        <NotificationProvider>
-            <WishlistProvider initialWishlistItems={wishlistItems}>
-                <CartProvider>
-                    <FrontendLayout title={title}>
-                        {children}
-                    </FrontendLayout>
-                </CartProvider>
-            </WishlistProvider>
-        </NotificationProvider>
+        <ThemeProvider>
+            <NotificationProvider>
+                <WishlistProvider initialWishlistItems={wishlistItems}>
+                    <CartProvider>
+                        <FrontendLayout title={title}>
+                            {children}
+                        </FrontendLayout>
+                    </CartProvider>
+                </WishlistProvider>
+            </NotificationProvider>
+        </ThemeProvider>
     );
 };
 
