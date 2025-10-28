@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { 
     HeartIcon, 
     TrashIcon,
@@ -13,10 +13,13 @@ import { useNotification, NotificationProvider } from '@/Components/Notification
 import CartButton from '@/Components/Frontend/CartButton';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import { HoverCard, PulseButton } from '@/Components/Animations/AnimationComponents';
+import { usePriceSettings } from '@/Utils/priceFormatter';
 
 const WishlistItem = ({ item, onRemove }) => {
     const { showSuccess, showError } = useNotification();
     const [isRemoving, setIsRemoving] = useState(false);
+    const { appSettings } = usePage().props;
+    const { formatPriceWithCurrency } = usePriceSettings(appSettings);
 
     const handleRemove = async () => {
         setIsRemoving(true);
@@ -108,11 +111,11 @@ const WishlistItem = ({ item, onRemove }) => {
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <span className="text-xl font-bold text-gray-900">
-                            {item.product.current_sale_price}€
+                            {formatPriceWithCurrency(item.product.current_sale_price)}
                         </span>
                         {item.product.price > item.product.current_sale_price && (
                             <span className="ml-2 text-base text-gray-500 line-through">
-                                {item.product.price}€
+                                {formatPriceWithCurrency(item.product.price)}
                             </span>
                         )}
                     </div>
@@ -145,7 +148,7 @@ const WishlistItem = ({ item, onRemove }) => {
 
 function WishlistContent({ wishlistItems = [] }) {
     const [items, setItems] = useState(wishlistItems);
-    const { showSuccess, showInfo } = useNotification();
+    const { showSuccess, showInfo, showError } = useNotification();
 
     const handleRemoveItem = (itemId) => {
         setItems(prev => prev.filter(item => item.id !== itemId));
@@ -284,3 +287,4 @@ export default function Wishlist(props) {
         </NotificationProvider>
     );
 }
+

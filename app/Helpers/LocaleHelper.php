@@ -226,8 +226,9 @@ if (!function_exists('get_js_locale_config')) {
      */
     function get_js_locale_config($locale = null) {
         $localeInfo = get_locale_info($locale);
-        $currency = get_currency();
-        $currencySymbol = get_currency_symbol();
+        // Harmoniser avec les réglages d'admin
+        $currency = \App\Services\AppSettingsService::getCurrency();
+        $currencySymbol = \App\Services\AppSettingsService::getCurrencySymbol();
         
         return [
             'locale' => $localeInfo['locale'],

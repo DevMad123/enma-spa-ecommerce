@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { formatCurrency as formatCurrencyUtil } from '@/Utils/LocaleUtils';
 
 /**
  * Hook pour utiliser les paramètres d'application
@@ -7,41 +8,12 @@ export const useAppSettings = () => {
     const { props } = usePage();
     const { appSettings } = props;
     
-    // Formatage de devise
+    // Formatage de devise (délégué à LocaleUtils pour respecter les réglages globaux)
     const formatCurrency = (amount, options = {}) => {
         if (amount === null || amount === undefined || amount === '') return 'N/A';
-        
-        const currency = appSettings?.currency || 'XOF';
-        const currencySymbol = appSettings?.currency_symbol || 'F CFA';
-        const locale = appSettings?.locale || 'fr-FR';
-        const showDecimals = appSettings?.show_decimals === true || appSettings?.show_decimals === 'true';
-        
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount)) return 'N/A';
-        
-        // Options de formatage
-        const formatOptions = {
-            minimumFractionDigits: showDecimals ? 2 : 0,
-            maximumFractionDigits: showDecimals ? 2 : 0,
-            ...options
-        };
-        
-        // Formatage selon la devise
-        if (currency === 'EUR') {
-            return new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'EUR',
-                ...formatOptions
-            }).format(numAmount);
-        } else if (currency === 'XOF') {
-            // Format spécifique pour le F CFA
-            const formatted = new Intl.NumberFormat(locale, formatOptions).format(numAmount);
-            return `${formatted} ${currencySymbol}`;
-        } else {
-            // Format générique
-            const formatted = new Intl.NumberFormat(locale, formatOptions).format(numAmount);
-            return `${formatted} ${currencySymbol}`;
-        }
+        return formatCurrencyUtil(numAmount, options);
     };
     
     // Formatage de date
@@ -149,3 +121,4 @@ export const useAppSettings = () => {
 };
 
 export default useAppSettings;
+

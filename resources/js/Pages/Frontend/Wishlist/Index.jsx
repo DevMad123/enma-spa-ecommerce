@@ -19,6 +19,7 @@ import {
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import { useNotification, NotificationProvider } from '@/Components/Notifications/NotificationProvider';
 import { PulseButton } from '@/Components/Animations/AnimationComponents';
+import ProductCard from '@/Components/Frontend/ProductCard';
 
 const WishlistProductCard = ({ item, onRemove }) => {
     const { addToCart } = useCart();
@@ -187,10 +188,12 @@ const WishlistProductCard = ({ item, onRemove }) => {
 
 function WishlistContent({ wishlistItems = [], wishlistCount = 0 }) {
     const { showSuccess, showError, showWarning } = useNotification();
+    const { removeFromWishlist } = useWishlist();
     const [viewMode, setViewMode] = useState('grid'); // 'grid' ou 'list'
     const [sortBy, setSortBy] = useState('recent'); // 'recent', 'name', 'price'
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredItems, setFilteredItems] = useState(wishlistItems);
+    const [removingIds, setRemovingIds] = useState(new Set());
 
     // Filtrage et tri des produits
     React.useEffect(() => {
@@ -224,6 +227,21 @@ function WishlistContent({ wishlistItems = [], wishlistCount = 0 }) {
 
     const handleRemoveItem = (productId) => {
         setFilteredItems(prev => prev.filter(item => item.product.id !== productId));
+    };
+
+    // Suppression optimiste depuis la wishlist (et synchro locale)
+    const handleRemove = (productId) => {
+        if (removingIds.has(productId)) return;
+        const next = new Set(removingIds); next.add(productId); setRemovingIds(next);
+        try {
+            removeFromWishlist(productId); // Optimistic via contexte
+            setFilteredItems(prev => prev.filter(item => item.product.id !== productId));
+            showSuccess('Produit retiré de votre wishlist');
+        } catch (e) {
+            showError("Impossible de retirer le produit", "Erreur");
+        } finally {
+            setRemovingIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
+        }
     };
 
     const clearWishlist = () => {
@@ -357,11 +375,17 @@ function WishlistContent({ wishlistItems = [], wishlistCount = 0 }) {
                             }
                         `}>
                             {filteredItems.map((item) => (
-                                <WishlistProductCard
-                                    key={item.id}
-                                    item={item}
-                                    onRemove={handleRemoveItem}
-                                />
+                                <div key={item.id} className="relative">
+                                    <ProductCard product={item.product} />
+                                    <PulseButton
+                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(item.product.id); }}
+                                        disabled={removingIds.has(item.product.id)}
+                                        className="absolute top-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-full border border-gray-200 hover:bg-white transition disabled:opacity-50"
+                                        title="Retirer de la wishlist"
+                                    >
+                                        <TrashIcon className="h-4 w-4 text-red-600" />
+                                    </PulseButton>
+                                </div>
                             ))}
                         </div>
                     )}
