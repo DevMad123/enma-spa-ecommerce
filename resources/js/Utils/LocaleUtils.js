@@ -58,9 +58,10 @@ export function formatNumber(number, options = {}) {
       .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   }
 
+  const showDecimals = config?.showDecimals !== false;
   const defaultOptions = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: showDecimals ? 2 : 0,
+    maximumFractionDigits: showDecimals ? 2 : 0,
     ...options,
   };
 
@@ -99,9 +100,10 @@ export function formatCurrency(amount, options = {}) {
 
   // Format numeric part, then apply symbol/position from settings
   const opt = options && typeof options === 'object' ? options : {};
+  const showDecimalsC = config?.showDecimals !== false;
   const digits = {
-    minimumFractionDigits: opt.minimumFractionDigits ?? 2,
-    maximumFractionDigits: opt.maximumFractionDigits ?? 2,
+    minimumFractionDigits: opt.minimumFractionDigits ?? (showDecimalsC ? 2 : 0),
+    maximumFractionDigits: opt.maximumFractionDigits ?? (showDecimalsC ? 2 : 0),
   };
   const formattedNumber = formatNumber(numAmount, digits);
 

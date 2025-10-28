@@ -190,7 +190,7 @@ export default function Register() {
                                     </li>
                                     <li className="flex items-center">
                                         <CheckCircleIcon className="h-4 w-4 text-green-500 mr-2" />
-                                        Au moins une lettre majuscule
+                                        Au moins une lettre majuscule et minuscule
                                     </li>
                                     <li className="flex items-center">
                                         <CheckCircleIcon className="h-4 w-4 text-green-500 mr-2" />

@@ -416,7 +416,7 @@ const RelatedProducts = ({ products }) => {
                             </h4>
                             <div className="flex items-center justify-between">
                                 <span className="text-lg font-bold text-gray-900">
-                                    {product.current_sale_price} {currencySymbol}
+                                    {formatCurrency(product.current_sale_price)}
                                 </span>
                                 <PulseButton
                                     onClick={() => {
@@ -682,7 +682,7 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                     <TruckIcon className="h-6 w-6 text-amber-600" />
                     <div>
                       <p className="font-medium text-gray-900">Livraison gratuite</p>
-                      <p className="text-sm text-gray-600">Des {appSettings?.free_shipping_threshold || '50000'} {currencySymbol} d'achat</p>
+                      <p className="text-sm text-gray-600">Des {formatCurrency(appSettings?.free_shipping_threshold || 50000)} d'achat</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { 
     ShoppingCartIcon, 
@@ -190,10 +190,10 @@ const FrontendLayout = ({ children, title }) => {
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center space-x-4">
                                     <span>📞 {phone}</span>
-                                    <span>✉️ {contactEmail}</span>
+                                    <span>📧 {contactEmail}</span>
                                 </div>
                                 <div className="hidden md:flex items-center space-x-4">
-                                    <span>🚚 Livraison gratuite dès 50000 {currencySymbol}</span>
+                                    <span>🚚 Livraison gratuite dès {formatCurrency(appSettings?.free_shipping_threshold || 50000)}</span>
                                     <span>🎁 Retours gratuits</span>
                                 </div>
                             </div>
@@ -394,7 +394,7 @@ const FrontendLayout = ({ children, title }) => {
                                     <span className="ml-2 text-2xl font-bold">{appName}</span>
                                 </div>
                                 <p className="text-gray-300 mb-4">
-                                    Votre destination e-commerce pour des produits de qualité. 
+                                    Votre destination e-commerce pour des produits de qualité.
                                     Découvrez notre sélection unique et profitez d'une expérience d'achat exceptionnelle.
                                 </p>
                                 <div className="flex space-x-4">
@@ -468,3 +468,6 @@ export default LayoutWithProviders;
 
 
 
+
+
+import { formatCurrency } from '@/Utils/LocaleUtils';

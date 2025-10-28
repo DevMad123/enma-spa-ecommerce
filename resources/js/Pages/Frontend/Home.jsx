@@ -198,9 +198,9 @@ const CustomHero = ({ customizations, appSettings }) => {
                             <div>
                                 <div className="text-xl font-semibold">{product.name}</div>
                                 <div className="text-lg">
-                                    <span className="font-bold">{product.current_sale_price ?? product.price} {currencySymbol}</span>
+                                    <span className="font-bold">{formatCurrency(product.current_sale_price ?? product.price)}</span>
                                     {product.current_sale_price && product.price && product.price > product.current_sale_price && (
-                                        <span className="ml-2 line-through opacity-70">{product.price} {currencySymbol}</span>
+                                        <span className="ml-2 line-through opacity-70">{formatCurrency(product.price)}</span>
                                     )}
                                 </div>
                             </div>
@@ -264,9 +264,9 @@ const HeroSlider = ({ slides = [], appSettings }) => {
                         {slides[index]?.tagline && (<p className="text-gray-700 mb-4">{slides[index].tagline}</p>)}
                         {product && (
                             <div className="flex items-center gap-3 mb-4">
-                                <span className="text-xl font-semibold text-gray-900">{product.current_sale_price ?? product.price} {currencySymbol}</span>
+                                <span className="text-xl font-semibold text-gray-900">{formatCurrency(product.current_sale_price ?? product.price)}</span>
                                 {(product.price && product.current_sale_price && product.price > product.current_sale_price) && (
-                                    <span className="text-gray-500 line-through">{product.price} {currencySymbol}</span>
+                                    <span className="text-gray-500 line-through">{formatCurrency(product.price)}</span>
                                 )}
                             </div>
                         )}
@@ -443,8 +443,6 @@ export default function Home({ wishlistItems, ...props }) {
         </FrontendLayout>
     );
 }
-
-
 
 
 

@@ -198,8 +198,8 @@ Route::prefix('reviews')->name('frontend.reviews.')->group(function () {
     Route::middleware('auth')->post('/{review}/report', [ReviewController::class, 'report'])->name('report');
 });
 
-// Profil Client (Authentification requise)
-Route::middleware('auth')->prefix('profile')->name('frontend.profile.')->group(function () {
+// Profil Client (auth + verified)
+Route::middleware(['auth', 'verified'])->prefix('profile')->name('frontend.profile.')->group(function () {
     Route::get('/', [FrontendProfileController::class, 'index'])->name('index');
     Route::get('/edit', [FrontendProfileController::class, 'edit'])->name('edit');
     Route::put('/update', [FrontendProfileController::class, 'update'])->name('update');
@@ -214,8 +214,7 @@ Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->na
 // -------------------
 // Routes Admin protégées (InertiaJS)
 // -------------------
-// Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard admin
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

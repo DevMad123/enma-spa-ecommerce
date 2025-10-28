@@ -67,6 +67,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Send the email verification notification using custom notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\VerifyEmailNotification());
+    }
+
+    /**
      * Get the full URL for the user's avatar
      *
      * @return string
@@ -213,6 +221,14 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($role) {
             $this->roles()->detach($role->id);
         }
+    }
+
+    /**
+     * Explicitly route mail notifications to the user's email address.
+     */
+    public function routeNotificationForMail($notification)
+    {
+        return $this->email;
     }
 
     // Helper pour vérifier si c'est un admin (pour compatibilité avec le middleware existant)

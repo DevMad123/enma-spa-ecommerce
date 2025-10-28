@@ -237,6 +237,8 @@ if (!function_exists('get_js_locale_config')) {
             'currency' => $currency,
             'currencySymbol' => $currencySymbol,
             'currencyPosition' => $localeInfo['currency_position'],
+            // Expose decimal display preference from settings
+            'showDecimals' => \App\Services\AppSettingsService::getShowDecimals(),
             'numberFormat' => [
                 'decimal' => $localeInfo['decimal_separator'],
                 'thousands' => $localeInfo['thousands_separator']

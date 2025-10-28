@@ -42,10 +42,18 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Assign default role to new users
+        try {
+            $user->assignRole('Customer');
+        } catch (\Throwable $e) {
+            // Ignore if role does not exist; seeding may not have run yet
+        }
+
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('admin.dashboard', absolute: false));
+        // Redirect to verification notice instead of admin dashboard
+        return redirect()->route('verification.notice');
     }
 }

@@ -14,7 +14,7 @@ export const useAppSettings = () => {
         const currency = appSettings?.currency || 'XOF';
         const currencySymbol = appSettings?.currency_symbol || 'F CFA';
         const locale = appSettings?.locale || 'fr-FR';
-        const showDecimals = appSettings?.show_decimals === 'true';
+        const showDecimals = appSettings?.show_decimals === true || appSettings?.show_decimals === 'true';
         
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount)) return 'N/A';
@@ -136,7 +136,7 @@ export const useAppSettings = () => {
         currency: appSettings?.currency || 'XOF',
         currencySymbol: appSettings?.currency_symbol || 'F CFA',
         locale: appSettings?.locale || 'fr-FR',
-        showDecimals: appSettings?.show_decimals === 'true',
+        showDecimals: appSettings?.show_decimals === true || appSettings?.show_decimals === 'true',
         
         // Méthodes de formatage
         formatCurrency,
