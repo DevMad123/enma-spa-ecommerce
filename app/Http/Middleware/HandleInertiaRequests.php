@@ -37,6 +37,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
             ],
+            // Locale configuration shared to all Inertia pages (frontend + admin)
+            'localeConfig' => get_js_locale_config(),
             'appSettings' => [
                 'app_name' => AppSettingsService::getAppName(),
                 'currency' => AppSettingsService::getCurrency(),

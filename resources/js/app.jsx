@@ -7,6 +7,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import { CartProvider } from './Layouts/FrontendLayout';
+import { initLocale } from './Utils/LocaleUtils';
 
 createInertiaApp({
     title: (title) => {
@@ -20,6 +21,16 @@ createInertiaApp({
     },
     setup({ el, App, props }) {
         const root = createRoot(el);
+
+        // Initialize locale config globally so formatters use admin settings
+        try {
+            const lc = props?.initialPage?.props?.localeConfig;
+            if (lc && typeof lc === 'object') {
+                initLocale(lc);
+            }
+        } catch (e) {
+            // Silent fail – formatters have fallbacks
+        }
 
         root.render(
             <Provider store={store}>
