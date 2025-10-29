@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function CustomizationPage({ customization = null, products = [] }) {
+export default function CustomizationPage({ customization = null, products = [], categories = [], gallery = [] }) {
   const { flash } = usePage().props;
   const [bannerPreview, setBannerPreview] = useState(customization?.hero_background_image || null);
   const [logoPreview, setLogoPreview] = useState(customization?.logo_image || null);
@@ -30,10 +30,22 @@ export default function CustomizationPage({ customization = null, products = [] 
     hero_subtitle: customization?.hero_subtitle ?? '',
     hero_background_image: null,
     featured_section_enabled: customization?.featured_section_enabled ?? true,
+    featured_category_id: customization?.featured_category_id ?? '',
     newsletter_enabled: customization?.newsletter_enabled ?? true,
     theme_color: customization?.theme_color ?? '',
     logo_image: null,
     slides: initialSlides.map(({ order, enabled, product_id, tagline }) => ({ order, enabled, product_id, tagline, background_image: null })),
+    gallery: Array.from({ length: 6 }).map((_, i) => {
+      const g = gallery?.[i] || {};
+      return {
+        order: i + 1,
+        enabled: g.enabled ?? true,
+        title: g.title || '',
+        url: g.url || '',
+        image: null,
+        preview: g.image || null,
+      };
+    }),
   });
 
   // Agréger les erreurs en messages lisibles (Slide X: ...)
@@ -98,6 +110,24 @@ export default function CustomizationPage({ customization = null, products = [] 
     setSlidePreviews(prev => prev.map((p, idx) => nextPreviews[idx] ?? p));
   }, [customization]);
 
+  const onGalleryChange = (idx, key, value) => {
+    const next = [...(data.gallery || [])];
+    next[idx] = { ...next[idx], [key]: value };
+    setData('gallery', next);
+  };
+
+  const onGalleryImage = (idx, file) => {
+    if (!file) return;
+    const maxKB = 3072;
+    if (!isAllowedImage(file)) { setErrorMessage('Format non supporté pour la galerie. Utilisez JPG, PNG, WEBP ou AVIF.'); return; }
+    const sizeKB = Math.ceil((file.size || 0) / 1024);
+    if (sizeKB > maxKB) { setErrorMessage('Image de galerie trop lourde (max 3 Mo).'); return; }
+    onGalleryChange(idx, 'image', file);
+    const next = [...(data.gallery || [])];
+    next[idx] = { ...next[idx], preview: URL.createObjectURL(file) };
+    setData('gallery', next);
+  };
+
   const handleSubmit = (e) => {
     console.log('Submitting form with data:', data);
     e.preventDefault();
@@ -117,6 +147,20 @@ export default function CustomizationPage({ customization = null, products = [] 
           };
           if (s.background_image instanceof File) {
             next.background_image = s.background_image;
+          }
+          return next;
+        });
+      }
+      if (Array.isArray(f.gallery)) {
+        f.gallery = f.gallery.map((g) => {
+          const next = {
+            order: g.order,
+            enabled: !!g.enabled,
+            title: g.title ?? '',
+            url: g.url ?? '',
+          };
+          if (g.image instanceof File) {
+            next.image = g.image;
           }
           return next;
         });
@@ -296,8 +340,70 @@ export default function CustomizationPage({ customization = null, products = [] 
                   {errors.hero_background_image && <p className="text-sm text-red-600 mt-1">{errors.hero_background_image}</p>}
                 </div>
               </div>
-            </div>
           </div>
+        </div>
+
+        {/* Galerie Lifestyle */}
+        <div className="bg-white rounded-lg border shadow-sm">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-lg font-semibold">Galerie lifestyle</h2>
+            <p className="text-sm text-gray-500">Images configurables (titre + lien facultatifs)</p>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium">Image #{i+1}</h3>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={!!data.gallery?.[i]?.enabled} onChange={(e) => setData('gallery', Object.assign([], data.gallery, { [i]: { ...data.gallery[i], enabled: e.target.checked } }))} />
+                    <span>Activer</span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                    <input type="text" value={data.gallery?.[i]?.title || ''} onChange={(e) => setData('gallery', Object.assign([], data.gallery, { [i]: { ...data.gallery[i], title: e.target.value } }))} className="w-full border rounded-lg px-3 py-2" placeholder="Titre (facultatif)" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Lien (URL)</label>
+                    <input type="text" value={data.gallery?.[i]?.url || ''} onChange={(e) => setData('gallery', Object.assign([], data.gallery, { [i]: { ...data.gallery[i], url: e.target.value } }))} className="w-full border rounded-lg px-3 py-2" placeholder="https://..." />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                  <div className="flex items-center gap-4">
+                    <label className="inline-flex items-center px-4 py-2 bg-gray-100 border rounded-lg cursor-pointer hover:bg-gray-200 whitespace-nowrap">
+                      <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.avif" onChange={(e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        const maxKB = 3072;
+                        const name = (file.name || '').toLowerCase();
+                        const mime = (file.type || '').toLowerCase();
+                        const ok = ['image/jpeg','image/png','image/webp','image/avif'].includes(mime) || ['.jpg','.jpeg','.png','.webp','.avif'].some(ext => name.endsWith(ext));
+                        if (!ok) { setErrorMessage('Format non supporté pour la galerie. Utilisez JPG, PNG, WEBP ou AVIF.'); return; }
+                        const sizeKB = Math.ceil((file.size || 0) / 1024);
+                        if (sizeKB > maxKB) { setErrorMessage('Image de galerie trop lourde (max 3 Mo).'); return; }
+                        const next = [...(data.gallery || [])];
+                        next[i] = { ...next[i], image: file, preview: URL.createObjectURL(file) };
+                        setData('gallery', next);
+                      }} />
+                      <span>Choisir une image</span>
+                    </label>
+                    <span className="text-xs text-gray-500">JPG, PNG, WEBP, AVIF – 3 Mo max</span>
+                    <div className="relative h-20 w-[200px] max-w-full overflow-hidden rounded-lg border bg-gray-50">
+                      {data.gallery?.[i]?.preview ? (
+                        <img src={toAbsolute(data.gallery[i].preview)} alt={`Gallery ${i+1}`} className="h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-500">Aucun aperçu</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Galerie Lifestyle */}
 
           {/* Sections */}
           <div className="bg-white rounded-lg border shadow-sm">
@@ -309,6 +415,20 @@ export default function CustomizationPage({ customization = null, products = [] 
                 <input type="checkbox" checked={!!data.featured_section_enabled} onChange={(e) => setData('featured_section_enabled', e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-700">Activer la section produits vedettes</span>
               </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie mise en avant</label>
+                <select
+                  value={data.featured_category_id || ''}
+                  onChange={(e) => setData('featured_category_id', e.target.value || '')}
+                  className={`block w-full px-3 py-2 border rounded-lg ${errors.featured_category_id ? 'border-red-300' : 'border-gray-300'}`}
+                >
+                  <option value="">— Aucune —</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                {errors.featured_category_id && <p className="text-sm text-red-600 mt-1">{errors.featured_category_id}</p>}
+              </div>
               <label className="flex items-center">
                 <input type="checkbox" checked={!!data.newsletter_enabled} onChange={(e) => setData('newsletter_enabled', e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
                 <span className="ml-2 text-sm text-gray-700">Afficher la section newsletter</span>

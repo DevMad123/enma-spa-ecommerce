@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\FrontCustomization;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\FrontCustomizationSlide;
+use App\Models\FrontGalleryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -18,12 +20,31 @@ class FrontCustomizationController extends Controller
     {
         $this->authorize('manage-customizations');
         $custom = FrontCustomization::first();
+
         $products = Product::query()
             ->select(['id', 'name'])
             ->orderBy('name')
             ->get();
 
-        // Adapter les URLs des images pour l'aperçu côté admin
+        $categories = ProductCategory::query()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+
+        $gallery = FrontGalleryItem::query()
+            ->orderBy('order')
+            ->get()
+            ->map(function ($g) {
+                return [
+                    'id' => $g->id,
+                    'order' => $g->order,
+                    'enabled' => (bool) $g->enabled,
+                    'title' => $g->title,
+                    'url' => $g->url,
+                    'image' => $g->image_url,
+                ];
+            });
+
         $customization = $custom ? [
             'id' => $custom->id,
             'hero_enabled' => (bool) $custom->hero_enabled,
@@ -31,6 +52,7 @@ class FrontCustomizationController extends Controller
             'hero_title' => $custom->hero_title,
             'hero_subtitle' => $custom->hero_subtitle,
             'featured_section_enabled' => (bool) $custom->featured_section_enabled,
+            'featured_category_id' => $custom->featured_category_id,
             'newsletter_enabled' => (bool) $custom->newsletter_enabled,
             'theme_color' => $custom->theme_color,
             'hero_background_image' => $custom->hero_background_image ? url('/' . ltrim($custom->hero_background_image, '/')) : null,
@@ -50,6 +72,8 @@ class FrontCustomizationController extends Controller
         return Inertia::render('Admin/Settings/Customization', [
             'customization' => $customization,
             'products' => $products,
+            'categories' => $categories,
+            'gallery' => $gallery,
         ]);
     }
 
@@ -61,13 +85,12 @@ class FrontCustomizationController extends Controller
             'content_type' => $request->header('Content-Type')
         ]);
         $this->authorize('manage-customizations');
-        // Validation manuelle et agrégation d'erreurs lisibles côté front
+
         $errors = $this->validateCustomization($request);
         if (!empty($errors)) {
             return back()->withErrors($errors)->withInput();
         }
 
-        // Construire une payload robuste: ne pas dépendre uniquement de validated() si vide
         $data = [];
         foreach (['hero_title','hero_subtitle','theme_color'] as $field) {
             if ($request->has($field)) {
@@ -78,19 +101,22 @@ class FrontCustomizationController extends Controller
             $val = $request->input('hero_product_id');
             $data['hero_product_id'] = $val === '' ? null : $val;
         }
+        if ($request->has('featured_category_id')) {
+            $val = $request->input('featured_category_id');
+            $data['featured_category_id'] = ($val === '' || is_null($val)) ? null : (int) $val;
+        }
         foreach (['hero_enabled','featured_section_enabled','newsletter_enabled'] as $b) {
             if ($request->has($b)) {
                 $data[$b] = $request->boolean($b);
             }
         }
-        Log::info('Data received for front customization update:', $data);
 
         $customization = FrontCustomization::first();
         if (!$customization) {
             $customization = new FrontCustomization();
         }
 
-        // Handle hero background image upload
+        // Upload hero background
         if ($request->hasFile('hero_background_image')) {
             if ($customization->hero_background_image) {
                 $this->deletePublicFileIfExists($customization->hero_background_image);
@@ -99,7 +125,7 @@ class FrontCustomizationController extends Controller
             $data['hero_background_image'] = '/' . ltrim('storage/' . $path, '/');
         }
 
-        // Handle logo image upload
+        // Upload logo image
         if ($request->hasFile('logo_image')) {
             if ($customization->logo_image) {
                 $this->deletePublicFileIfExists($customization->logo_image);
@@ -108,21 +134,10 @@ class FrontCustomizationController extends Controller
             $data['logo_image'] = '/' . ltrim('storage/' . $path, '/');
         }
 
-        // Normalize booleans safely (avoid casting 'false' string to true)
-        if ($request->has('hero_enabled')) {
-            $data['hero_enabled'] = $request->boolean('hero_enabled');
-        }
-        if ($request->has('featured_section_enabled')) {
-            $data['featured_section_enabled'] = $request->boolean('featured_section_enabled');
-        }
-        if ($request->has('newsletter_enabled')) {
-            $data['newsletter_enabled'] = $request->boolean('newsletter_enabled');
-        }
-
         $customization->fill($data);
         $customization->save();
 
-        // Handle slides (up to 3)
+        // Slides (up to 3)
         $slides = $request->input('slides', []);
         $slideFiles = $request->file('slides', []);
         foreach ([1,2,3] as $position) {
@@ -131,26 +146,18 @@ class FrontCustomizationController extends Controller
             if (!$payload) {
                 continue;
             }
-
-            // Enabled: convertir correctement les valeurs 'true'/'false', '1'/'0'
             if (array_key_exists('enabled', $payload)) {
                 $enabled = filter_var($payload['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                $slide->enabled = is_null($enabled) ? false : $enabled;
+                $slide->enabled = is_null($enabled) ? false : (bool) $enabled;
             } elseif (!$slide->exists) {
                 $slide->enabled = false;
             }
-
-            // Product: normaliser chaîne vide -> null
             if (array_key_exists('product_id', $payload)) {
-                $slide->product_id = ($payload['product_id'] === '' || is_null($payload['product_id']))
-                    ? null
-                    : (int) $payload['product_id'];
+                $slide->product_id = ($payload['product_id'] === '' || is_null($payload['product_id'])) ? null : (int) $payload['product_id'];
             }
-
             if (array_key_exists('tagline', $payload)) {
                 $slide->tagline = (string) $payload['tagline'];
             }
-
             $fileKey = 'slides.' . ($position-1) . '.background_image';
             $uploaded = null;
             if ($request->hasFile($fileKey)) {
@@ -168,9 +175,48 @@ class FrontCustomizationController extends Controller
             $slide->order = $position;
             $slide->save();
         }
+
+        // Gallery items (up to 6)
+        $galleryPayloads = $request->input('gallery', []);
+        $galleryFiles = $request->file('gallery', []);
+        for ($i = 0; $i < 6; $i++) {
+            $payload = $galleryPayloads[$i] ?? null;
+            $fileKey = 'gallery.' . $i . '.image';
+            if (!$payload && !$request->hasFile($fileKey) && !isset($galleryFiles[$i])) continue;
+            $item = FrontGalleryItem::firstOrNew(['order' => $i+1]);
+            if (array_key_exists('enabled', $payload)) {
+                $enabled = filter_var($payload['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                $item->enabled = is_null($enabled) ? true : (bool) $enabled;
+            } elseif (!$item->exists) {
+                $item->enabled = true;
+            }
+            $item->title = $payload['title'] ?? null;
+            $item->url = $payload['url'] ?? null;
+            $uploaded = null;
+            if ($request->hasFile($fileKey)) {
+                $uploaded = $request->file($fileKey);
+            } elseif (isset($galleryFiles[$i])) {
+                $candidate = $galleryFiles[$i];
+                if ($candidate instanceof \Illuminate\Http\UploadedFile) {
+                    $uploaded = $candidate;
+                } elseif (is_array($candidate) && isset($candidate['image'])) {
+                    $uploaded = $candidate['image'];
+                }
+            }
+            if ($uploaded) {
+                if ($item->image_path) {
+                    $this->deletePublicFileIfExists($item->image_path);
+                }
+                $path = $uploaded->store('customizations', 'public');
+                $item->image_path = '/' . ltrim('storage/' . $path, '/');
+            }
+            $item->order = $i+1;
+            $item->save();
+        }
+
         Cache::forget('front_customizations');
 
-        return back()->with('success', 'Personnalisation mise à jour avec succès.');
+        return back()->with('success', 'Personnalisation mise a jour avec succes.');
     }
 
     private function deletePublicFileIfExists(?string $path): void
@@ -191,9 +237,8 @@ class FrontCustomizationController extends Controller
 
         $checkFile = function($file, $maxBytes, $key) use (&$errors, $allowedMimes) {
             if (!$file) return;
-            // Vérifier fichier valide pour éviter exception sur gros fichiers
             if (!($file instanceof \Illuminate\Http\UploadedFile) && !($file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile)) {
-                $errors[$key][] = "Le fichier n'a pas été téléversé correctement.";
+                $errors[$key][] = "Le fichier n'a pas ete televerse correctement.";
                 return;
             }
             if (method_exists($file, 'isValid') && !$file->isValid()) {
@@ -201,18 +246,18 @@ class FrontCustomizationController extends Controller
                 if (in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
                     $errors[$key][] = "L'image est trop volumineuse (limite serveur).";
                 } else {
-                    $errors[$key][] = "Le fichier n'a pas été téléversé correctement.";
+                    $errors[$key][] = "Le fichier n'a pas ete televerse correctement.";
                 }
                 return;
             }
             $path = method_exists($file, 'getPathname') ? $file->getPathname() : null;
             if (!$path || !@is_file($path) || !@is_readable($path)) {
-                $errors[$key][] = "Le fichier est illisible (réessayez).";
+                $errors[$key][] = "Le fichier est illisible (reessayez).";
                 return;
             }
             $mime = $file->getMimeType();
             if ($mime && !in_array($mime, $allowedMimes, true)) {
-                $errors[$key][] = "Format non supporté (JPG, PNG, WEBP, AVIF).";
+                $errors[$key][] = "Format non supporte (JPG, PNG, WEBP, AVIF).";
             }
             $size = (int) $file->getSize();
             if ($size > $maxBytes) {
@@ -229,7 +274,7 @@ class FrontCustomizationController extends Controller
             $checkFile($request->file('logo_image'), 3*1024*1024, 'logo_image');
         }
 
-        // Slides (0..2) – 4 Mo
+        // Slides (0..2) - 4 Mo
         $slideFiles = $request->file('slides', []);
         for ($i = 0; $i < 3; $i++) {
             $fileKey = 'slides.' . $i . '.background_image';
@@ -242,15 +287,13 @@ class FrontCustomizationController extends Controller
             if ($uploaded) {
                 $checkFile($uploaded, 4*1024*1024, 'slides.' . $i . '.background_image');
             }
-            // Product ID existe si fourni
             $pid = $request->input('slides.' . $i . '.product_id');
             if ($pid !== null && $pid !== '' && !Product::where('id', $pid)->exists()) {
                 $errors['slides.' . $i . '.product_id'][] = "Produit de slide invalide.";
             }
-            // Tagline longueur
             $tag = $request->input('slides.' . $i . '.tagline');
             if ($tag !== null && mb_strlen((string)$tag) > 255) {
-                $errors['slides.' . $i . '.tagline'][] = "Le texte d'accroche ne doit pas dépasser 255 caractères.";
+                $errors['slides.' . $i . '.tagline'][] = "Le texte d'accroche ne doit pas depasser 255 caracteres.";
             }
         }
 
@@ -260,10 +303,32 @@ class FrontCustomizationController extends Controller
             $errors['hero_product_id'][] = "Produit hero invalide.";
         }
 
+        // Featured category id
+        $fcid = $request->input('featured_category_id');
+        if ($fcid !== null && $fcid !== '' && !ProductCategory::where('id', $fcid)->exists()) {
+            $errors['featured_category_id'][] = "Categorie mise en avant invalide.";
+        }
+
+        // Gallery images (up to 6) - 3 Mo
+        $galleryFiles = $request->file('gallery', []);
+        for ($i = 0; $i < 6; $i++) {
+            $fileKey = 'gallery.' . $i . '.image';
+            $uploaded = null;
+            if ($request->hasFile($fileKey)) {
+                $uploaded = $request->file($fileKey);
+            } elseif (isset($galleryFiles[$i])) {
+                $candidate = $galleryFiles[$i];
+                if ($candidate instanceof \Illuminate\Http\UploadedFile) {
+                    $uploaded = $candidate;
+                } elseif (is_array($candidate) && isset($candidate['image'])) {
+                    $uploaded = $candidate['image'];
+                }
+            }
+            if ($uploaded) {
+                $checkFile($uploaded, 3*1024*1024, 'gallery.' . $i . '.image');
+            }
+        }
+
         return $errors;
     }
 }
-
-
-
-

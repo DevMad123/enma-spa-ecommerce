@@ -347,7 +347,7 @@ const FrontendLayout = ({ children, title }) => {
                         </div>
                     </div>
 
-                                        {/* Mobile Drawer Menu */}
+                    {/* Mobile Drawer Menu */}
                     {mobileMenuOpen && (
                         <div className="fixed inset-0 z-50">
                             <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
@@ -362,8 +362,8 @@ const FrontendLayout = ({ children, title }) => {
                                     <Link href={route('frontend.shop.index')} className="text-sm font-medium text-black" onClick={() => setMobileMenuOpen(false)}>Tout voir</Link>
                                 </div>
                                 <div className="space-y-3">
-                                                                        {categories.map(cat => (
-                                        <Link key={cat.id} href={cat.slug ? route('frontend.shop.category', cat.slug) : route('frontend.shop.index')} onClick={() => setMobileMenuOpen(false)} className="block">
+                                    {categories.map(cat => (
+                                        <Link key={cat.id} href={cat.id ? route('frontend.shop.category', cat.id) : route('frontend.shop.index')} onClick={() => setMobileMenuOpen(false)} className="block">
                                             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
                                                 <img src={cat.image} alt={cat.name} className="h-12 w-12 rounded object-cover border" loading="lazy" />
                                                 <span className="font-medium text-gray-900">{cat.name}</span>

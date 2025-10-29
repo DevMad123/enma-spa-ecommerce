@@ -20,6 +20,8 @@ import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
 import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
 import FeaturesCarousel from '@/Components/Features/FeaturesCarousel';
 import ProductCarousel from '@/Components/Frontend/ProductCarousel';
+import BrandCarousel from '@/Components/Frontend/BrandCarousel';
+import GalleryGrid from '@/Components/Frontend/GalleryGrid';
 import useCustomizations from '@/Hooks/useCustomizations';
 
 const ProductCard = ({ product, appSettings }) => {
@@ -36,6 +38,7 @@ const ProductCard = ({ product, appSettings }) => {
                     </span>
                 </div>
             )}
+            
 
             {/* Bouton favoris */}
             <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -299,7 +302,10 @@ function HomeContent({
     categories = [],
     brands = [],
     stats = {},
-    appSettings = {}
+    appSettings = {},
+    featuredCategory = null,
+    featuredCategoryProducts = [],
+    galleryItems = [],
 }) {
     const { customizations } = useCustomizations();
     const appName = appSettings?.app_name || 'ENMA SPA';
@@ -377,14 +383,34 @@ function HomeContent({
                 </section>
             )}
             {/* New In Carousel */}
-            {console.log(newProducts)}
+            
             {newProducts.length > 0 && (
                 <ProductCarousel
                     products={newProducts}
-                    title="Nouveautés"
+                    title="New In"
                     viewMoreHref={route('nouveautes')}
                     currencySymbol={currencySymbol}
                 />
+            )}
+
+            {/* Catégorie mise en avant (Section 6) */}
+            {featuredCategory && (featuredCategoryProducts?.length > 0) && (
+                <ProductCarousel
+                    products={featuredCategoryProducts}
+                    title={featuredCategory.name}
+                    viewMoreHref={route('frontend.shop.category', featuredCategory.id)}
+                    currencySymbol={currencySymbol}
+                />
+            )}
+
+            {/* Marques (Section 7) */}
+            {Array.isArray(brands) && brands.length > 0 && (
+                <BrandCarousel brands={brands} title="Nos marques" />
+            )}
+
+            {/* Galerie lifestyle (Section 8) */}
+            {Array.isArray(galleryItems) && galleryItems.length > 0 && (
+                <GalleryGrid items={galleryItems} title="Gallerie" />
             )}
 
 {/* Featured Products Section */}
@@ -443,6 +469,13 @@ export default function Home({ wishlistItems, ...props }) {
         </FrontendLayout>
     );
 }
+
+
+
+
+
+
+
 
 
 

@@ -146,9 +146,9 @@ class ShopController extends Controller
         ]);
     }
 
-    public function category($categorySlug, Request $request)
+    public function category($categoryId, Request $request)
     {
-        $category = ProductCategory::where('slug', $categorySlug)->firstOrFail();
+        $category = ProductCategory::where('id', $categoryId)->firstOrFail();
         
         $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
             ->where('category_id', $category->id)

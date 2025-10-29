@@ -22,6 +22,7 @@ class MenuController extends Controller
                 'id' => $c->id,
                 'name' => $c->name,
                 'slug' => $c->slug,
+                'image' => $c->image,
                 'subcategories' => $c->subcategory->map(function ($s) {
                     return [
                         'id' => $s->id,

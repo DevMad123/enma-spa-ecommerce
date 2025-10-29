@@ -232,18 +232,22 @@ const FilterSidebar = ({
 }) => {
     const { appSettings } = usePage().props;
     const maxPriceDefault = appSettings?.max_price_filter || 1000;
-    const [priceRange, setPriceRange] = useState([filters.min_price || 0, filters.max_price || maxPriceDefault]);
+    const [priceRange, setPriceRange] = useState([
+        typeof filters.min_price === 'number' ? filters.min_price : (parseInt(filters.min_price) || 0),
+        typeof filters.max_price === 'number' ? filters.max_price : (parseInt(filters.max_price) || maxPriceDefault),
+    ]);
 
     const handlePriceChange = (index, value) => {
         const newRange = [...priceRange];
-        newRange[index] = parseInt(value);
+        // Autoriser la saisie vide, sinon parser en entier
+        const parsed = value === '' ? '' : parseInt(value, 10);
+        newRange[index] = isNaN(parsed) ? '' : parsed;
         setPriceRange(newRange);
-        
-        onFilterChange({
-            ...filters,
-            min_price: newRange[0],
-            max_price: newRange[1]
-        });
+
+        const next = { ...filters };
+        if (newRange[0] === '' || newRange[0] === null) delete next.min_price; else next.min_price = newRange[0];
+        if (newRange[1] === '' || newRange[1] === null) delete next.max_price; else next.max_price = newRange[1];
+        onFilterChange(next);
     };
 
     const sidebarClasses = `
@@ -281,7 +285,7 @@ const FilterSidebar = ({
                                     <label key={subcategory.id} className="flex items-center">
                                         <input
                                             type="checkbox"
-                                            checked={filters.subcategories?.includes(subcategory.id.toString())}
+                                            checked={Array.isArray(filters.subcategories) ? filters.subcategories.includes(subcategory.id.toString()) : false}
                                             onChange={(e) => {
                                                 const subcategories = filters.subcategories || [];
                                                 const newSubcategories = e.target.checked
@@ -336,7 +340,7 @@ const FilterSidebar = ({
                                     <label key={brand.id} className="flex items-center">
                                         <input
                                             type="checkbox"
-                                            checked={filters.brands?.includes(brand.id.toString())}
+                                            checked={Array.isArray(filters.brands) ? filters.brands.includes(brand.id.toString()) : false}
                                             onChange={(e) => {
                                                 const brands = filters.brands || [];
                                                 const newBrands = e.target.checked
@@ -362,7 +366,7 @@ const FilterSidebar = ({
                                     <label key={color.id} className="flex flex-col items-center cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={filters.colors?.includes(color.id.toString())}
+                                            checked={Array.isArray(filters.colors) ? filters.colors.includes(color.id.toString()) : false}
                                             onChange={(e) => {
                                                 const colors = filters.colors || [];
                                                 const newColors = e.target.checked
@@ -374,7 +378,7 @@ const FilterSidebar = ({
                                         />
                                         <div 
                                             className="w-8 h-8 rounded-full border-2 border-gray-300 relative"
-                                            style={{ backgroundColor: color.hex_code || color.name.toLowerCase() }}
+                                            style={{ backgroundColor: color.color_code || color.name.toLowerCase() }}
                                         >
                                             {filters.colors?.includes(color.id.toString()) && (
                                                 <div className="absolute inset-0 rounded-full border-2 border-amber-500" />
@@ -396,7 +400,7 @@ const FilterSidebar = ({
                                     <label key={size.id} className="cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={filters.sizes?.includes(size.id.toString())}
+                                            checked={Array.isArray(filters.sizes) ? filters.sizes.includes(size.id.toString()) : false}
                                             onChange={(e) => {
                                                 const sizes = filters.sizes || [];
                                                 const newSizes = e.target.checked
@@ -455,7 +459,7 @@ function CategoryShow({
     const safeColors = Array.isArray(colors) ? colors.filter(c => c && c.id) : [];
     const safeSizes = Array.isArray(sizes) ? sizes.filter(s => s && s.id) : [];
     const safeFilters = filters && typeof filters === 'object' ? filters : {};
-    const safeCategory = category && typeof category === 'object' ? category : { name: '', slug: '' };
+    const safeCategory = category && typeof category === 'object' ? category : { id: null, name: '', slug: '' };
     
     // Fonction pour nettoyer les filtres avant envoi à Inertia
     const cleanFilters = (filters) => {
@@ -477,7 +481,8 @@ function CategoryShow({
     
     const [viewMode, setViewMode] = useState('grid');
     const [sortBy, setSortBy] = useState(() => {
-        return safeFilters && safeFilters.sort ? safeFilters.sort : 'name';
+        const s = (safeFilters && typeof safeFilters.sort !== 'undefined') ? safeFilters.sort : 'newest';
+        return typeof s === 'string' ? s : String(s);
     });
     const [localFilters, setLocalFilters] = useState(() => cleanFilters(safeFilters));
     const [filtersOpen, setFiltersOpen] = useState(false);
@@ -489,8 +494,8 @@ function CategoryShow({
         // Debounced filter application
         clearTimeout(window.filterTimeout);
         window.filterTimeout = setTimeout(() => {
-            if (safeCategory?.slug) {
-                router.get(route('frontend.shop.category', safeCategory.slug), cleanedFilters, {
+            if (safeCategory?.id) {
+                router.get(route('frontend.shop.category', safeCategory.id), cleanedFilters, {
                     preserveState: true,
                     preserveScroll: true,
                     replace: true
@@ -501,12 +506,12 @@ function CategoryShow({
 
     const handleSortChange = (newSort) => {
         setSortBy(newSort);
-        if (safeCategory?.slug) {
+        if (safeCategory?.id) {
             const newFilters = cleanFilters({
                 ...localFilters,
                 sort: newSort
             });
-            router.get(route('frontend.shop.category', safeCategory.slug), newFilters, {
+            router.get(route('frontend.shop.category', safeCategory.id), newFilters, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true
@@ -647,10 +652,12 @@ function CategoryShow({
                                 {/* Sort Dropdown */}
                                 <div className="relative">
                                     <select
-                                        value={sortBy}
+                                        value={String(sortBy)}
                                         onChange={(e) => handleSortChange(e.target.value)}
                                         className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                     >
+                                        <option value="newest">Plus récents</option>
+                                        <option value="price_asc">Prix croissant</option>
                                         <option value="name">Nom A-Z</option>
                                         <option value="name_desc">Nom Z-A</option>
                                         <option value="price">Prix croissant</option>

@@ -14,6 +14,7 @@ class FrontCustomization extends Model
         'hero_title',
         'hero_subtitle',
         'featured_section_enabled',
+        'featured_category_id',
         'newsletter_enabled',
         'theme_color',
         'logo_image',
@@ -28,6 +29,11 @@ class FrontCustomization extends Model
     public function heroProduct()
     {
         return $this->belongsTo(Product::class, 'hero_product_id');
+    }
+
+    public function featuredCategory()
+    {
+        return $this->belongsTo(ProductCategory::class, 'featured_category_id');
     }
 
     public function getHeroBackgroundImageUrlAttribute(): ?string
@@ -57,4 +63,3 @@ class FrontCustomization extends Model
         });
     }
 }
-
