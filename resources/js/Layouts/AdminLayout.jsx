@@ -73,7 +73,7 @@ function getPageTitle(url) {
 
 export default function AdminLayout({ title, children }) {
   const { props } = usePage();
-  const { auth, appSettings } = props;
+  const { auth, appSettings, flash } = props;
   const { url } = usePage();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -148,6 +148,16 @@ export default function AdminLayout({ title, children }) {
           {/* Main content area */}
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto">
+              {flash?.success && (
+                <div className="mb-4 rounded border border-green-200 bg-green-50 text-green-800 px-4 py-3">
+                  {flash.success}
+                </div>
+              )}
+              {flash?.error && (
+                <div className="mb-4 rounded border border-red-200 bg-red-50 text-red-800 px-4 py-3">
+                  {flash.error}
+                </div>
+              )}
               {children}
             </div>
           </main>

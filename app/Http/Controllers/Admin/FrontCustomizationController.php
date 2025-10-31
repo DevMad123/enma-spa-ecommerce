@@ -12,13 +12,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Gate;
 use Log;
 
 class FrontCustomizationController extends Controller
 {
     public function edit()
     {
-        $this->authorize('manage-customizations');
+        if (Gate::denies('manage-customizations')) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('error', "Vous n'êtes pas autorisé à accéder à la personnalisation du site.");
+        }
         $custom = FrontCustomization::first();
 
         $products = Product::query()
@@ -84,7 +89,11 @@ class FrontCustomizationController extends Controller
             'files' => array_keys($request->allFiles()),
             'content_type' => $request->header('Content-Type')
         ]);
-        $this->authorize('manage-customizations');
+        if (Gate::denies('manage-customizations')) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('error', "Vous n'êtes pas autorisé à modifier la personnalisation du site.");
+        }
 
         $errors = $this->validateCustomization($request);
         if (!empty($errors)) {
