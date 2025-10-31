@@ -55,7 +55,7 @@ export default function ProductsList() {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
         
-        router.get(route('admin.products.index'), {
+        router.get(route('admin.products.index', undefined, false), {
             search: searchTerm,
             ...updatedFilters,
         }, {
@@ -82,7 +82,7 @@ export default function ProductsList() {
             stock_status: '',
             per_page: 15,
         });
-        router.get(route('admin.products.index'));
+        router.get(route('admin.products.index', undefined, false));
     };
 
     const handleBulkAction = (action, selectedIds) => {
@@ -93,7 +93,7 @@ export default function ProductsList() {
 
         if (action === 'delete') {
             if (confirm(`Êtes-vous sûr de vouloir supprimer ${selectedIds.length} produit(s) ?`)) {
-                router.post(route('admin.products.bulk-delete'), {
+                router.post(route('admin.products.bulk-delete', undefined, false), {
                     ids: selectedIds
                 });
             }
@@ -102,13 +102,13 @@ export default function ProductsList() {
                 search: searchTerm,
                 ...activeFilters,
             });
-            window.location.href = route('admin.products.export') + '?' + exportParams.toString();
+            window.location.href = route('admin.products.export', undefined, false) + '?' + exportParams.toString();
         } else if (action === 'activate') {
-            router.post(route('admin.products.bulk-activate'), {
+            router.post(route('admin.products.bulk-activate', undefined, false), {
                 ids: selectedIds
             });
         } else if (action === 'deactivate') {
-            router.post(route('admin.products.bulk-deactivate'), {
+            router.post(route('admin.products.bulk-deactivate', undefined, false), {
                 ids: selectedIds
             });
         }
@@ -116,16 +116,16 @@ export default function ProductsList() {
 
     const handleDelete = (productId) => {
         if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-            router.delete(route('admin.products.destroy', productId));
+            router.delete(route('admin.products.destroy', productId, false));
         }
     };
 
     const handleEdit = (product) => {
-        router.visit(route('admin.products.edit', product.id));
+        router.visit(route('admin.products.edit', product.id, false));
     };
 
     const handleView = (productId) => {
-        router.visit(route('admin.products.show', productId));
+        router.visit(route('admin.products.show', productId, false));
     };
 
     // Exporter en CSV
@@ -134,7 +134,7 @@ export default function ProductsList() {
             search: searchTerm,
             ...activeFilters,
         });
-        window.location.href = route('admin.products.export') + '?' + exportParams.toString();
+        window.location.href = route('admin.products.export', undefined, false) + '?' + exportParams.toString();
     };
 
     // Obtenir le badge de statut de stock
@@ -325,7 +325,7 @@ export default function ProductsList() {
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Produits</h1>
                     <Link
-                        href={route('admin.products.create')}
+                        href={route('admin.products.create', undefined, false)}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700"
                     >
                         <PlusIcon className="w-4 h-4 mr-2" />

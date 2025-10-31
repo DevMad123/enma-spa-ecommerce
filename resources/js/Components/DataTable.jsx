@@ -22,6 +22,21 @@ export default function DataTable({
   const [selectAll, setSelectAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Normaliser les URLs de pagination pour éviter le Mixed Content (force relatif si même domaine)
+  const toRelativeIfSameHost = (url) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url, window.location.origin);
+      // Si l'hôte est le même (peu importe le schéma), utiliser un chemin relatif
+      if (u.host === window.location.host) {
+        return `${u.pathname}${u.search}${u.hash}`;
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  };
+
   // Sécuriser les données
   const safeData = Array.isArray(data) ? data : [];
   const safeColumns = Array.isArray(columns) ? columns : [];
@@ -299,7 +314,7 @@ export default function DataTable({
                 return (
                   <Link
                     key={index}
-                    href={link.url || '#'}
+                    href={toRelativeIfSameHost(link.url) || '#'}
                     className={`p-2 rounded-lg transition-colors ${
                       link.url 
                         ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100" 
@@ -315,7 +330,7 @@ export default function DataTable({
                 return (
                   <Link
                     key={index}
-                    href={link.url || '#'}
+                    href={toRelativeIfSameHost(link.url) || '#'}
                     className={`p-2 rounded-lg transition-colors ${
                       link.url 
                         ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100" 
@@ -330,7 +345,7 @@ export default function DataTable({
               return (
                 <Link
                   key={index}
-                  href={link.url || '#'}
+                  href={toRelativeIfSameHost(link.url) || '#'}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     link.active
                       ? "bg-blue-600 text-white"
