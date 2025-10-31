@@ -24,7 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('production')) {
+        // Forcer HTTPS si l'URL de l'app est en HTTPS (utile derrière un proxy comme Render)
+        $appUrl = config('app.url');
+        if (is_string($appUrl) && parse_url($appUrl, PHP_URL_SCHEME) === 'https') {
+            URL::forceScheme('https');
+        } elseif (app()->environment('production')) {
+            // Garde-fou si APP_ENV=production mais APP_URL mal configurée
             URL::forceScheme('https');
         }
         Schema::defaultStringLength(191);
