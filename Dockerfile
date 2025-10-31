@@ -1,9 +1,12 @@
 # Étape de base : PHP / Laravel
 FROM php:8.2-fpm AS base
 
+# Paquets système requis + GD avec support WebP/JPEG/FreeType
 RUN apt-get update && apt-get install -y \
-    git unzip zip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
-    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
+    git unzip zip libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev \
+    libonig-dev libxml2-dev libzip-dev libpq-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 # Copier le binaire Composer depuis image composer officielle
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -28,7 +31,8 @@ RUN npm run build
 FROM base AS final
 
 # Copier le build frontend vers le dossier public de Laravel
-COPY --from=node_build /app/public /var/www/html/public
+# Copier uniquement le dossier de build Vite pour éviter d'écraser d'autres fichiers de /public
+COPY --from=node_build /app/public/build /var/www/html/public/build
 
 # Copier le script entrypoint dans l’image
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

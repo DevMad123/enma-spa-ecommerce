@@ -8,10 +8,10 @@ import store from './redux/store';
 import { CartProvider } from './Layouts/FrontendLayout';
 import { initLocale } from './Utils/LocaleUtils';
 
-// 1) Charger toutes les pages (code splitting activé)
+// Charger toutes les pages (JS/TS/JSX/TSX)
 const pages = import.meta.glob('./Pages/**/*.{js,jsx,ts,tsx}');
 
-// 2) Index insensible à la casse pour les chemins renvoyés par le serveur
+// Index insensible à la casse (clé normalisée → clé réelle)
 const pagesIndexCI = Object.fromEntries(
   Object.keys(pages).map((key) => [key.toLowerCase(), key])
 );
@@ -19,7 +19,7 @@ const pagesIndexCI = Object.fromEntries(
 createInertiaApp({
   title: (title) => title,
 
-  // 3) Résolution robuste: exact → fallback insensible à la casse
+  // Résolution robuste: exact → fallback insensible à la casse
   resolve: async (name) => {
     const candidates = [
       `./Pages/${name}.jsx`,
@@ -28,15 +28,22 @@ createInertiaApp({
       `./Pages/${name}.ts`,
     ];
 
+    const load = (key) => pages[key]().then((m) => m.default || m);
+
     // a) Correspondance exacte
     for (const path of candidates) {
-      if (pages[path]) return pages[path]();
+      if (pages[path]) return load(path);
     }
 
-    // b) Fallback insensible à la casse (Linux-safe)
+    // b) Fallback insensible à la casse (Linux)
     for (const path of candidates) {
       const ciKey = pagesIndexCI[path.toLowerCase()];
-      if (ciKey && pages[ciKey]) return pages[ciKey]();
+      if (ciKey && pages[ciKey]) {
+        if (import.meta?.env?.DEV) {
+          console.warn(`[Inertia] Résolution sans respecter la casse: "${name}" → ${ciKey}`);
+        }
+        return load(ciKey);
+      }
     }
 
     console.error(`[Inertia] Page introuvable: ${name}`);
@@ -47,7 +54,7 @@ createInertiaApp({
   setup({ el, App, props }) {
     const root = createRoot(el);
 
-    // 4) Initialisation de la locale (sécurisée)
+    // Initialisation de la locale (sécurisée)
     try {
       const lc = props?.initialPage?.props?.localeConfig;
       if (lc && typeof lc === 'object') initLocale(lc);
