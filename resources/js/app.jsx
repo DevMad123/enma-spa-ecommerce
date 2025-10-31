@@ -8,58 +8,60 @@ import store from './redux/store';
 import { CartProvider } from './Layouts/FrontendLayout';
 import { initLocale } from './Utils/LocaleUtils';
 
-// ✅ Charger toutes les pages JS/TS/JSX/TSX de façon dynamique
+// 1) Charger toutes les pages (code splitting activé)
 const pages = import.meta.glob('./Pages/**/*.{js,jsx,ts,tsx}');
 
+// 2) Index insensible à la casse pour les chemins renvoyés par le serveur
+const pagesIndexCI = Object.fromEntries(
+  Object.keys(pages).map((key) => [key.toLowerCase(), key])
+);
+
 createInertiaApp({
-    title: (title) => title,
+  title: (title) => title,
 
-    // ✅ Fonction de résolution robuste
-    resolve: async (name) => {
-        // Essaye toutes les extensions possibles
-        const possiblePaths = [
-            `./Pages/${name}.jsx`,
-            `./Pages/${name}.js`,
-            `./Pages/${name}.tsx`,
-            `./Pages/${name}.ts`,
-        ];
+  // 3) Résolution robuste: exact → fallback insensible à la casse
+  resolve: async (name) => {
+    const candidates = [
+      `./Pages/${name}.jsx`,
+      `./Pages/${name}.js`,
+      `./Pages/${name}.tsx`,
+      `./Pages/${name}.ts`,
+    ];
 
-        const match = possiblePaths.find((path) => pages[path]);
+    // a) Correspondance exacte
+    for (const path of candidates) {
+      if (pages[path]) return pages[path]();
+    }
 
-        if (!match) {
-            console.error(`[Inertia] Page introuvable : ${name}`);
-            console.error('Chemins testés :', possiblePaths);
-            throw new Error(`Inertia page not found: ${name}. Vérifie le chemin et la casse du fichier.`);
-        }
+    // b) Fallback insensible à la casse (Linux-safe)
+    for (const path of candidates) {
+      const ciKey = pagesIndexCI[path.toLowerCase()];
+      if (ciKey && pages[ciKey]) return pages[ciKey]();
+    }
 
-        // Importe dynamiquement le composant
-        const module = await pages[match]();
+    console.error(`[Inertia] Page introuvable: ${name}`);
+    console.error('Chemins testés:', candidates);
+    throw new Error(`Inertia page not found: ${name}. Vérifie le chemin et la casse du fichier.`);
+  },
 
-        if (!module?.default) {
-            console.error(`[Inertia] Le module "${match}" n'exporte pas de composant par défaut.`);
-            throw new Error(`Inertia page "${name}" existe mais n'exporte pas de composant par défaut.`);
-        }
+  setup({ el, App, props }) {
+    const root = createRoot(el);
 
-        return module;
-    },
+    // 4) Initialisation de la locale (sécurisée)
+    try {
+      const lc = props?.initialPage?.props?.localeConfig;
+      if (lc && typeof lc === 'object') initLocale(lc);
+    } catch (_) {}
 
-    setup({ el, App, props }) {
-        const root = createRoot(el);
+    root.render(
+      <Provider store={store}>
+        <CartProvider>
+          <App {...props} />
+        </CartProvider>
+      </Provider>
+    );
+  },
 
-        // ✅ Initialisation du locale (sécurisée)
-        try {
-            const lc = props?.initialPage?.props?.localeConfig;
-            if (lc && typeof lc === 'object') initLocale(lc);
-        } catch (_) {}
-
-        root.render(
-            <Provider store={store}>
-                <CartProvider>
-                    <App {...props} />
-                </CartProvider>
-            </Provider>
-        );
-    },
-
-    progress: { color: '#4B5563' },
+  progress: { color: '#4B5563' },
 });
+
