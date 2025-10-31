@@ -3,34 +3,54 @@ import '../css/app.css';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import { CartProvider } from './Layouts/FrontendLayout';
 import { initLocale } from './Utils/LocaleUtils';
 
+// ✅ Charger toutes les pages JS/TS/JSX/TSX de façon dynamique
+const pages = import.meta.glob('./Pages/**/*.{js,jsx,ts,tsx}');
+
 createInertiaApp({
-    title: (title) => {
-        // Utiliser directement la variable d'environnement comme fallback
-        // Le vrai nom sera géré par le Head component dans chaque page
-        return title;
+    title: (title) => title,
+
+    // ✅ Fonction de résolution robuste
+    resolve: async (name) => {
+        // Essaye toutes les extensions possibles
+        const possiblePaths = [
+            `./Pages/${name}.jsx`,
+            `./Pages/${name}.js`,
+            `./Pages/${name}.tsx`,
+            `./Pages/${name}.ts`,
+        ];
+
+        const match = possiblePaths.find((path) => pages[path]);
+
+        if (!match) {
+            console.error(`[Inertia] Page introuvable : ${name}`);
+            console.error('Chemins testés :', possiblePaths);
+            throw new Error(`Inertia page not found: ${name}. Vérifie le chemin et la casse du fichier.`);
+        }
+
+        // Importe dynamiquement le composant
+        const module = await pages[match]();
+
+        if (!module?.default) {
+            console.error(`[Inertia] Le module "${match}" n'exporte pas de composant par défaut.`);
+            throw new Error(`Inertia page "${name}" existe mais n'exporte pas de composant par défaut.`);
+        }
+
+        return module;
     },
-    resolve: (name) => {
-        const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true })
-        return pages[`./Pages/${name}.jsx`]
-    },
+
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        // Initialize locale config globally so formatters use admin settings
+        // ✅ Initialisation du locale (sécurisée)
         try {
             const lc = props?.initialPage?.props?.localeConfig;
-            if (lc && typeof lc === 'object') {
-                initLocale(lc);
-            }
-        } catch (e) {
-            // Silent fail – formatters have fallbacks
-        }
+            if (lc && typeof lc === 'object') initLocale(lc);
+        } catch (_) {}
 
         root.render(
             <Provider store={store}>
@@ -40,7 +60,6 @@ createInertiaApp({
             </Provider>
         );
     },
-    progress: {
-        color: '#4B5563',
-    },
+
+    progress: { color: '#4B5563' },
 });
