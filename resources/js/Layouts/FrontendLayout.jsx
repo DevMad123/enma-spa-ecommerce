@@ -30,10 +30,30 @@ export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
 
     useEffect(() => {
-        // Charger le panier depuis localStorage
+        // Charger le panier depuis localStorage et normaliser les prix si besoin
         const savedCart = localStorage.getItem('cart');
         if (savedCart) {
-            setCartItems(JSON.parse(savedCart));
+            try {
+                const parsed = JSON.parse(savedCart) || [];
+                const normalized = parsed.map((it) => {
+                    const priceNum = parseFloat(it?.price);
+                    if (Number.isFinite(priceNum) && priceNum > 0) return it;
+                    const candidates = [
+                        it?.product?.current_sale_price,
+                        it?.product?.sale_price,
+                        it?.product?.price,
+                        it?.product?.selected_variant_price,
+                    ];
+                    const fixed = candidates
+                        .map(v => (v !== null && v !== undefined ? parseFloat(v) : NaN))
+                        .find(v => Number.isFinite(v)) ?? 0;
+                    return { ...it, price: fixed };
+                });
+                setCartItems(normalized);
+                localStorage.setItem('cart', JSON.stringify(normalized));
+            } catch {
+                setCartItems([]);
+            }
         }
     }, []);
 
@@ -51,8 +71,16 @@ export const CartProvider = ({ children }) => {
             || (Array.isArray(product?.sizes) ? product.sizes.find(s => s.id === resolvedSizeId) : null)
             || null;
 
-        // Use current_sale_price already adjusted for variant when possible
-        const unitPrice = typeof product?.current_sale_price === 'number' ? product.current_sale_price : (product?.price ?? 0);
+        // Resolve a robust unit price (handles string or number, variant/simple)
+        const candidates = [
+            product?.current_sale_price,
+            product?.sale_price,
+            product?.price,
+            product?.selected_variant_price,
+        ];
+        const unitPrice = candidates
+            .map(v => (v !== null && v !== undefined ? parseFloat(v) : NaN))
+            .find(v => Number.isFinite(v)) ?? 0;
 
         const existingItem = cartItems.find(item =>
             item.product_id === product.id &&

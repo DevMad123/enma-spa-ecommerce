@@ -32,9 +32,9 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
     const itemTotal = item.price * item.quantity;
 
     return (
-        <div className="flex items-center space-x-4 py-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-6 border-b border-gray-200">
             {/* Image du produit */}
-            <div className="flex-shrink-0 w-24 h-24">
+            <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24">
                 <img
                     src={item.product.image || '/images/placeholder.jpg'}
                     alt={item.product.name}
@@ -44,9 +44,9 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
             {/* Informations du produit */}
             <div className="flex-1">
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                     <div>
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-base md:text-lg font-medium text-gray-900">
                             <Link 
                                 href={route('frontend.shop.show', item.product.id)}
                                 className="hover:text-amber-600 transition-colors"
@@ -79,8 +79,8 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                         </div>
                     </div>
 
-                    <div className="text-right">
-                        <p className="text-lg font-medium text-gray-900">
+                    <div className="sm:text-right mt-2 sm:mt-0">
+                        <p className="text-base md:text-lg font-medium text-gray-900">
                             {formatPriceWithCurrency(itemTotal)}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -144,13 +144,13 @@ const OrderSummary = ({ cartItems, subtotal, tax, total }) => {
 
             <div className="space-y-4">
                 {/* Sous-total */}
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                     <span className="text-gray-600">Sous-total ({cartItems.length} article{cartItems.length > 1 ? 's' : ''})</span>
                     <span className="font-medium">{formatPriceWithCurrency(subtotal)}</span>
                 </div>
 
                 {/* TVA */}
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                     <span className="text-gray-600">TVA</span>
                     <span className="font-medium">{formatPriceWithCurrency(tax)}</span>
                 </div>
@@ -289,7 +289,7 @@ function Cart({ recommendedProducts = [] }) {
         <FrontendLayout title={`Panier (${getTotalItems()})`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Mon panier</h1>
                         <p className="text-gray-600 mt-2">
@@ -305,7 +305,7 @@ function Cart({ recommendedProducts = [] }) {
                     </Link>
                 </div>
 
-                <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                     {/* Liste des articles */}
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -338,7 +338,7 @@ function Cart({ recommendedProducts = [] }) {
                                     <span>Vider le panier</span>
                                 </button>
 
-                                <div className="text-right">
+                                <div className="sm:text-right mt-2 sm:mt-0">
                                     <p className="text-sm text-gray-600">Sous-total</p>
                                     <p className="text-2xl font-bold text-gray-900">{formatPriceWithCurrency(subtotal)}</p>
                                 </div>
@@ -372,3 +372,4 @@ export default function CartWithProvider(props) {
         </CartProvider>
     );
 }
+
