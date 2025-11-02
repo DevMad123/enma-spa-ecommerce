@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FrontendLayout, { CartProvider } from '@/Layouts/FrontendLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { 
+import {
     FunnelIcon,
     Squares2X2Icon,
     ListBulletIcon,
@@ -63,7 +63,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                     {product.category?.name}
                                 </p>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                    <SafeLink 
+                                    <SafeLink
                                         href={product.id ? route('frontend.shop.show', product.id) : null}
                                         className="hover:text-amber-600 transition-colors"
                                     >
@@ -73,14 +73,14 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                 <p className="text-gray-600 mb-4 line-clamp-2">
                                     {product.description}
                                 </p>
-                                
+
                                 <div className="flex items-center mb-4">
                                     <div className="flex items-center">
                                         {[...Array(5)].map((_, i) => (
                                             <StarIcon
                                                 key={i}
-                                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5) 
-                                                    ? 'text-yellow-400 fill-current' 
+                                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5)
+                                                    ? 'text-yellow-400 fill-current'
                                                     : 'text-gray-300'
                                                 }`}
                                             />
@@ -112,12 +112,12 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="ml-6 flex flex-col items-end space-y-2">
-                                <WishlistButton 
-                                    product={product} 
+                                <WishlistButton
+                                    product={product}
                                     size="default"
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors" 
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                                 />
                                 <CartButton
                                     product={product}
@@ -147,10 +147,10 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
 
             {/* Bouton favoris */}
             <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <WishlistButton 
-                    product={product} 
+                <WishlistButton
+                    product={product}
                     size="default"
-                    className="p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all" 
+                    className="p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all"
                 />
             </div>
 
@@ -187,8 +187,8 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                         {[...Array(5)].map((_, i) => (
                             <StarIcon
                                 key={i}
-                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5) 
-                                    ? 'text-yellow-400 fill-current' 
+                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5)
+                                    ? 'text-yellow-400 fill-current'
                                     : 'text-gray-300'
                                 }`}
                             />
@@ -234,15 +234,15 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
     );
 };
 
-const FilterSidebar = ({ 
-    categories, 
-    brands, 
-    colors, 
+const FilterSidebar = ({
+    categories,
+    brands,
+    colors,
     sizes,
-    filters, 
+    filters,
     onFilterChange,
     isOpen,
-    onClose 
+    onClose
 }) => {
     // Protection des données dans le sidebar
     const safeCategories = Array.isArray(categories) ? categories : [];
@@ -251,14 +251,14 @@ const FilterSidebar = ({
     const safeSizes = Array.isArray(sizes) ? sizes : [];
     const { appSettings } = usePage().props;
     const maxPriceDefault = appSettings?.max_price_filter || 1000;
-    
+
     const [priceRange, setPriceRange] = useState([filters.min_price || 0, filters.max_price || maxPriceDefault]);
 
     const handlePriceChange = (index, value) => {
         const newRange = [...priceRange];
         newRange[index] = parseInt(value);
         setPriceRange(newRange);
-        
+
         onFilterChange({
             ...filters,
             min_price: newRange[0],
@@ -268,8 +268,8 @@ const FilterSidebar = ({
 
     // Styles différents selon le contexte (mobile vs desktop)
     const isMobile = isOpen !== false; // Si isOpen est un booléen, c'est mobile
-    
-    const sidebarClasses = isMobile 
+
+    const sidebarClasses = isMobile
         ? `fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
         : 'w-full'; // Pour desktop, juste la largeur complète
 
@@ -277,7 +277,7 @@ const FilterSidebar = ({
         <>
             {/* Overlay - Uniquement pour mobile */}
             {isMobile && isOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-40"
                     onClick={onClose}
                 />
@@ -287,6 +287,7 @@ const FilterSidebar = ({
                 <div className={`${isMobile ? 'h-full overflow-y-auto p-6' : ''}`}>
                     {/* Header mobile uniquement */}
                     {isMobile && (
+                      <>
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-semibold">Filtres</h2>
                             <button onClick={onClose} className="p-2">
@@ -295,16 +296,15 @@ const FilterSidebar = ({
                                 </svg>
                             </button>
                         </div>
-                    )}
 
                     {/* Catégories */}
-                    <div className="mb-8">
+                    <div className={`${isMobile ? '' : 'mb-8'}`}>
                         <h3 className="text-lg font-semibold mb-4">Catégories</h3>
                         <div className="space-y-3">
                             {safeCategories.map((category) => {
                                 // Protection contre les objets category invalides
                                 if (!category || !category.id) return null;
-                                
+
                                 return (
                                     <label key={category.id} className="flex items-center">
                                         <input
@@ -363,7 +363,7 @@ const FilterSidebar = ({
                                 {safeBrands.map((brand) => {
                                     // Protection contre les objets brand invalides
                                     if (!brand || !brand.id) return null;
-                                    
+
                                     return (
                                         <label key={brand.id} className="flex items-center">
                                             <input
@@ -394,7 +394,7 @@ const FilterSidebar = ({
                                 {safeColors.map((color) => {
                                     // Protection contre les objets color invalides
                                     if (!color || !color.id) return null;
-                                    
+
                                     return (
                                         <label key={color.id} className="flex flex-col items-center cursor-pointer">
                                             <input
@@ -409,7 +409,7 @@ const FilterSidebar = ({
                                                 }}
                                                 className="sr-only"
                                             />
-                                            <div 
+                                            <div
                                                 className="w-8 h-8 rounded-full border-2 border-gray-300 relative"
                                                 style={{ backgroundColor: color.color_code || color.name?.toLowerCase() || '#cccccc' }}
                                             >
@@ -433,7 +433,7 @@ const FilterSidebar = ({
                                 {safeSizes.map((size) => {
                                     // Protection contre les objets size invalides
                                     if (!size || !size.id) return null;
-                                    
+
                                     return (
                                         <label key={size.id} className="cursor-pointer">
                                             <input
@@ -450,8 +450,8 @@ const FilterSidebar = ({
                                             />
                                             <div className={`
                                                 px-3 py-2 border border-gray-300 rounded-md text-center text-sm
-                                                ${filters.sizes?.includes(size.id.toString()) 
-                                                    ? 'bg-amber-500 text-white border-amber-500' 
+                                                ${filters.sizes?.includes(size.id.toString())
+                                                    ? 'bg-amber-500 text-white border-amber-500'
                                                     : 'bg-white text-gray-700 hover:bg-gray-50'
                                                 }
                                             `}>
@@ -471,6 +471,8 @@ const FilterSidebar = ({
                     >
                         Réinitialiser les filtres
                     </button>
+                    </>
+                    )}
                 </div>
             </div>
         </>
@@ -488,14 +490,14 @@ function Shop(props = {}) {
         filters = {},
         currentCategory = null
     } = props;
-    
+
     // Protection complète contre les données nulles/undefined
     const safeProducts = products && typeof products === 'object' ? {
         data: Array.isArray(products.data) ? products.data.filter(p => p && p.id) : [],
         links: Array.isArray(products.links) ? products.links : [],
         total: products.total || 0
     } : { data: [], links: [], total: 0 };
-    
+
     const safeCategories = Array.isArray(categories) ? categories.filter(c => c && c.id) : [];
     const safeBrands = Array.isArray(brands) ? brands.filter(b => b && b.id) : [];
     const safeColors = Array.isArray(colors) ? colors.filter(c => c && c.id) : [];
@@ -530,9 +532,16 @@ function Shop(props = {}) {
     const [localFilters, setLocalFilters] = useState(() => cleanFilters(safeFilters));
     const [filtersOpen, setFiltersOpen] = useState(false);
 
+    // Ouvrir via un événement global émis par le bouton flottant
+    useEffect(() => {
+        const handler = () => setFiltersOpen(true);
+        window.addEventListener('openShopFilters', handler);
+        return () => window.removeEventListener('openShopFilters', handler);
+    }, []);
+
     const handleFilterChange = (newFilters) => {
         setLocalFilters(newFilters);
-        
+
         // Debounced filter application
         clearTimeout(window.filterTimeout);
         window.filterTimeout = setTimeout(() => {
@@ -591,7 +600,7 @@ function Shop(props = {}) {
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Filters */}
                     <div className="lg:w-80 flex-shrink-0">
-                        <div className="lg:hidden mb-4">
+                        <div className="hidden md:block lg:hidden mb-4">
                             <button
                                 onClick={() => setFiltersOpen(true)}
                                 className="flex items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -600,7 +609,7 @@ function Shop(props = {}) {
                                 Filtres
                             </button>
                         </div>
-                        
+
                         <div className="hidden lg:block">
                             <h2 className="text-lg font-semibold mb-6">Filtres</h2>
                             <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -651,8 +660,8 @@ function Shop(props = {}) {
                                     <button
                                         onClick={() => setViewMode('grid')}
                                         className={`p-2 rounded-md transition-colors ${
-                                            viewMode === 'grid' 
-                                                ? 'bg-white text-amber-600 shadow-sm' 
+                                            viewMode === 'grid'
+                                                ? 'bg-white text-amber-600 shadow-sm'
                                                 : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                     >
@@ -661,8 +670,8 @@ function Shop(props = {}) {
                                     <button
                                         onClick={() => setViewMode('list')}
                                         className={`p-2 rounded-md transition-colors ${
-                                            viewMode === 'list' 
-                                                ? 'bg-white text-amber-600 shadow-sm' 
+                                            viewMode === 'list'
+                                                ? 'bg-white text-amber-600 shadow-sm'
                                                 : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                     >
@@ -700,9 +709,9 @@ function Shop(props = {}) {
                                         : 'space-y-6'
                                 }>
                                     {safeProducts.data.map((product) => (
-                                        <ProductCardUnified 
-                                            key={product.id} 
-                                            product={product} 
+                                        <ProductCardUnified
+                                            key={product.id}
+                                            product={product}
                                             variant={viewMode === 'grid' ? 'default' : 'compact'}
                                         />
                                     ))}
@@ -723,7 +732,7 @@ function Shop(props = {}) {
                                                         />
                                                     );
                                                 }
-                                                
+
                                                 return (
                                                     <Link
                                                         key={index}
@@ -732,8 +741,8 @@ function Shop(props = {}) {
                                                         preserveScroll
                                                         className={`
                                                             px-4 py-2 text-sm font-medium rounded-lg transition-colors
-                                                            ${link.active 
-                                                                ? 'bg-amber-500 text-white' 
+                                                            ${link.active
+                                                                ? 'bg-amber-500 text-white'
                                                                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                                                             }
                                                         `}
@@ -776,11 +785,19 @@ function Shop(props = {}) {
 // Wrapper avec le nouveau système
 export default function ShopWithCart({ wishlistItems, ...props }) {
     return (
-        <FrontendLayout 
-            title={props.currentCategory ? `${props.currentCategory.name} - Boutique` : 'Boutique'} 
+        <FrontendLayout
+            title={props.currentCategory ? `${props.currentCategory.name} - Boutique` : 'Boutique'}
             wishlistItems={wishlistItems}
         >
             <Shop {...props} />
+            {/* Bouton flottant filtres (mobile uniquement) */}
+            <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openShopFilters'))}
+                className="lg:hidden fixed bottom-20 right-4 z-40 p-4 rounded-full text-white shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 active:scale-95 transition"
+                aria-label="Ouvrir les filtres"
+            >
+                <FunnelIcon className="h-5 w-5" />
+            </button>
         </FrontendLayout>
     );
 }

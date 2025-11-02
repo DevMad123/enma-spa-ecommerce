@@ -4,7 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import ProductCard from '@/Components/Frontend/ProductCard';
 
 const ProductMiniCard = ({ product }) => (
-  <div className="min-w-[220px] sm:min-w-[240px] md:min-w-[260px] mr-4 last:mr-0">
+  <div className="min-w-[220px] sm:min-w-[240px] md:min-w-[260px] mr-4 last:mr-0 snap-start">
     <ProductCard product={product} variant="carousel" />
   </div>
 );
@@ -21,11 +21,11 @@ export default function ProductCarousel({ products = [], title = 'Nouveautes', v
   if (!Array.isArray(products) || products.length === 0) return null;
 
   return (
-    <section className="py-12 bg-white">
+    <section className="py-8 md:py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-6">
+        <div className="flex items-end justify-between mb-4 md:mb-6">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{title}</h2>
           </div>
           <div className="flex items-center gap-3">
             {viewMoreHref && (
@@ -55,7 +55,7 @@ export default function ProductCarousel({ products = [], title = 'Nouveautes', v
             <ChevronRightIcon className="h-5 w-5 mt-2 mx-auto" />
           </button>
 
-          <div ref={scrollerRef} className="flex overflow-x-auto no-scrollbar scroll-smooth gap-4 px-2">
+          <div ref={scrollerRef} className="flex overflow-x-auto no-scrollbar scroll-smooth gap-4 px-2 snap-x snap-mandatory">
             {products.map((p) => (
               <ProductMiniCard key={p.id} product={p} />
             ))}

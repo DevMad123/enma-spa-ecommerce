@@ -367,7 +367,7 @@ export default function CustomersList() {
                     <div className="p-6">
                         <form onSubmit={handleSearch} className="space-y-4">
                             {/* Recherche principale */}
-                            <div className="flex items-center space-x-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                 <div className="flex-1">
                                     <div className="relative">
                                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -382,14 +382,14 @@ export default function CustomersList() {
                                 </div>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                    className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                                 >
                                     Rechercher
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowFilters(!showFilters)}
-                                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+                                    className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center justify-center"
                                 >
                                     <FunnelIcon className="w-4 h-4 mr-2" />
                                     Filtres
@@ -434,7 +434,7 @@ export default function CustomersList() {
                                         <button
                                             type="button"
                                             onClick={() => applyFilters()}
-                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                                            className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                                         >
                                             Appliquer
                                         </button>
@@ -472,3 +472,4 @@ export default function CustomersList() {
         </AdminLayout>
     );
 }
+

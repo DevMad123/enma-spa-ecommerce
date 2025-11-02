@@ -249,7 +249,7 @@ export default function DashboardSidebar({ collapsed, onCollapse, mobileOpen, on
   };
 
   return (
-    <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg flex flex-col transition-all duration-300 z-30 
+    <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg flex flex-col transition-all duration-300 z-50 
       ${collapsed ? "w-20" : "w-72"} 
       ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
     `}>

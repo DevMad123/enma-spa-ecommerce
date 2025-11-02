@@ -10,7 +10,7 @@ export default function NewsletterForm({ className = '' }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!email.trim()) {
             setMessage('Veuillez saisir votre adresse email.');
             setMessageType('error');
@@ -57,8 +57,8 @@ export default function NewsletterForm({ className = '' }) {
                     Inscrivez-vous à notre newsletter
                 </h3>
             </div>
-            
-            <p className="text-gray-600 mb-4">
+
+            <p className="text-gray-200 mb-4">
                 Recevez nos dernières offres et nouveautés directement dans votre boîte email.
             </p>
 
@@ -93,8 +93,8 @@ export default function NewsletterForm({ className = '' }) {
 
                 {message && (
                     <div className={`flex items-center p-3 rounded-lg ${
-                        messageType === 'success' 
-                            ? 'bg-green-50 text-green-800 border border-green-200' 
+                        messageType === 'success'
+                            ? 'bg-green-50 text-green-800 border border-green-200'
                             : 'bg-red-50 text-red-800 border border-red-200'
                     }`}>
                         {messageType === 'success' ? (
@@ -107,8 +107,8 @@ export default function NewsletterForm({ className = '' }) {
                 )}
             </form>
 
-            <p className="text-xs text-gray-500 mt-3">
-                En vous inscrivant, vous acceptez de recevoir nos emails promotionnels. 
+            <p className="text-xs text-gray-200 mt-3">
+                En vous inscrivant, vous acceptez de recevoir nos emails promotionnels.
                 Vous pouvez vous désinscrire à tout moment.
             </p>
         </div>

@@ -1,9 +1,9 @@
 ﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { 
-    ShoppingCartIcon, 
-    HeartIcon, 
-    UserIcon, 
+import {
+    ShoppingCartIcon,
+    HeartIcon,
+    UserIcon,
     MagnifyingGlassIcon,
     Bars3Icon,
     XMarkIcon,
@@ -93,9 +93,9 @@ export const CartProvider = ({ children }) => {
     };
 
     const removeFromCart = (productId, colorId = null, sizeId = null) => {
-        const newCartItems = cartItems.filter(item => 
-            !(item.product_id === productId && 
-              item.color_id === colorId && 
+        const newCartItems = cartItems.filter(item =>
+            !(item.product_id === productId &&
+              item.color_id === colorId &&
               item.size_id === sizeId)
         );
         setCartItems(newCartItems);
@@ -109,8 +109,8 @@ export const CartProvider = ({ children }) => {
         }
 
         const newCartItems = cartItems.map(item =>
-            item.product_id === productId && 
-            item.color_id === colorId && 
+            item.product_id === productId &&
+            item.color_id === colorId &&
             item.size_id === sizeId
                 ? { ...item, quantity: quantity }
                 : item
@@ -152,6 +152,8 @@ const FrontendLayout = ({ children, title }) => {
     const { customizations } = useCustomizations();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+    const [categoriesOpen, setCategoriesOpen] = useState(false);
     const { getTotalItems } = useCart();
     const { getTotalItems: getWishlistTotalItems } = useWishlist();
     const { categories } = useMenuCategories();
@@ -183,7 +185,7 @@ const FrontendLayout = ({ children, title }) => {
             <Head title={`${title} - ${appName}`} />
             <div className="min-h-screen bg-white">
                 {/* Header */}
-                <header className="bg-white shadow-lg sticky top-0 z-50">
+                <header className="bg-white shadow-lg sticky top-0 z-50 overflow-x-hidden">
                     {/* Top Bar */}
                     <div className="w-full text-center text-xs md:text-sm py-2 bg-gray-900 text-white">{appSettings?.announcement_text || `10 offerts sur votre 1ère commande avec le code FIRST10`}
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -201,24 +203,36 @@ const FrontendLayout = ({ children, title }) => {
                     </div>
 
                     {/* Main Header */}
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between h-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+                        <div className="flex items-center justify-between h-12 md:h-16">
                             {/* Logo */}
                             <div className="flex-shrink-0">
                                 <Link href={route('home')} className="flex items-center">
                                     {customizations?.logo_image ? (
-                                        <img src={customizations.logo_image} alt={appName} className="h-8 w-auto max-w-[160px] object-contain" />
+                                        <img src={customizations.logo_image} alt={appName} className="h-6 md:h-8 w-auto max-w-[80px] md:max-w-[160px] object-contain" />
                                     ) : (
                                         <>
-                                            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                                            <div className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-base md:text-xl">
                                                 {firstLetter}
                                             </div>
-                                            <span className="ml-2 text-2xl font-bold" style={ themeColor ? { color: themeColor } : {} }>
+                                            <span className="ml-2 hidden md:inline text-xl font-bold" style={ themeColor ? { color: themeColor } : {} }>
                                                 {appName}
                                             </span>
                                         </>
                                     )}
                                 </Link>
+                            </div>
+
+                            {/* Bouton Catégories (desktop uniquement) */}
+                            <div className="hidden md:flex items-center ml-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setCategoriesOpen(true)}
+                                    className="inline-flex items-center px-3 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                                >
+                                    <Bars3Icon className="h-5 w-5 mr-2" />
+                                    Catégories
+                                </button>
                             </div>
 
                             {/* Navigation Desktop */}
@@ -251,9 +265,17 @@ const FrontendLayout = ({ children, title }) => {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-4 ml-auto md:ml-0">
+                                {/* Mobile Search */}
+                                <button
+                                    onClick={() => setMobileSearchOpen(true)}
+                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 md:hidden"
+                                    aria-label="Rechercher"
+                                >
+                                    <MagnifyingGlassIcon className="h-6 w-6" />
+                                </button>
                                 {/* Wishlist */}
-                                <Link 
+                                <Link
                                     href={route('frontend.wishlist.index')}
                                     className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative"
                                     title="Ma Wishlist"
@@ -282,13 +304,13 @@ const FrontendLayout = ({ children, title }) => {
 
                                 {/* User Menu */}
                                 {auth.user ? (
-                                    <div className="relative group">
+                                    <div className="relative group hidden md:block">
                                         <button className="flex items-center space-x-1 p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200">
                                             <UserIcon className="h-6 w-6" />
                                             <span className="hidden md:block text-sm font-medium">{auth.user.name}</span>
                                             <ChevronDownIcon className="h-4 w-4" />
                                         </button>
-                                        
+
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                                             <div className="py-1">
                                                 <Link
@@ -315,7 +337,7 @@ const FrontendLayout = ({ children, title }) => {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center space-x-2">
+                                    <div className="hidden md:flex items-center space-x-2">
                                         <Link
                                             href={route('login')}
                                             className="text-sm text-gray-600 hover:text-amber-600 transition-colors duration-200"
@@ -335,7 +357,7 @@ const FrontendLayout = ({ children, title }) => {
                                 {/* Mobile menu button */}
                                 <button
                                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200"
+                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 md:hidden"
                                 >
                                     {mobileMenuOpen ? (
                                         <XMarkIcon className="h-6 w-6" />
@@ -351,26 +373,106 @@ const FrontendLayout = ({ children, title }) => {
                     {mobileMenuOpen && (
                         <div className="fixed inset-0 z-50">
                             <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-                            <div className="absolute inset-y-0 left-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto">
+                            <div className="absolute inset-y-0 right-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto transform transition-all duration-300">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">Nos Produits</h3>
+                                    <h3 className="text-lg font-semibold">Menu</h3>
                                     <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer">
                                         <XMarkIcon className="h-6 w-6" />
                                     </button>
                                 </div>
-                                <div className="mb-3">
-                                    <Link href={route('frontend.shop.index')} className="text-sm font-medium text-black" onClick={() => setMobileMenuOpen(false)}>Tout voir</Link>
+
+                                {/* Navigation principale (mobile) */}
+                                <nav className="mt-2 mb-4">
+                                    <ul className="space-y-1">
+                                        {[{ name: 'Accueil', href: route('home') }, ...navigation].map((item) => (
+                                            <li key={item.name}>
+                                                <Link
+                                                    href={item.href}
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                    className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50"
+                                                >
+                                                    {item.name}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </nav>
+
+                                {/* Compte */}
+                                <div className="mt-4">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Compte</h4>
+                                    {auth.user ? (
+                                        <div className="space-y-2">
+                                            <Link href={route('frontend.profile.index')} onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Mon Profil</Link>
+                                            <Link href={route('frontend.profile.orders')} onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Mes Commandes</Link>
+                                            <Link href={route('logout')} method="post" as="button" onClick={() => setMobileMenuOpen(false)} className="block w-full text-left px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Déconnexion</Link>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Link href={route('login')} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg border text-center text-gray-800 hover:bg-gray-50">Connexion</Link>
+                                            <Link href={route('register')} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg bg-amber-500 text-white text-center hover:bg-amber-600">Inscription</Link>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Drawer Catégories (desktop et tablettes uniquement) */}
+                    {categoriesOpen && (
+                        <div className="fixed inset-0 z-50 hidden md:block">
+                            <div className="absolute inset-0 bg-black/50" onClick={() => setCategoriesOpen(false)} />
+                            <div className="absolute inset-y-0 left-0 w-[28rem] max-w-[40%] bg-white shadow-xl p-4 overflow-y-auto transform transition-all duration-300">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold">Catégories</h3>
+                                    <button onClick={() => setCategoriesOpen(false)} aria-label="Fermer">
+                                        <XMarkIcon className="h-6 w-6" />
+                                    </button>
                                 </div>
                                 <div className="space-y-3">
                                     {categories.map(cat => (
-                                        <Link key={cat.id} href={cat.id ? route('frontend.shop.category', cat.id) : route('frontend.shop.index')} onClick={() => setMobileMenuOpen(false)} className="block">
-                                            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                                        <Link
+                                            key={cat.id}
+                                            href={cat.id ? route('frontend.shop.category', cat.id) : route('frontend.shop.index')}
+                                            onClick={() => setCategoriesOpen(false)}
+                                            className="block"
+                                        >
+                                            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition">
                                                 <img src={cat.image} alt={cat.name} className="h-12 w-12 rounded object-cover border" loading="lazy" />
                                                 <span className="font-medium text-gray-900">{cat.name}</span>
                                             </div>
                                         </Link>
                                     ))}
                                 </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Mobile Search Overlay */}
+                    {mobileSearchOpen && (
+                        <div className="fixed inset-0 z-50">
+                            <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSearchOpen(false)} />
+                            <div className="absolute top-0 left-0 right-0 bg-white p-4 shadow-lg">
+                                <form onSubmit={handleSearch}>
+                                    <div className="relative">
+                                        <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Rechercher des produits..."
+                                            autoFocus
+                                            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileSearchOpen(false)}
+                                            className="absolute right-2 top-1.5 p-1 text-gray-500 hover:text-gray-700"
+                                            aria-label="Fermer la recherche"
+                                        >
+                                            <XMarkIcon className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}

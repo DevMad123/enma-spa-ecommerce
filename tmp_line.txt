@@ -1,0 +1,1 @@
+                    <div className="w-full text-center text-xs md:text-sm py-2 bg-gray-900 text-white">{appSettings?.announcement_text || `10 offerts sur votre 1ère commande avec le code FIRST10`}

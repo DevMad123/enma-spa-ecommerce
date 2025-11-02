@@ -126,17 +126,17 @@ export default function NotificationIndex({ notifications, stats, filters }) {
         <AdminLayout>
             <Head title="Notifications" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-4 md:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
                             <p className="mt-2 text-gray-600">
                                 Gérez toutes vos notifications administratives
                             </p>
                         </div>
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center gap-2 sm:space-x-3 w-full sm:w-auto">
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
                                 className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
@@ -236,7 +236,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                 {/* Actions bulk */}
                 {selectedNotifications.length > 0 && (
                     <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <span className="text-sm text-blue-800">
                                 {selectedNotifications.length} notification(s) sélectionnée(s)
                             </span>
@@ -251,7 +251,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                 </button>
                                 <button
                                     onClick={() => setSelectedNotifications([])}
-                                    className="flex items-center px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="flex items-center px-3 py-1 border border-gray-300 rounded text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                 >
                                     <HiOutlineX className="h-4 w-4 mr-1" />
                                     Annuler
@@ -266,7 +266,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                     {notifications.data.length > 0 ? (
                         <>
                             {/* Header du tableau */}
-                            <div className="px-6 py-4 border-b border-gray-200">
+                            <div className="px-4 md:px-4 md:px-6 py-4 border-b border-gray-200">
                                 <div className="flex items-center">
                                     <input
                                         type="checkbox"
@@ -287,7 +287,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                     const colorClass = NOTIFICATION_COLORS[notification.color] || NOTIFICATION_COLORS.blue;
                                     
                                     return (
-                                        <div key={notification.id} className={`px-6 py-4 hover:bg-gray-50 transition-colors ${!notification.is_read ? 'bg-blue-50' : ''}`}>
+                                        <div key={notification.id} className={`px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors ${!notification.is_read ? 'bg-blue-50' : ''}`}>
                                             <div className="flex items-center space-x-4">
                                                 <input
                                                     type="checkbox"
@@ -301,7 +301,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                                 </div>
                                                 
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                                         <p className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
                                                             {notification.title}
                                                         </p>
@@ -346,9 +346,9 @@ export default function NotificationIndex({ notifications, stats, filters }) {
 
                             {/* Pagination */}
                             {notifications.links && (
-                                <div className="px-6 py-4 border-t border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm text-gray-700">
+                                <div className="px-4 md:px-6 py-4 border-t border-gray-200">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                        <div className="text-xs sm:text-sm text-gray-700">
                                             Affichage de {notifications.from} à {notifications.to} sur {notifications.total} résultats
                                         </div>
                                         <div className="flex space-x-1">
@@ -372,7 +372,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                             )}
                         </>
                     ) : (
-                        <div className="px-6 py-12 text-center">
+                        <div className="px-4 md:px-6 py-12 text-center">
                             <HiOutlineBell className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-4 text-sm font-medium text-gray-900">Aucune notification</h3>
                             <p className="mt-2 text-sm text-gray-500">
@@ -385,3 +385,10 @@ export default function NotificationIndex({ notifications, stats, filters }) {
         </AdminLayout>
     );
 }
+
+
+
+
+
+
+

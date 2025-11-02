@@ -190,25 +190,25 @@ export default function DataTable({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header avec recherche et actions bulk */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+      <div className="p-4 md:p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Recherche */}
           {searchableFields.length > 0 && (
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full sm:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
 
           {/* Actions en masse */}
           {selectedItems.length > 0 && safeBulkActions.length > 0 && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center flex-wrap gap-2">
               <span className="text-sm text-gray-600">
                 {selectedItems.length} sélectionné(s)
               </span>
@@ -216,7 +216,7 @@ export default function DataTable({
                 <button
                   key={index}
                   onClick={() => onBulkAction && onBulkAction(action.value, selectedItems)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                     action.className || 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -229,8 +229,8 @@ export default function DataTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Table (desktop) */}
+      <div className="overflow-x-auto hidden md:block">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -299,16 +299,56 @@ export default function DataTable({
         </table>
       </div>
 
+      {/* List (mobile) */}
+      <div className="md:hidden divide-y divide-gray-100">
+        {filteredData.length === 0 ? (
+          <div className="px-4 py-8 text-center text-gray-500">Aucune donnée trouvée</div>
+        ) : (
+          filteredData.map((item, rowIndex) => (
+            <div key={item.id || rowIndex} className="px-4 py-3">
+              {safeBulkActions.length > 0 && (
+                <div className="mb-2">
+                  <label className="inline-flex items-center space-x-2 text-sm text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => handleSelectItem(item.id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Sélectionner</span>
+                  </label>
+                </div>
+              )}
+              <div className="space-y-2">
+                {safeColumns.slice(0,3).map((column, colIndex) => (
+                  <div key={colIndex} className="flex items-start justify-between">
+                    <span className="text-xs text-gray-500 mr-3">{column.label}</span>
+                    <div className="text-sm text-gray-900">
+                      {column.render ? column.render(item) : (item[column.key] || '-')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {safeActions.length > 0 && (
+                <div className="mt-3 flex items-center justify-end space-x-2">
+                  {renderActions(item)}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Pagination */}
       {pagination && pagination.links && pagination.links.length > 0 && (
-        <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <div className="text-sm text-gray-700">
-            Affichage de <span className="font-medium">{pagination.from}</span> à{" "}
-            <span className="font-medium">{pagination.to}</span> sur{" "}
-            <span className="font-medium">{pagination.total}</span> résultats
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="text-xs sm:text-sm text-gray-700">
+            Affichage de <span className="font-medium">{pagination.from}</span> à
+            <span className="font-medium"> {pagination.to}</span> sur
+            <span className="font-medium"> {pagination.total}</span> résultats
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             {pagination.links.map((link, index) => {
               if (link.label.includes('Previous')) {
                 return (

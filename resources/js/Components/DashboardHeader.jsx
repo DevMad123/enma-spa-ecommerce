@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
-import { 
-  HiOutlineBell, 
-  HiOutlineCog, 
-  HiOutlineLogout, 
+import {
+  HiOutlineBell,
+  HiOutlineCog,
+  HiOutlineLogout,
   HiOutlineUserCircle,
   HiOutlineSearch,
   HiOutlineMoon,
@@ -23,7 +23,7 @@ const NOTIFICATION_ICONS = {
   new_user: HiOutlineUser,
 };
 
-export default function DashboardHeader({ 
+export default function DashboardHeader({
   user = { name: "Admin", avatar: null },
   title = "Dashboard",
   onSidebarToggle,
@@ -37,7 +37,7 @@ export default function DashboardHeader({
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  
+
   const dropdownRef = useRef();
   const notificationRef = useRef();
   const searchRef = useRef();
@@ -45,7 +45,7 @@ export default function DashboardHeader({
   // Charger les notifications
   const loadNotifications = async () => {
     if (notificationsLoading) return;
-    
+
     setNotificationsLoading(true);
     try {
       const response = await fetch(route('admin.notifications.header'));
@@ -74,17 +74,17 @@ export default function DashboardHeader({
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
       });
-      
+
       // Mettre à jour immédiatement l'état local
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === notificationId 
+      setNotifications(prev =>
+        prev.map(notif =>
+          notif.id === notificationId
             ? { ...notif, is_read: true }
             : notif
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
-      
+
       // Recharger les notifications pour être sûr
       setTimeout(loadNotifications, 500);
     } catch (error) {
@@ -102,13 +102,13 @@ export default function DashboardHeader({
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
       });
-      
+
       // Mettre à jour immédiatement l'état local
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notif => ({ ...notif, is_read: true }))
       );
       setUnreadCount(0);
-      
+
       // Recharger les notifications pour être sûr
       setTimeout(loadNotifications, 500);
     } catch (error) {
@@ -129,7 +129,7 @@ export default function DashboardHeader({
         setSearchOpen(false);
       }
     }
-    
+
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
@@ -140,10 +140,10 @@ export default function DashboardHeader({
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-      <div className="flex items-center justify-between px-6 py-4">
+    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50 overflow-x-hidden">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         {/* Left side */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 md:space-x-4 min-w-0">
           {/* Mobile menu button */}
           {onSidebarToggle && (
             <button
@@ -156,14 +156,14 @@ export default function DashboardHeader({
           )}
 
           {/* Page title */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h1>
-            <p className="text-sm text-gray-500 hidden sm:block">
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold text-gray-900 tracking-tight truncate max-w-[60vw] sm:max-w-none">{title}</h1>
+            <p className="text-xs md:text-sm text-gray-500 hidden sm:block">
+              {new Date().toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               })}
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function DashboardHeader({
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 onFocus={() => setSearchOpen(true)}
               />
-              
+
               {/* Search dropdown */}
               {searchOpen && searchQuery && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl py-2 max-h-96 overflow-y-auto">
@@ -200,7 +200,7 @@ export default function DashboardHeader({
         )}
 
         {/* Right side */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 md:space-x-2">
           {/* Search button (mobile) */}
           {showSearch && (
             <button className="md:hidden p-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
@@ -242,8 +242,8 @@ export default function DashboardHeader({
             </button>
 
             {/* Notifications dropdown */}
-            {notificationOpen && (
-              <div className="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in">
+              {notificationOpen && (
+              <div className="fixed right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in z-50">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
                   {unreadCount > 0 && (
@@ -255,7 +255,7 @@ export default function DashboardHeader({
                     </button>
                   )}
                 </div>
-                
+
                 <div className="max-h-96 overflow-y-auto">
                   {notificationsLoading ? (
                     <div className="px-4 py-8 text-center text-gray-500">
@@ -330,7 +330,7 @@ export default function DashboardHeader({
                     })
                   )}
                 </div>
-                
+
                 {notifications.length > 0 && (
                   <div className="px-4 py-3 border-t border-gray-100">
                     <Link
@@ -372,14 +372,14 @@ export default function DashboardHeader({
                 <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                 <p className="text-xs text-gray-500">{user.role || 'Administrateur'}</p>
               </div>
-              <FiChevronDown 
-                className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} 
+              <FiChevronDown
+                className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
               />
             </button>
 
             {/* Dropdown menu */}
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in">
+              <div className="fixed right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl py-2 animate-fade-in z-50">
                 {/* User info */}
                 <div className="px-4 py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
@@ -404,7 +404,7 @@ export default function DashboardHeader({
                     <HiOutlineUserCircle className="h-5 w-5 text-gray-400" />
                     <span className="font-medium">Mon profil</span>
                   </Link>
-                  
+
                   <Link
                     href={route('admin.settings.index')}
                     className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
@@ -431,20 +431,20 @@ export default function DashboardHeader({
           </div>
         </div>
       </div>
-      
+
       <style>{`
-        .animate-fade-in { 
-          animation: fade-in 0.2s ease-out; 
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
         }
-        @keyframes fade-in { 
-          from { 
-            opacity: 0; 
-            transform: translateY(-10px); 
-          } 
-          to { 
-            opacity: 1; 
-            transform: none; 
-          } 
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: none;
+          }
         }
         .line-clamp-2 {
           display: -webkit-box;

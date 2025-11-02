@@ -38,7 +38,7 @@ const ProductCard = ({ product, appSettings }) => {
                     </span>
                 </div>
             )}
-            
+
 
             {/* Bouton favoris */}
             <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -75,7 +75,7 @@ const ProductCard = ({ product, appSettings }) => {
                     {product.description}
                 </p>
 
-                {/* Évaluations */}
+                {/* Evaluations */}
                 <div className="flex items-center mb-4">
                     <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
@@ -177,7 +177,7 @@ const CustomHero = ({ customizations, appSettings }) => {
 
     return (
         <section
-            className="relative min-h-[calc(60vh)] flex items-center overflow-hidden"
+            className="relative w-full max-h-[400px] md:max-h-none min-h-[45vh] md:min-h-[65vh] flex items-center overflow-hidden"
             style={{
                 backgroundImage: hero?.hero_background_image ? `url(${hero.hero_background_image})` : undefined,
                 backgroundSize: 'cover',
@@ -188,26 +188,26 @@ const CustomHero = ({ customizations, appSettings }) => {
                 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
             )}
             <div className="absolute inset-0 bg-black/40" />
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 w-full">
                 <div className="max-w-2xl text-white">
                     {hero?.hero_title && (
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">{hero.hero_title}</h1>
+                        <h1 className="text-xl md:text-5xl font-bold mb-3 md:mb-4 leading-tight">{hero.hero_title}</h1>
                     )}
                     {hero?.hero_subtitle && (
-                        <p className="text-lg md:text-xl text-gray-200 mb-8">{hero.hero_subtitle}</p>
+                        <p className="text-sm md:text-xl text-gray-200 mb-6 md:mb-8">{hero.hero_subtitle}</p>
                     )}
                     {product && (
-                        <div className="bg-white/10 backdrop-blur rounded-xl p-4 inline-flex items-center space-x-4">
+                        <div className="bg-white/10 backdrop-blur rounded-xl p-3 md:p-4 inline-flex items-center space-x-3 md:space-x-4">
                             <div>
-                                <div className="text-xl font-semibold">{product.name}</div>
-                                <div className="text-lg">
+                                <div className="text-base md:text-xl font-semibold">{product.name}</div>
+                                <div className="text-sm md:text-lg">
                                     <span className="font-bold">{formatCurrency(product.current_sale_price ?? product.price)}</span>
                                     {product.current_sale_price && product.price && product.price > product.current_sale_price && (
                                         <span className="ml-2 line-through opacity-70">{formatCurrency(product.price)}</span>
                                     )}
                                 </div>
                             </div>
-                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-5 py-2.5 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition">Acheter</a>
+                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-4 py-2 md:px-5 md:py-2.5 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition">Acheter</a>
                         </div>
                     )}
                 </div>
@@ -247,8 +247,8 @@ const HeroSlider = ({ slides = [], appSettings }) => {
     const currencySymbol = appSettings?.currency_symbol || 'F CFA';
 
     return (
-        <section className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-            <div className="relative h-[60vh]">
+        <section className="relative overflow-hidden w-full" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+            <div className="relative h-[48vh] max-h-[400px] sm:h-[60vh] sm:max-h-none">
                 <div className="absolute inset-0">
                     <div className="h-full w-full flex transition-transform duration-700" style={{ transform: `translateX(-${index * 100}%)` }}>
                         {slides.map((s, i) => (
@@ -261,9 +261,9 @@ const HeroSlider = ({ slides = [], appSettings }) => {
                     </div>
                     <div className="absolute inset-0 bg-black/40" />
                 </div>
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full flex justify-end h-full items-center">
-                    <div className="bg-white/80 backdrop-blur rounded-xl p-6 md:p-8 max-w-md">
-                        {product?.name && (<h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{product.name}</h2>)}
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 w-full flex justify-end h-full items-center">
+                    <div className="bg-white/80 backdrop-blur rounded-xl p-4 md:p-8 max-w-md">
+                        {product?.name && (<h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-2">{product.name}</h2>)}
                         {slides[index]?.tagline && (<p className="text-gray-700 mb-4">{slides[index].tagline}</p>)}
                         {product && (
                             <div className="flex items-center gap-3 mb-4">
@@ -274,7 +274,7 @@ const HeroSlider = ({ slides = [], appSettings }) => {
                             </div>
                         )}
                         {product?.id && (
-                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-5 py-2.5 bg-gray-900 text-white rounded-lg font-semibold hover:bg-black transition">Découvrir</a>
+                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-4 py-2.5 bg-gray-900 text-white rounded-lg font-semibold hover:bg-black transition">Découvrir</a>
                         )}
                     </div>
                 </div>
@@ -383,7 +383,7 @@ function HomeContent({
                 </section>
             )}
             {/* New In Carousel */}
-            
+
             {newProducts.length > 0 && (
                 <ProductCarousel
                     products={newProducts}
@@ -469,9 +469,6 @@ export default function Home({ wishlistItems, ...props }) {
         </FrontendLayout>
     );
 }
-
-
-
 
 
 
