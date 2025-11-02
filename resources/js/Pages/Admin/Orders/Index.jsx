@@ -3,11 +3,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
 import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
-import { 
-    MagnifyingGlassIcon, 
-    PlusIcon, 
-    EyeIcon, 
-    PencilIcon, 
+import {
+    MagnifyingGlassIcon,
+    PlusIcon,
+    EyeIcon,
+    PencilIcon,
     TrashIcon,
     ArrowDownTrayIcon,
     FunnelIcon,
@@ -50,7 +50,7 @@ export default function OrdersList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.orders.index'), {
             search: searchTerm,
             ...updatedFilters,
@@ -111,9 +111,9 @@ export default function OrdersList() {
             5: { class: 'bg-red-100 text-red-800', text: orderStatuses[5] },
             6: { class: 'bg-green-100 text-green-800', text: orderStatuses[6] },
         };
-        
+
         const config = statusConfig[status] || { class: 'bg-gray-100 text-gray-800', text: 'Inconnu' };
-        
+
         return (
             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.class}`}>
                 {config.text}
@@ -129,9 +129,9 @@ export default function OrdersList() {
             2: { class: 'bg-yellow-100 text-yellow-800', text: paymentStatuses[2] },
             3: { class: 'bg-purple-100 text-purple-800', text: paymentStatuses[3] },
         };
-        
+
         const config = statusConfig[status] || { class: 'bg-gray-100 text-gray-800', text: 'Inconnu' };
-        
+
         return (
             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.class}`}>
                 {config.text}
@@ -261,7 +261,7 @@ export default function OrdersList() {
     return (
         <AdminLayout>
             <Head title="Gestion des Commandes" />
-            
+
             {/* En-tête avec statistiques */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -360,7 +360,7 @@ export default function OrdersList() {
             </div>
 
             {/* Messages Flash */}
-            {flash?.success && (
+            {/* {flash?.success && (
                 <div className="mb-4 rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
                     <div className="flex">
                         <CheckCircleIcon className="h-5 w-5 text-green-400" />
@@ -372,7 +372,7 @@ export default function OrdersList() {
                     </div>
                 </div>
             )}
-            
+
             {flash?.error && (
                 <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
                     <div className="flex">
@@ -384,7 +384,7 @@ export default function OrdersList() {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Filtres et recherche */}
             <div className="bg-white shadow rounded-lg mb-6">

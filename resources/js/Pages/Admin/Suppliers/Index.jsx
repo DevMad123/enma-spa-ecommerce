@@ -21,7 +21,7 @@ import {
 
 export default function SuppliersList() {
     const { supplierList, filters, stats, flash } = usePage().props;
-    
+
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [activeFilters, setActiveFilters] = useState({
         status: filters.status !== null ? filters.status : '',
@@ -96,9 +96,9 @@ export default function SuppliersList() {
             render: (supplier) => (
                 <div className="flex-shrink-0 h-12 w-12">
                     {supplier.image ? (
-                        <img 
-                            className="h-12 w-12 rounded-lg object-cover" 
-                            src={supplier.image?.startsWith('http') ? supplier.image : `/${supplier.image}`} 
+                        <img
+                            className="h-12 w-12 rounded-lg object-cover"
+                            src={supplier.image?.startsWith('http') ? supplier.image : `/${supplier.image}`}
                             alt={supplier.supplier_name}
                         />
                     ) : (
@@ -152,8 +152,8 @@ export default function SuppliersList() {
                 const isActive = supplier.status === 1 || supplier.status === true || supplier.status === '1';
                 return (
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        isActive 
-                            ? 'bg-green-100 text-green-800' 
+                        isActive
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                     }`}>
                         {isActive ? (
@@ -329,7 +329,7 @@ export default function SuppliersList() {
             </div>
 
             {/* Messages Flash */}
-            {flash?.success && (
+            {/* {flash?.success && (
                 <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                     {flash.success}
                 </div>
@@ -338,7 +338,7 @@ export default function SuppliersList() {
                 <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                     {flash.error}
                 </div>
-            )}
+            )} */}
 
             {/* Filtres et recherche */}
             <div className="bg-white shadow rounded-lg mb-6">

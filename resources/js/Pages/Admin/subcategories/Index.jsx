@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
 import { normalizeImageUrl } from '@/Utils/imageUtils';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -48,7 +48,7 @@ export default function SubcategoriesList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.subcategories.index'), {
             search: searchTerm,
             ...updatedFilters,
@@ -139,9 +139,9 @@ export default function SubcategoriesList() {
             render: (subcategory) => (
                 <div className="flex-shrink-0 h-12 w-12">
                     {subcategory.image ? (
-                        <img 
-                            className="h-12 w-12 rounded-lg object-cover" 
-                            src={normalizeImageUrl(subcategory.image)} 
+                        <img
+                            className="h-12 w-12 rounded-lg object-cover"
+                            src={normalizeImageUrl(subcategory.image)}
                             alt={subcategory.name}
                         />
                     ) : (
@@ -182,9 +182,9 @@ export default function SubcategoriesList() {
             label: 'Description',
             render: (subcategory) => (
                 <div className="text-sm text-gray-900 max-w-xs">
-                    {subcategory.note ? 
-                        (subcategory.note.length > 50 
-                            ? subcategory.note.substring(0, 50) + '...' 
+                    {subcategory.note ?
+                        (subcategory.note.length > 50
+                            ? subcategory.note.substring(0, 50) + '...'
                             : subcategory.note
                         ) : 'Aucune description'
                     }
@@ -206,7 +206,7 @@ export default function SubcategoriesList() {
             render: (subcategory) => (
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     subcategory.status === true || subcategory.status === 1 || subcategory.status === "1"
-                        ? 'bg-green-100 text-green-800' 
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                 }`}>
                     {subcategory.status === true || subcategory.status === 1 || subcategory.status === "1" ? (
@@ -290,7 +290,7 @@ export default function SubcategoriesList() {
     return (
         <AdminLayout>
             <Head title="Gestion des Sous-catégories" />
-            
+
             {/* En-tête avec statistiques */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -378,8 +378,8 @@ export default function SubcategoriesList() {
                                             Par Catégories
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {typeof stats?.subcategories_by_category === 'object' 
-                                                ? Object.keys(stats.subcategories_by_category || {}).length 
+                                            {typeof stats?.subcategories_by_category === 'object'
+                                                ? Object.keys(stats.subcategories_by_category || {}).length
                                                 : stats?.subcategories_by_category || 0}
                                         </dd>
                                     </dl>
@@ -391,7 +391,7 @@ export default function SubcategoriesList() {
             </div>
 
             {/* Messages Flash */}
-            {flash?.success && (
+            {/* {flash?.success && (
                 <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                     {flash.success}
                 </div>
@@ -400,7 +400,7 @@ export default function SubcategoriesList() {
                 <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                     {flash.error}
                 </div>
-            )}
+            )} */}
 
             {/* Filtres et recherche */}
             <div className="bg-white shadow rounded-lg mb-6">

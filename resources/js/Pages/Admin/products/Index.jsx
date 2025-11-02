@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
 import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -54,7 +54,7 @@ export default function ProductsList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.products.index', undefined, false), {
             search: searchTerm,
             ...updatedFilters,
@@ -156,9 +156,9 @@ export default function ProductsList() {
             render: (product) => (
                 <div className="flex-shrink-0 h-12 w-12">
                     {product.image ? (
-                        <img 
-                            className="h-12 w-12 rounded-lg object-cover" 
-                            src={product.image?.startsWith('http') ? product.image : `/${product.image}`} 
+                        <img
+                            className="h-12 w-12 rounded-lg object-cover"
+                            src={product.image?.startsWith('http') ? product.image : `/${product.image}`}
                             alt={product.name}
                         />
                     ) : (
@@ -217,7 +217,7 @@ export default function ProductsList() {
             render: (product) => (
                 <div>
                     <div className={`text-sm font-medium ${
-                        (product.available_quantity || 0) > 10 ? 'text-green-600' : 
+                        (product.available_quantity || 0) > 10 ? 'text-green-600' :
                         (product.available_quantity || 0) > 0 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
                         {Math.floor(product.available_quantity) || 0} unités
@@ -233,8 +233,8 @@ export default function ProductsList() {
             label: 'Statut',
             render: (product) => (
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    product.status === 1 
-                        ? 'bg-green-100 text-green-800' 
+                    product.status === 1
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                 }`}>
                     {product.status === 1 ? (
@@ -319,7 +319,7 @@ export default function ProductsList() {
     return (
         <AdminLayout>
             <Head title="Gestion des Produits" />
-            
+
             {/* En-tête avec statistiques */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -418,7 +418,7 @@ export default function ProductsList() {
             </div>
 
             {/* Messages Flash */}
-            {flash?.success && (
+            {/* {flash?.success && (
                 <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                     {flash.success}
                 </div>
@@ -427,7 +427,7 @@ export default function ProductsList() {
                 <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                     {flash.error}
                 </div>
-            )}
+            )} */}
 
             {/* Filtres et recherche */}
             <div className="bg-white shadow rounded-lg mb-6">

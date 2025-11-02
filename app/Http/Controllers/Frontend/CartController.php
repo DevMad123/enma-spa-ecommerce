@@ -208,9 +208,29 @@ class CartController extends Controller
             if (Auth::check()) {
                 $user = Auth::user();
                 $customer = Ecommerce_customer::where('user_id', $user->id)->first();
+
                 if (!$customer) {
-                    // Extraire prénom et nom depuis le nom complet de l'utilisateur
-                    $nameParts = explode(' ', $user->name, 2);
+                    // Tenter d'associer un customer existant par email (évite les doublons sur contrainte unique)
+                    $customer = Ecommerce_customer::where('email', $user->email)->first();
+                }
+
+                if ($customer) {
+                    // Mettre à jour les infos de contact depuis l'adresse de livraison
+                    $nameParts = explode(' ', (string) $user->name, 2);
+                    $firstName = $nameParts[0] ?? $request->shipping_first_name;
+                    $lastName = $nameParts[1] ?? $request->shipping_last_name;
+
+                    $customer->update([
+                        'user_id' => $customer->user_id ?: $user->id,
+                        'first_name' => $firstName ?: $customer->first_name,
+                        'last_name' => $lastName ?: $customer->last_name,
+                        'phone_one' => $request->shipping_phone ?: $customer->phone_one,
+                        'present_address' => $request->shipping_address ?: $customer->present_address,
+                        'status' => 1,
+                    ]);
+                } else {
+                    // Créer un nouveau customer lié à l'utilisateur
+                    $nameParts = explode(' ', (string) $user->name, 2);
                     $firstName = $nameParts[0] ?? $request->shipping_first_name;
                     $lastName = $nameParts[1] ?? $request->shipping_last_name;
 
@@ -221,21 +241,33 @@ class CartController extends Controller
                         'email' => $user->email,
                         'phone_one' => $request->shipping_phone,
                         'present_address' => $request->shipping_address,
-                        'password' => bcrypt('temp_password'), // Mot de passe temporaire
+                        'password' => bcrypt('temp_password'),
                         'status' => 1,
                     ]);
                 }
             } else {
-                // Commande invité - créer customer temporaire
-                $customer = Ecommerce_customer::create([
-                    'first_name' => $request->shipping_first_name,
-                    'last_name' => $request->shipping_last_name,
-                    'email' => $request->email,
-                    'phone_one' => $request->shipping_phone,
-                    'present_address' => $request->shipping_address,
-                    'password' => bcrypt('temp_password'), // Mot de passe temporaire pour invité
-                    'status' => 1,
-                ]);
+                // Commande invité - réutiliser le customer existant par email si présent
+                $customer = Ecommerce_customer::where('email', $request->email)->first();
+                if ($customer) {
+                    // Mettre à jour les infos avec l'adresse de livraison actuelle
+                    $customer->update([
+                        'first_name' => $request->shipping_first_name ?: $customer->first_name,
+                        'last_name' => $request->shipping_last_name ?: $customer->last_name,
+                        'phone_one' => $request->shipping_phone ?: $customer->phone_one,
+                        'present_address' => $request->shipping_address ?: $customer->present_address,
+                        'status' => 1,
+                    ]);
+                } else {
+                    $customer = Ecommerce_customer::create([
+                        'first_name' => $request->shipping_first_name,
+                        'last_name' => $request->shipping_last_name,
+                        'email' => $request->email,
+                        'phone_one' => $request->shipping_phone,
+                        'present_address' => $request->shipping_address,
+                        'password' => bcrypt('temp_password'), // Mot de passe temporaire pour invité
+                        'status' => 1,
+                    ]);
+                }
             }
 
             Log::info('Customer created/found:', ['customer_id' => $customer->id]);
@@ -397,6 +429,25 @@ class CartController extends Controller
             // Supprimer le cache de protection anti-duplication
             cache()->forget($cacheKey);
 
+            // Autoriser l'accès à la page de succès pour les invités via la session
+            if (!Auth::check()) {
+                try {
+                    $allowed = session()->get('guest_allowed_orders', []);
+                    $allowed[] = $sell->id;
+                    // Conserver uniquement les 5 dernières commandes invitées pour cette session
+                    $allowed = array_values(array_unique(array_map('intval', $allowed)));
+                    if (count($allowed) > 5) {
+                        $allowed = array_slice($allowed, -5);
+                    }
+                    session()->put('guest_allowed_orders', $allowed);
+                } catch (\Throwable $e) {
+                    Log::warning('Unable to store guest order id in session', [
+                        'order_id' => $sell->id ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             // Retourner une réponse JSON pour toutes les requêtes AJAX (incluant Inertia)
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 Log::info('Returning JSON response for AJAX/Inertia request');
@@ -452,24 +503,39 @@ class CartController extends Controller
                 abort(403, 'Accès non autorisé.');
             }
 
-        $sell = Sell::with([
-            'customer',
-            'sellDetails.product',
-            'sellDetails.productVariant.color',
-            'sellDetails.productVariant.size',
-            'paymentMethod',
-            'shipping',
-            'shippingAddress',
-            'billingAddress'
-        ])
+            $sell = Sell::with([
+                'customer',
+                'sellDetails.product',
+                'sellDetails.productVariant.color',
+                'sellDetails.productVariant.size',
+                'paymentMethod',
+                'shipping',
+                'shippingAddress',
+                'billingAddress'
+            ])
                 ->where('customer_id', $customer->id) // Vérifier la propriété
                 ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
                 ->findOrFail($sellId);
         } else {
-            // Pour les invités, on pourrait ajouter une vérification par session ou token
-            // Pour l'instant, refuser l'accès si non connecté
-            return redirect()->route('login')
-                ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+            // Invité : autoriser l'accès si la commande a été créée durant cette session
+            $allowed = session()->get('guest_allowed_orders', []);
+            if (!in_array((int) $sellId, array_map('intval', (array) $allowed), true)) {
+                return redirect()->route('frontend.cart.index')
+                    ->with('error', "Votre session ne permet pas d'accéder à cette commande.");
+            }
+
+            $sell = Sell::with([
+                'customer',
+                'sellDetails.product',
+                'sellDetails.productVariant.color',
+                'sellDetails.productVariant.size',
+                'paymentMethod',
+                'shipping',
+                'shippingAddress',
+                'billingAddress'
+            ])
+                ->where('created_at', '>=', now()->subHours(24)) // Limite de 24h pour la page de succès
+                ->findOrFail($sellId);
         }
 
         Log::info('Order sell details:', $sell->toArray());

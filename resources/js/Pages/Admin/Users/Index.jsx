@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
-import { 
-    MagnifyingGlassIcon, 
-    PlusIcon, 
-    PencilIcon, 
-    TrashIcon, 
+import {
+    MagnifyingGlassIcon,
+    PlusIcon,
+    PencilIcon,
+    TrashIcon,
     EyeIcon,
     UserIcon,
     CheckCircleIcon,
@@ -38,7 +38,7 @@ export default function List({ users, roles, filters, currentUserId }) {
             role: selectedRole,
             status: selectedStatus,
         };
-        
+
         params[type] = value;
 
         router.get(route('admin.users.index'), params, {
@@ -65,10 +65,10 @@ export default function List({ users, roles, filters, currentUserId }) {
         }
 
         // Empêcher la suppression des super administrateurs
-        const hasAdminRole = user.roles && user.roles.some(role => 
+        const hasAdminRole = user.roles && user.roles.some(role =>
             role.name === 'super_admin' || role.name === 'admin'
         );
-        
+
         if (hasAdminRole) {
             if (!confirm(`ATTENTION: Vous tentez de supprimer un administrateur "${user.name}". Cette action est irréversible et peut affecter le fonctionnement du système. Êtes-vous absolument sûr ?`)) {
                 return;
@@ -130,8 +130,8 @@ export default function List({ users, roles, filters, currentUserId }) {
             render: (user) => (
                 <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
-                        <img 
-                            src={user.avatar_url || user.default_avatar_url} 
+                        <img
+                            src={user.avatar_url || user.default_avatar_url}
                             alt={user.name}
                             className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center"
                         />
@@ -152,7 +152,7 @@ export default function List({ users, roles, filters, currentUserId }) {
             label: 'Rôle',
             render: (user) => (
                 <div className="text-sm text-gray-900">
-                    {user.roles && user.roles.length > 0 
+                    {user.roles && user.roles.length > 0
                         ? user.roles.map(role => role.name).join(', ')
                         : 'Aucun rôle'
                     }
@@ -178,7 +178,7 @@ export default function List({ users, roles, filters, currentUserId }) {
             label: 'Dernière connexion',
             render: (user) => (
                 <span className="text-sm text-gray-500">
-                    {user.id === currentUserId 
+                    {user.id === currentUserId
                         ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 Utilisateur actuel
@@ -212,10 +212,10 @@ export default function List({ users, roles, filters, currentUserId }) {
                         onClick={() => toggleStatus(user)}
                         disabled={user.id === currentUserId}
                         className={`p-2 rounded-lg transition-colors hover:bg-opacity-50 ${
-                            user.id === currentUserId 
-                                ? 'text-gray-400 cursor-not-allowed bg-gray-100' 
-                                : ((user.status == 1 || user.status === '1') 
-                                    ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' 
+                            user.id === currentUserId
+                                ? 'text-gray-400 cursor-not-allowed bg-gray-100'
+                                : ((user.status == 1 || user.status === '1')
+                                    ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50'
                                     : 'text-green-600 hover:text-green-900 hover:bg-green-50')
                         }`}
                         title={(user.status == 1 || user.status === '1') ? 'Désactiver' : 'Activer'}
@@ -230,8 +230,8 @@ export default function List({ users, roles, filters, currentUserId }) {
                         onClick={() => handleDelete(user)}
                         disabled={user.id === currentUserId}
                         className={`p-2 rounded-lg transition-colors ${
-                            user.id === currentUserId 
-                                ? 'text-gray-400 cursor-not-allowed bg-gray-100' 
+                            user.id === currentUserId
+                                ? 'text-gray-400 cursor-not-allowed bg-gray-100'
                                 : 'text-red-600 hover:text-red-900 hover:bg-red-50'
                         }`}
                         title={user.id === currentUserId ? 'Vous ne pouvez pas supprimer votre propre compte' : 'Supprimer'}
@@ -263,7 +263,7 @@ export default function List({ users, roles, filters, currentUserId }) {
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
-                    {flash?.success && (
+                    {/* {flash?.success && (
                         <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
                             {flash.success}
                         </div>
@@ -272,7 +272,7 @@ export default function List({ users, roles, filters, currentUserId }) {
                         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
                             {flash.error}
                         </div>
-                    )}
+                    )} */}
 
                     {/* Header */}
                     <div className="bg-white shadow rounded-lg">

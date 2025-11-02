@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -40,7 +40,7 @@ export default function PaymentsList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.payments.index'), {
             search: searchTerm,
             ...updatedFilters,
@@ -290,7 +290,7 @@ export default function PaymentsList() {
                 </div>
 
                 {/* Flash messages */}
-                {flash?.success && (
+                {/* {flash?.success && (
                     <div className="mt-4 rounded-md bg-green-50 p-4">
                         <div className="flex">
                             <CheckCircleIcon className="h-5 w-5 text-green-400" />
@@ -302,7 +302,7 @@ export default function PaymentsList() {
                         </div>
                     </div>
                 )}
-                
+
                 {flash?.error && (
                     <div className="mt-4 rounded-md bg-red-50 p-4">
                         <div className="flex">
@@ -314,7 +314,7 @@ export default function PaymentsList() {
                             </div>
                         </div>
                     </div>
-                )}
+                )} */}
             </div>
 
             {/* Tableau de bord statistiques */}
@@ -411,7 +411,7 @@ export default function PaymentsList() {
                                     />
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-2">
                                 <button
                                     type="button"

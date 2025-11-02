@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
 import { initLocale, formatDate, getLocaleConfig } from '@/Utils/LocaleUtils';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -42,7 +42,7 @@ export default function PaymentMethodsList() {
     const filteredPaymentMethods = paymentMethods.filter(method => {
         const matchesSearch = method.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             method.code.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === '' || 
+        const matchesStatus = statusFilter === '' ||
                             (statusFilter === 'active' && method.is_active) ||
                             (statusFilter === 'inactive' && !method.is_active);
         return matchesSearch && matchesStatus;
@@ -272,7 +272,7 @@ export default function PaymentMethodsList() {
                                 <p className="text-gray-600">Gérez les moyens de paiement acceptés</p>
                             </div>
                         </div>
-                        
+
                         <div className="flex flex-col sm:flex-row gap-4">
                             {/* Statistiques rapides */}
                             <div className="flex space-x-4">
@@ -341,7 +341,7 @@ export default function PaymentMethodsList() {
                 </div>
 
                 {/* Flash messages */}
-                {flash?.success && (
+                {/* {flash?.success && (
                     <div className="rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
                         <div className="flex">
                             <CheckCircleIcon className="h-5 w-5 text-green-400" />
@@ -353,7 +353,7 @@ export default function PaymentMethodsList() {
                         </div>
                     </div>
                 )}
-                
+
                 {flash?.error && (
                     <div className="rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
                         <div className="flex">
@@ -365,7 +365,7 @@ export default function PaymentMethodsList() {
                             </div>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Table des données */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200">

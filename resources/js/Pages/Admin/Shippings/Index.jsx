@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import DataTable from '@/Components/DataTable';
 import { initLocale, formatCurrency, formatDate, getCurrentCurrency, getCurrentCurrencySymbol, getLocaleConfig } from '@/Utils/LocaleUtils';
-import { 
+import {
     PlusIcon,
     MagnifyingGlassIcon,
     EyeIcon,
@@ -48,7 +48,7 @@ export default function ShippingsList() {
     const applyFilters = (newFilters = {}) => {
         const updatedFilters = { ...activeFilters, ...newFilters };
         setActiveFilters(updatedFilters);
-        
+
         router.get(route('admin.shippings.index'), {
             search: searchTerm,
             ...updatedFilters,
@@ -136,10 +136,10 @@ export default function ShippingsList() {
     };
 
     const getStatusBadge = (isActive) => {
-        const config = isActive 
+        const config = isActive
             ? { color: 'bg-green-100 text-green-800', icon: CheckCircleIcon, text: 'Actif' }
             : { color: 'bg-red-100 text-red-800', icon: XCircleIcon, text: 'Inactif' };
-        
+
         const Icon = config.icon;
 
         return (
@@ -195,7 +195,7 @@ export default function ShippingsList() {
             label: 'Délai',
             render: (shipping) => (
                 <div className="text-sm text-gray-500">
-                    {shipping.estimated_days 
+                    {shipping.estimated_days
                         ? `${shipping.estimated_days} jour${shipping.estimated_days > 1 ? 's' : ''}`
                         : 'Non défini'
                     }
@@ -314,7 +314,7 @@ export default function ShippingsList() {
                 </div>
 
                 {/* Flash messages */}
-                {flash?.success && (
+                {/* {flash?.success && (
                     <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-4 shadow-sm">
                         <div className="flex">
                             <CheckCircleIcon className="h-5 w-5 text-green-400" />
@@ -326,7 +326,7 @@ export default function ShippingsList() {
                         </div>
                     </div>
                 )}
-                
+
                 {flash?.error && (
                     <div className="mt-4 rounded-md bg-red-50 border border-red-200 p-4 shadow-sm">
                         <div className="flex">
@@ -338,7 +338,7 @@ export default function ShippingsList() {
                             </div>
                         </div>
                     </div>
-                )}
+                )} */}
             </div>
 
             {/* Tableau de bord statistiques */}
@@ -435,7 +435,7 @@ export default function ShippingsList() {
                                     />
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-2">
                                 <button
                                     type="button"

@@ -19,7 +19,7 @@ import {
 
 export default function BrandsList() {
     const { brandList, filters, stats, flash } = usePage().props;
-    
+
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [activeFilters, setActiveFilters] = useState({
         status: filters?.status !== null ? filters?.status : '',
@@ -94,9 +94,9 @@ export default function BrandsList() {
             render: (brand) => (
                 <div className="flex-shrink-0 h-12 w-12">
                     {brand.image ? (
-                        <img 
-                            className="h-12 w-12 rounded-lg object-cover" 
-                            src={brand.image?.startsWith('http') ? brand.image : `/${brand.image}`} 
+                        <img
+                            className="h-12 w-12 rounded-lg object-cover"
+                            src={brand.image?.startsWith('http') ? brand.image : `/${brand.image}`}
                             alt={brand.name}
                         />
                     ) : (
@@ -118,8 +118,8 @@ export default function BrandsList() {
                     </div>
                     {brand.description && (
                         <div className="text-sm text-gray-500">
-                            {brand.description.length > 50 
-                                ? brand.description.substring(0, 50) + '...' 
+                            {brand.description.length > 50
+                                ? brand.description.substring(0, 50) + '...'
                                 : brand.description
                             }
                         </div>
@@ -134,8 +134,8 @@ export default function BrandsList() {
                 const isActive = brand.status === 1 || brand.status === true || brand.status === '1';
                 return (
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        isActive 
-                            ? 'bg-green-100 text-green-800' 
+                        isActive
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                     }`}>
                         {isActive ? (
@@ -211,7 +211,7 @@ export default function BrandsList() {
     return (
         <AdminLayout>
             <Head title="Gestion des marques" />
-            
+
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ export default function BrandsList() {
                 )}
 
                 {/* Messages Flash */}
-                {flash?.success && (
+                {/* {flash?.success && (
                     <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                         {flash.success}
                     </div>
@@ -325,7 +325,7 @@ export default function BrandsList() {
                     <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                         {flash.error}
                     </div>
-                )}
+                )} */}
 
                 {/* Filtres et recherche */}
                 <div className="bg-white shadow rounded-lg mb-6">

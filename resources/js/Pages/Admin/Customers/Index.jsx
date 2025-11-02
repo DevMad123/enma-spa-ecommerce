@@ -21,7 +21,7 @@ import {
 
 export default function CustomersList() {
     const { customerList, filters, stats, flash } = usePage().props;
-    
+
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [activeFilters, setActiveFilters] = useState({
         status: filters?.status !== null ? filters?.status : '',
@@ -106,9 +106,9 @@ export default function CustomersList() {
             render: (customer) => (
                 <div className="flex-shrink-0 h-12 w-12">
                     {customer.image ? (
-                        <img 
-                            className="h-12 w-12 rounded-full object-cover" 
-                            src={customer.image?.startsWith('http') ? customer.image : `/${customer.image}`} 
+                        <img
+                            className="h-12 w-12 rounded-full object-cover"
+                            src={customer.image?.startsWith('http') ? customer.image : `/${customer.image}`}
                             alt={`${customer.first_name} ${customer.last_name}`}
                         />
                     ) : (
@@ -148,8 +148,8 @@ export default function CustomersList() {
                 const isActive = customer.status === 1 || customer.status === true || customer.status === '1';
                 return (
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        isActive 
-                            ? 'bg-green-100 text-green-800' 
+                        isActive
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                     }`}>
                         {isActive ? (
@@ -188,9 +188,9 @@ export default function CustomersList() {
             label: 'Adresse',
             render: (customer) => (
                 <span className="text-sm text-gray-500">
-                    {customer.present_address ? 
-                        (customer.present_address.length > 40 
-                            ? customer.present_address.substring(0, 40) + '...' 
+                    {customer.present_address ?
+                        (customer.present_address.length > 40
+                            ? customer.present_address.substring(0, 40) + '...'
                             : customer.present_address
                         ) : 'Non renseignée'
                     }
@@ -246,7 +246,7 @@ export default function CustomersList() {
     return (
         <AdminLayout>
             <Head title="Gestion des clients" />
-            
+
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -351,7 +351,7 @@ export default function CustomersList() {
                 )}
 
                 {/* Messages Flash */}
-                {flash?.success && (
+                {/* {flash?.success && (
                     <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
                         {flash.success}
                     </div>
@@ -360,7 +360,7 @@ export default function CustomersList() {
                     <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                         {flash.error}
                     </div>
-                )}
+                )} */}
 
                 {/* Filtres et recherche */}
                 <div className="bg-white shadow rounded-lg mb-6">
