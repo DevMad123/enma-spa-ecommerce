@@ -157,7 +157,7 @@ export default function NotificationShow({ notification }) {
                             </div>
 
                             {/* Métadonnées/Données */}
-                            {console.log('Notification:', notification)}
+                            {import.meta.env.DEV && console.log('Notification:', notification)}
                             {notification.data && Object.keys(notification.data).length > 0 && (
                                 <div className="mt-8 border-t border-gray-200 pt-6">
                                     <h3 className="text-lg font-medium text-gray-900 mb-4">Détails</h3>

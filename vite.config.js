@@ -13,7 +13,7 @@ export default defineConfig({
   build: {
     outDir: 'public/build',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',

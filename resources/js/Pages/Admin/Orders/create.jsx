@@ -206,17 +206,17 @@ export default function CreateOrder() {
         // Utiliser la méthode post du hook useForm
         router.post(route('admin.orders.store'), formDataToSend, {
             onStart: () => {
-                console.log('🚀 Début de la requête POST');
+                if (import.meta.env.DEV) console.log('🚀 Début de la requête POST');
             },
             onSuccess: (data) => {
-                console.log('✅ Succès:', data);
+                if (import.meta.env.DEV) console.log('✅ Succès:', data);
                 // Redirection gérée par le contrôleur
             },
             onError: (errors) => {
                 console.error('❌ Erreurs:', errors);
             },
             onFinish: () => {
-                console.log('🏁 Fin de la requête');
+                if (import.meta.env.DEV) console.log('🏁 Fin de la requête');
             }
         });
     };
@@ -604,7 +604,7 @@ export default function CreateOrder() {
                                 <button
                                     type="submit"
                                     disabled={processing || !selectedCustomer || cartItems.length === 0}
-                                    onClick={() => console.log('🔘 Bouton de soumission cliqué!')}
+                                    onClick={() => if (import.meta.env.DEV) console.log('🔘 Bouton de soumission cliqué!')}
                                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     {processing ? 'Création...' : 'Créer la commande'}

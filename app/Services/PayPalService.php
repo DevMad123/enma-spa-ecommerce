@@ -1,11 +1,13 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
 use App\Models\PaymentMethod;
 use App\Models\Sell;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
+use PaypalServerSdkLib\PaypalServerSdkClientBuilder;
+use PaypalServerSdkLib\Environment as PaypalEnvironment;
+use PaypalServerSdkLib\Authentication\ClientCredentialsAuthCredentialsBuilder;
 
 class PayPalService
 {
@@ -13,18 +15,18 @@ class PayPalService
     private $clientId;
     private $clientSecret;
     private $mode;
-    private $baseUrl;
+    private $client; // PaypalServerSdkClient
 
     public function __construct()
     {
         $this->paymentMethod = PaymentMethod::where('code', 'paypal')->where('is_active', true)->first();
-        
+
         if (!$this->paymentMethod) {
             throw new \Exception('PayPal payment method not found or not active');
         }
 
         $config = $this->paymentMethod->config;
-        
+
         if (!isset($config['client_id']) || !isset($config['client_secret'])) {
             throw new \Exception('PayPal configuration incomplete');
         }
@@ -32,33 +34,15 @@ class PayPalService
         $this->clientId = $config['client_id'];
         $this->clientSecret = $config['client_secret'];
         $this->mode = $config['mode'] ?? 'sandbox';
-        $this->baseUrl = $this->mode === 'sandbox' 
-            ? 'https://api-m.sandbox.paypal.com' 
-            : 'https://api-m.paypal.com';
-    }
 
-    /**
-     * Obtenir un token d'accès PayPal
-     */
-    private function getAccessToken()
-    {
-        try {
-            $response = Http::withBasicAuth($this->clientId, $this->clientSecret)
-                ->asForm()
-                ->post($this->baseUrl . '/v1/oauth2/token', [
-                    'grant_type' => 'client_credentials'
-                ]);
+        $environment = $this->mode === 'sandbox' ? PaypalEnvironment::SANDBOX : PaypalEnvironment::PRODUCTION;
 
-            if ($response->successful()) {
-                return $response->json()['access_token'];
-            }
-
-            throw new \Exception('Failed to get PayPal access token: ' . $response->body());
-
-        } catch (\Exception $e) {
-            Log::error('PayPal access token error', ['message' => $e->getMessage()]);
-            throw $e;
-        }
+        $this->client = PaypalServerSdkClientBuilder::init()
+            ->environment($environment)
+            ->clientCredentialsAuthCredentials(
+                ClientCredentialsAuthCredentialsBuilder::init($this->clientId, $this->clientSecret)
+            )
+            ->build();
     }
 
     /**
@@ -67,9 +51,6 @@ class PayPalService
     public function createPayment(Sell $order, array $returnUrls)
     {
         try {
-            $accessToken = $this->getAccessToken();
-
-            // Préparation des données de paiement
             $paymentData = [
                 'intent' => 'CAPTURE',
                 'purchase_units' => [[
@@ -104,30 +85,41 @@ class PayPalService
                 ]
             ];
 
-            $response = Http::withToken($accessToken)
-                ->post($this->baseUrl . '/v2/checkout/orders', $paymentData);
+            $apiResponse = $this->client->getOrdersController()->createOrder([
+                'body' => $paymentData,
+            ]);
 
-            if ($response->successful()) {
-                $paymentResponse = $response->json();
-                
+            if ($apiResponse->isSuccess()) {
+                /** @var \PaypalServerSdkLib\Models\Order $orderModel */
+                $orderModel = $apiResponse->getResult();
+                $paymentId = $orderModel->getId();
+                $links = $orderModel->getLinks() ?: [];
+                $approvalUrl = null;
+                foreach ($links as $link) {
+                    if (method_exists($link, 'getRel') && $link->getRel() === 'approve') {
+                        $approvalUrl = $link->getHref();
+                        break;
+                    }
+                }
+
                 Log::info('PayPal payment created', [
-                    'payment_id' => $paymentResponse['id'],
+                    'payment_id' => $paymentId,
                     'order_id' => $order->id,
                     'amount' => $order->total_payable_amount
                 ]);
 
                 return [
                     'success' => true,
-                    'payment_id' => $paymentResponse['id'],
-                    'approval_url' => $this->getApprovalUrl($paymentResponse),
-                    'payment' => $paymentResponse
+                    'payment_id' => $paymentId,
+                    'approval_url' => $approvalUrl,
+                    'payment' => $orderModel,
                 ];
             }
 
-            throw new \Exception('PayPal API Error: ' . $response->body());
+            throw new \Exception('PayPal API Error (createOrder)');
 
         } catch (\Exception $ex) {
-            Log::error('PayPal payment creation error', [
+            Log::error('PayPal create payment error', [
                 'message' => $ex->getMessage(),
                 'order_id' => $order->id
             ]);
@@ -145,27 +137,37 @@ class PayPalService
     public function capturePayment($paymentId)
     {
         try {
-            $accessToken = $this->getAccessToken();
+            $apiResponse = $this->client->getOrdersController()->captureOrder([
+                'id' => $paymentId,
+                'body' => [],
+            ]);
 
-            $response = Http::withToken($accessToken)
-                ->post($this->baseUrl . "/v2/checkout/orders/{$paymentId}/capture");
+            if ($apiResponse->isSuccess()) {
+                /** @var \PaypalServerSdkLib\Models\Order $orderModel */
+                $orderModel = $apiResponse->getResult();
 
-            if ($response->successful()) {
-                $captureResponse = $response->json();
-                
+                $transactionId = null;
+                $units = $orderModel->getPurchaseUnits() ?: [];
+                if (!empty($units) && method_exists($units[0], 'getPayments') && $units[0]->getPayments()) {
+                    $captures = $units[0]->getPayments()->getCaptures() ?: [];
+                    if (!empty($captures) && method_exists($captures[0], 'getId')) {
+                        $transactionId = $captures[0]->getId();
+                    }
+                }
+
                 Log::info('PayPal payment captured', [
                     'payment_id' => $paymentId,
-                    'status' => $captureResponse['status']
+                    'status' => $orderModel->getStatus()
                 ]);
 
                 return [
                     'success' => true,
-                    'payment' => $captureResponse,
-                    'transaction_id' => $captureResponse['purchase_units'][0]['payments']['captures'][0]['id'] ?? null
+                    'payment' => $orderModel,
+                    'transaction_id' => $transactionId,
                 ];
             }
 
-            throw new \Exception('PayPal capture error: ' . $response->body());
+            throw new \Exception('PayPal capture error');
 
         } catch (\Exception $ex) {
             Log::error('PayPal capture error', [
@@ -186,19 +188,18 @@ class PayPalService
     public function getPaymentDetails($paymentId)
     {
         try {
-            $accessToken = $this->getAccessToken();
+            $apiResponse = $this->client->getOrdersController()->getOrder([
+                'id' => $paymentId,
+            ]);
 
-            $response = Http::withToken($accessToken)
-                ->get($this->baseUrl . "/v2/checkout/orders/{$paymentId}");
-
-            if ($response->successful()) {
+            if ($apiResponse->isSuccess()) {
                 return [
                     'success' => true,
-                    'payment' => $response->json()
+                    'payment' => $apiResponse->getResult(),
                 ];
             }
 
-            throw new \Exception('PayPal get payment error: ' . $response->body());
+            throw new \Exception('PayPal get payment error');
 
         } catch (\Exception $ex) {
             Log::error('PayPal get payment details error', [
@@ -219,7 +220,7 @@ class PayPalService
     private function formatOrderItems(Sell $order)
     {
         $items = [];
-        
+
         if ($order->sellDetails) {
             foreach ($order->sellDetails as $detail) {
                 $items[] = [
@@ -238,27 +239,12 @@ class PayPalService
     }
 
     /**
-     * Extraire l'URL d'approbation du paiement
-     */
-    private function getApprovalUrl($payment)
-    {
-        if (isset($payment['links'])) {
-            foreach ($payment['links'] as $link) {
-                if ($link['rel'] === 'approve') {
-                    return $link['href'];
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Vérifier si PayPal est configuré
      */
     public static function isConfigured()
     {
         $paymentMethod = PaymentMethod::where('code', 'paypal')->where('is_active', true)->first();
-        
+
         if (!$paymentMethod) {
             return false;
         }

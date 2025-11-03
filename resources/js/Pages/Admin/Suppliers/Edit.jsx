@@ -80,21 +80,21 @@ export default function EditSupplier({ supplier }) {
             formData.append('image_deleted', '1');
         }
 
-        console.log('📦 Données envoyées:', Object.fromEntries(formData));
+        if (import.meta.env.DEV) console.log('📦 Données envoyées:', Object.fromEntries(formData));
 
         // Envoyer via router.post pour supporter l'upload de fichiers
         router.post(route('admin.suppliers.update', supplier.id), formData, {
             onStart: () => {
-                console.log('🚀 Début de la requête PUT');
+                if (import.meta.env.DEV) console.log('🚀 Début de la requête PUT');
             },
             onSuccess: (data) => {
-                console.log('✅ Succès:', data);
+                if (import.meta.env.DEV) console.log('✅ Succès:', data);
             },
             onError: (errors) => {
                 console.error('❌ Erreurs:', errors);
             },
             onFinish: () => {
-                console.log('🏁 Requête terminée');
+                if (import.meta.env.DEV) console.log('🏁 Requête terminée');
             }
         });
     };
@@ -530,6 +530,7 @@ export default function EditSupplier({ supplier }) {
         </AdminLayout>
     );
 }
+
 
 
 

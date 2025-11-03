@@ -92,7 +92,7 @@ export default function ShowOrder() {
             </span>
         );
     };
-    console.log(order);
+    if (import.meta.env.DEV) console.log(order);
 
     return (
         <AdminLayout>

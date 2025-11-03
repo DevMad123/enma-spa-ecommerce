@@ -7,13 +7,12 @@ export const getCurrencydata = createAsyncThunk("currency", async () => {
 });
 
 export const getWishcount = createAsyncThunk("wish", async () => {
-  let login = localStorage.getItem("ACCESS_TOKEN");
-  if (login === null) {
-    return 0;
-  } else {
+  // Plus de token en localStorage: on tente l'appel; 401 => 0
+  try {
     const response = await axiosClient.get("user/wish/count");
-    return response.data;
-  }
+    if (response?.status === 200) return response.data;
+  } catch (_) {}
+  return 0;
 });
 
 export const shippingCost = createAsyncThunk("shipping", async (info) => {

@@ -96,7 +96,7 @@ export default function CustomersList() {
         }
         router.visit(route('admin.customers.show', customerId));
     };
-    console.log(customerList);
+    if (import.meta.env.DEV) console.log(customerList);
 
     // Configuration des colonnes
     const columns = [
@@ -472,4 +472,3 @@ export default function CustomersList() {
         </AdminLayout>
     );
 }
-

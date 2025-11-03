@@ -129,7 +129,7 @@ export default function CustomizationPage({ customization = null, products = [],
   };
 
   const handleSubmit = (e) => {
-    console.log('Submitting form with data:', data);
+    if (import.meta.env.DEV) console.log('Submitting form with data:', data);
     e.preventDefault();
     // Omettre les fichiers non sélectionnés pour éviter de nullifier les images existantes
     transform((form) => {
@@ -498,6 +498,7 @@ export default function CustomizationPage({ customization = null, products = [],
     </AdminLayout>
   );
 }
+
 
 
 

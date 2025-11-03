@@ -292,17 +292,17 @@ export default function CreateProduct() {
         // Envoyer via Inertia
         router.post(route('admin.products.store'), formData, {
             onStart: () => {
-                console.log('🚀 Début de la requête POST');
+                if (import.meta.env.DEV) console.log('🚀 Début de la requête POST');
             },
             onSuccess: (data) => {
-                console.log('✅ Succès:', data);
+                if (import.meta.env.DEV) console.log('✅ Succès:', data);
                 // Redirection automatique vers la liste des produits
             },
             onError: (errors) => {
                 console.error('❌ Erreurs:', errors);
             },
             onFinish: () => {
-                console.log('🏁 Fin de la requête');
+                if (import.meta.env.DEV) console.log('🏁 Fin de la requête');
             }
         });
     };
@@ -1003,3 +1003,4 @@ export default function CreateProduct() {
         </AdminLayout>
     );
 }
+

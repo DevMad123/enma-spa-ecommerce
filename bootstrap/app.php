@@ -19,11 +19,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust proxies to correctly detect HTTPS and client IP when behind reverse proxies
+        if (method_exists($middleware, 'trustProxies')) {
+            $middleware->trustProxies(at: \App\Http\Middleware\TrustProxies::class);
+        }
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
         $middleware->web(append: [
+            \App\Http\Middleware\SecureHeaders::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\ShareWishlistData::class,

@@ -324,7 +324,7 @@ export default function FAQ() {
                         >
                             Nous Contacter
                         </a>
-                        {console.log('App Settings:', appSettings)}
+                        {if (import.meta.env.DEV) console.log('App Settings:', appSettings)}
                         <a
                             href={`tel:${appSettings?.phone || '+225XXXXXXXXXX'}`}
                             className="border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-amber-600 transition-all duration-200"

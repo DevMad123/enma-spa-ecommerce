@@ -90,7 +90,7 @@ export default function CheckoutSuccess({ order }) {
                     </div>
 
                     {/* Content */}
-                    {console.log(order)}
+                    {if (import.meta.env.DEV) console.log(order)}
                     <div className="p-8">
                         <div className="grid md:grid-cols-2 gap-8">
                             {/* Informations de livraison */}
@@ -354,3 +354,4 @@ export default function CheckoutSuccess({ order }) {
         </FrontendLayout>
     );
 }
+

@@ -48,10 +48,10 @@ export default function CreateSupplier({ title }) {
         // Envoyer via router.post avec FormData (comme les produits)
         router.post(route('admin.suppliers.store'), formData, {
             onStart: () => {
-                console.log('🚀 Début de la création du fournisseur');
+                if (import.meta.env.DEV) console.log('🚀 Début de la création du fournisseur');
             },
             onSuccess: (data) => {
-                console.log('✅ Fournisseur créé avec succès');
+                if (import.meta.env.DEV) console.log('✅ Fournisseur créé avec succès');
             },
             onError: (errors) => {
                 console.error('❌ Erreurs lors de la création:', errors);
@@ -363,4 +363,5 @@ export default function CreateSupplier({ title }) {
         </AdminLayout>
     );
 }
+
 

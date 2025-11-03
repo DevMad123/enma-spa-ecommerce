@@ -18,7 +18,7 @@ import {
 
 export default function EditProduct({ product, categories, subcategories: initialSubcategories, brands, suppliers, colors, sizes }) {
     const { localeConfig } = usePage().props;
-    console.log('🔄 Composant EditProduct chargé');
+    if (import.meta.env.DEV) console.log('🔄 Composant EditProduct chargé');
     
     // État pour gérer l'initialisation de la locale
     const [isLocaleInitialized, setIsLocaleInitialized] = useState(false);
@@ -279,17 +279,17 @@ export default function EditProduct({ product, categories, subcategories: initia
         // Envoyer via Inertia
         router.post(route('admin.products.update', product.id), formData, {
             onStart: () => {
-                console.log('🚀 Début de la requête PUT');
+                if (import.meta.env.DEV) console.log('🚀 Début de la requête PUT');
             },
             onSuccess: (data) => {
-                console.log('✅ Succès:', data);
+                if (import.meta.env.DEV) console.log('✅ Succès:', data);
                 // Redirection automatique vers la vue du produit
             },
             onError: (errors) => {
                 console.error('❌ Erreurs:', errors);
             },
             onFinish: () => {
-                console.log('🏁 Requête terminée');
+                if (import.meta.env.DEV) console.log('🏁 Requête terminée');
             }
         });
     };
@@ -965,3 +965,4 @@ export default function EditProduct({ product, categories, subcategories: initia
         </AdminLayout>
     );
 }
+

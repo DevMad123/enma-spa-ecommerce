@@ -164,7 +164,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
             settings: settingsData
         }, {
             onSuccess: (response) => {
-                console.log('Paramètres mis à jour avec succès');
+                if (import.meta.env.DEV) console.log('Paramètres mis à jour avec succès');
                 setSuccessMessage('Paramètres mis à jour avec succès !');
                 // Cacher le message après 5 secondes
                 setTimeout(() => setSuccessMessage(''), 5000);
@@ -189,7 +189,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
         router.post(route('admin.settings.upload-file'), formData, {
             onSuccess: () => {
                 // Le message sera géré par useEffect via les props du contrôleur
-                console.log('Fichier uploadé avec succès');
+                if (import.meta.env.DEV) console.log('Fichier uploadé avec succès');
             },
             onError: (errors) => {
                 console.error('Erreur upload:', errors);
@@ -211,7 +211,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
             data: { key },
             onSuccess: () => {
                 // Le message sera géré par useEffect via les props du contrôleur
-                console.log('Fichier supprimé avec succès');
+                if (import.meta.env.DEV) console.log('Fichier supprimé avec succès');
             },
             onError: (errors) => {
                 console.error('Erreur suppression:', errors);
@@ -706,4 +706,5 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
         </AdminLayout>
     );
 }
+
 

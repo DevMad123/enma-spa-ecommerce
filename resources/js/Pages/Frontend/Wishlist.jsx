@@ -28,8 +28,8 @@ const WishlistItem = ({ item, onRemove }) => {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                }
+                },
+                credentials: 'same-origin'
             });
             
             showSuccess('Produit retiré de votre liste de souhaits');
@@ -164,8 +164,8 @@ function WishlistContent({ wishlistItems = [] }) {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                }
+                },
+                credentials: 'same-origin'
             });
             
             setItems([]);
@@ -287,4 +287,3 @@ export default function Wishlist(props) {
         </NotificationProvider>
     );
 }
-

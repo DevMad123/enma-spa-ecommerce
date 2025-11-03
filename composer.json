@@ -11,7 +11,7 @@
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "paypal/rest-api-sdk-php": "^1.6",
+        "paypal/paypal-server-sdk": "^1.0",
         "tightenco/ziggy": "^1.0"
     },
     "require-dev": {
@@ -56,6 +56,10 @@
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --ansi"
+        ],
+        "security-audit": [
+            "@php -r \"passthru('composer audit', $e); exit($e);\"",
+            "@php -r \"passthru('npm audit', $e); exit($e);\""
         ]
     },
     "extra": {

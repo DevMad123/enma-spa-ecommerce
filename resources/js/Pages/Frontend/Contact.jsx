@@ -108,7 +108,7 @@ export default function Contact({ flash }) {
         subject: '',
         message: ''
     });
-    console.log('App Settings:', appSettings);
+    if (import.meta.env.DEV) console.log('App Settings:', appSettings);
     // Informations de contact depuis les settings
     const contactInfo = {
         email: appSettings?.contact_email || 'contact@enmaspa.com',

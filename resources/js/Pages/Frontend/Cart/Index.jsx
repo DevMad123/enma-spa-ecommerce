@@ -60,7 +60,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                                 <span>{item.product.category.name}</span>
                             )}
                         </div>
-                        {console.log(item)}
+                        {if (import.meta.env.DEV) console.log(item)}
                         {/* Variantes sélectionnées */}
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                             {item.color && (
@@ -372,4 +372,5 @@ export default function CartWithProvider(props) {
         </CartProvider>
     );
 }
+
 

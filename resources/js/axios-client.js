@@ -1,29 +1,21 @@
 import axios from "axios";
-import { useDispatch, useSelector} from "react-redux";
+
+// Authentification via cookies HttpOnly (Sanctum stateful)
+// - Plus d'en-tête Authorization/Bearer ni de token en localStorage
+// - Les cookies de session + cookie XSRF (XSRF-TOKEN) assurent l'auth côté API
 const axiosClient = axios.create({
   baseURL: "/api",
+  withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
 });
-  axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("ACCESS_TOKEN");
-  config.headers.Authorization = `Bearer ${token}`;
-
-  return config;
-});
-
-
 
 axiosClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     try {
       const { response } = error;
-      if (response.status === 401) {
-        //    401 Unauthorized;
-        localStorage.removeItem("ACCESS_TOKEN");
-      }
-      if (response.status === 405) {
+      if (response?.status === 405) {
         alert("Method Not Allowed");
       }
       return response;
@@ -35,3 +27,4 @@ axiosClient.interceptors.response.use(
 );
 
 export default axiosClient;
+

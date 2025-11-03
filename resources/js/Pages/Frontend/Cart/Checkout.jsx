@@ -74,7 +74,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
     // const subtotal = getTotalPrice();
     const tax = subtotal * taxRate;
     // const total = subtotal + tax;
-    console.log(tax);
+    if (import.meta.env.DEV) console.log(tax);
     const total = subtotal + shippingCost + tax;
 
     const handleSubmit = (e) => {
@@ -112,7 +112,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
         const selectedPaymentMethod = paymentMethods.find(method => method.id == selectedPayment);
 
         // Debug: Vérifier le contenu avant envoi
-        console.log('Debug checkout:', {
+        if (import.meta.env.DEV) console.log('Debug checkout:', {
             originalCartItems: cartItems,
             transformedCartItems: transformedCartItems,
             cartItemsLength: cartItems.length,
@@ -132,8 +132,8 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             handleWavePayment(formData);
         } else {
           // // Traitement normal (autres méthodes de paiement)
-          // console.log('Sending POST to:', '/cart/checkout');
-          // console.log('Data being sent:', formData);
+          // if (import.meta.env.DEV) console.log('Sending POST to:', '/cart/checkout');
+          // if (import.meta.env.DEV) console.log('Data being sent:', formData);
 
           // Utiliser fetch avec JSON pour envoyer les cart_items correctement
           fetch('/cart/checkout', {
@@ -148,7 +148,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
           })
           .then(response => response.json())
           .then(data => {
-              console.log('Checkout successful:', data);
+              if (import.meta.env.DEV) console.log('Checkout successful:', data);
               if (data.success) {
                   clearCart();
                   if (data.redirect) {
@@ -159,7 +159,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
               }
           })
           .catch(error => {
-              console.error('Erreur checkout détaillée:', {
+              if (import.meta.env.DEV) console.error('Erreur checkout détaillée:', {
                   error: error,
                   formData: formData,
                   cartItems: cartItems
@@ -218,7 +218,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 throw new Error(orderData.message || 'Erreur lors de la création de la commande');
             }
         } catch (error) {
-            console.error('Erreur PayPal:', error);
+            if (import.meta.env.DEV) console.error('Erreur PayPal:', error);
             alert('Erreur lors du paiement PayPal: ' + error.message);
         }
     };
@@ -272,7 +272,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 throw new Error(orderData.message || 'Erreur lors de la création de la commande');
             }
         } catch (error) {
-            console.error('Erreur Orange Money:', error);
+            if (import.meta.env.DEV) console.error('Erreur Orange Money:', error);
             alert('Erreur lors du paiement Orange Money: ' + error.message);
         }
     };
@@ -326,7 +326,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
                 throw new Error(orderData.message || 'Erreur lors de la création de la commande');
             }
         } catch (error) {
-            console.error('Erreur Wave:', error);
+            if (import.meta.env.DEV) console.error('Erreur Wave:', error);
             alert('Erreur lors du paiement Wave: ' + error.message);
         }
     };
@@ -346,7 +346,7 @@ const CheckoutForm = ({ shippingMethods = [], paymentMethods = [], selectedShipp
             </div>
         );
     }
-    console.log(paymentMethods);
+    if (import.meta.env.DEV) console.log(paymentMethods);
     return (
         <form onSubmit={handleSubmit} className="space-y-8">
             {/* Contact Information */}
@@ -893,7 +893,7 @@ const OrderSummary = ({ selectedShipping, shippingMethods = [] }) => {
 function Checkout({ shippingMethods = [], paymentMethods = [], availableCountries = {}, defaultCountry = 'FR', isInternationalShippingEnabled = true }) {
     const [selectedShipping, setSelectedShipping] = useState(shippingMethods[0]?.id || '');
 
-    console.log('Checkout props received:', {
+    if (import.meta.env.DEV) console.log('Checkout props received:', {
         shippingMethods: shippingMethods,
         paymentMethods: paymentMethods,
         availableCountries: availableCountries,
@@ -954,3 +954,4 @@ export default function CheckoutWithCart(props) {
         </CartProvider>
     );
 }
+

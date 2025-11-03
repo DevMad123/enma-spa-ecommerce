@@ -34,8 +34,9 @@ FROM base AS final
 # Copier uniquement le dossier de build Vite pour éviter d'écraser d'autres fichiers de /public
 COPY --from=node_build /app/public/build /var/www/html/public/build
 
-# Copier le script entrypoint dans l’image
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# Override entrypoint with sanitized script for production (no built-in server)
+COPY scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Définir l’entrypoint
@@ -46,3 +47,4 @@ EXPOSE 9000
 
 # Commande par défaut (lancée après l’entrypoint)
 CMD ["php-fpm"]
+

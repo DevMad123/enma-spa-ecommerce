@@ -46,6 +46,7 @@ use App\Http\Controllers\WavePaymentController;
 // Contrôleurs utilisateur
 use App\Http\Controllers\ProfileController;
 
+if (app()->environment('local')) {
 // Route de test pour les paramètres
 Route::get('/test-settings', function () {
     return view('test-settings');
@@ -85,6 +86,7 @@ Route::get('/simulate-upload-to-settings', function () {
         'filename' => 'test.jpg'
     ]);
 })->name('simulate-upload-to-settings');
+}
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Redirection conviviale pour les nouveautés (tri par plus récents)
@@ -214,7 +216,7 @@ Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->na
 // -------------------
 // Routes Admin protégées (InertiaJS)
 // -------------------
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'hasAnyRole:admin,manager'])->prefix('admin')->name('admin.')->group(function () {
 // Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard admin
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -467,7 +469,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     // Routes Méthodes de Paiement
-    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+    Route::prefix('payment-methods')->name('payment-methods.')->middleware(['hasRole:admin'])->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\PaymentMethodController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Admin\PaymentMethodController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\Admin\PaymentMethodController::class, 'store'])->name('store');
@@ -485,7 +487,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     // Routes Paramètres
-    Route::prefix('settings')->name('settings.')->group(function () {
+    Route::prefix('settings')->name('settings.')->middleware(['hasRole:admin'])->group(function () {
         Route::get('/', [SettingController::class, 'index'])->name('index');
         Route::put('/', [SettingController::class, 'update'])->name('update');
         Route::get('/get/{key}', [SettingController::class, 'getSetting'])->name('get');
@@ -502,7 +504,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     // Routes Règles de TVA
-    Route::prefix('tax-rules')->name('tax-rules.')->group(function () {
+    Route::prefix('tax-rules')->name('tax-rules.')->middleware(['hasRole:admin'])->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\TaxRuleController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Admin\TaxRuleController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\Admin\TaxRuleController::class, 'store'])->name('store');

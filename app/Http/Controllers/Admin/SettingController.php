@@ -259,11 +259,9 @@ class SettingController extends Controller
             $file = $request->file('file');
             $key = $request->key;
             
-            // Générer un nom de fichier unique
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            
-            // Stocker le fichier dans le dossier public/settings
-            $path = $file->storeAs('settings', $fileName, 'public');
+            // Générer un nom aléatoire sécurisé et stocker dans le disque public
+            // (le nom original peut être renvoyé au client pour affichage si besoin)
+            $path = $file->store('settings', 'public');
             
             // Supprimer l'ancien fichier si il existe
             $oldValue = Setting::get($key);
