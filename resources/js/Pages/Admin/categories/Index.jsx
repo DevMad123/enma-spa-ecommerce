@@ -127,7 +127,7 @@ export default function CategoriesList() {
             key: 'image',
             label: 'Image',
             render: (category) => (
-                <div className="flex-shrink-0 h-12 w-12">
+                <Link href={route('admin.categories.show', category.id)} className="flex-shrink-0 h-12 w-12 block hover:opacity-80 transition">
                     {category.image ? (
                         <img
                             className="h-12 w-12 rounded-lg object-cover"
@@ -139,17 +139,17 @@ export default function CategoriesList() {
                             <TagIcon className="h-6 w-6 text-gray-400" />
                         </div>
                     )}
-                </div>
+                </Link>
             )
         },
         {
             key: 'name',
             label: 'Nom',
             render: (category) => (
-                <div>
+                <Link href={route('admin.categories.show', category.id)} className="block hover:text-indigo-600 transition">
                     <div className="text-sm font-medium text-gray-900">{category.name}</div>
                     <div className="text-sm text-gray-500">Slug: {category.slug || 'N/A'}</div>
-                </div>
+                </Link>
             )
         },
         {

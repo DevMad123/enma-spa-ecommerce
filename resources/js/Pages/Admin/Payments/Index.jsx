@@ -144,34 +144,38 @@ export default function PaymentsList() {
             key: 'reference',
             label: 'Référence',
             render: (payment) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {payment.reference || `#${payment.id}`}
+                <Link href={route('admin.payments.show', payment.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">
+                            {payment.reference || `#${payment.id}`}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            ID: {payment.id}
+                        </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                        ID: {payment.id}
-                    </div>
-                </div>
+                </Link>
             )
         },
         {
             key: 'order',
             label: 'Commande',
             render: (payment) => (
-                <div>
-                    {payment.sell ? (
-                        <div>
-                            <div className="text-sm font-medium text-gray-900">
-                                {payment.sell.order_reference || `#${payment.sell.id}`}
+                <Link href={route('admin.payments.show', payment.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        {payment.sell ? (
+                            <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                    {payment.sell.order_reference || `#${payment.sell.id}`}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    {payment.sell.customer?.first_name} {payment.sell.customer?.last_name}
+                                </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                                {payment.sell.customer?.first_name} {payment.sell.customer?.last_name}
-                            </div>
-                        </div>
-                    ) : (
-                        <span className="text-sm text-gray-500 italic">Paiement direct</span>
-                    )}
-                </div>
+                        ) : (
+                            <span className="text-sm text-gray-500 italic">Paiement direct</span>
+                        )}
+                    </div>
+                </Link>
             )
         },
         {

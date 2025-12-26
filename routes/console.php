@@ -3,11 +3,25 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Schedule;
 use App\Models\Product;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
+
+// ============================================
+// BACKUP AUTOMATIQUE DE LA BASE DE DONNÉES
+// ============================================
+Schedule::command('db:backup --keep-days=30')
+    ->daily()
+    ->at('02:00')
+    ->onSuccess(function () {
+        info('✅ Backup de la base de données effectué avec succès');
+    })
+    ->onFailure(function () {
+        error_log('❌ Échec du backup de la base de données');
+    });
 
 // Commande d'initialisation: migrations + seed si nécessaire
 Artisan::command('app:init', function () {

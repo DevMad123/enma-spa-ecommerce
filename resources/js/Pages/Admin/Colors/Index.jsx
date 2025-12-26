@@ -114,7 +114,7 @@ export default function ColorsList() {
             key: 'color',
             label: 'Aperçu',
             render: (color) => (
-                <div className="flex items-center gap-2">
+                <Link href={route('admin.colors.show', color.id)} className="flex items-center gap-2 hover:opacity-80 transition">
                     <div
                         className="w-8 h-8 border border-gray-300 rounded-full shadow-sm"
                         style={{
@@ -122,14 +122,14 @@ export default function ColorsList() {
                         }}
                         title={color.color_code || "Pas de code couleur"}
                     ></div>
-                </div>
+                </Link>
             )
         },
         {
             key: 'name',
             label: 'Nom',
             render: (color) => (
-                <div>
+                <Link href={route('admin.colors.show', color.id)} className="block hover:text-indigo-600 transition">
                     <div className="text-sm font-medium text-gray-900">{color.name}</div>
                     <div className="text-sm text-gray-500">
                         {color.color_code ? (
@@ -140,7 +140,7 @@ export default function ColorsList() {
                             <span className="text-gray-400">N/A</span>
                         )}
                     </div>
-                </div>
+                </Link>
             )
         },
         {

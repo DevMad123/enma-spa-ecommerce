@@ -153,13 +153,15 @@ export default function PaymentMethodsList() {
             title: 'Méthode',
             sortable: true,
             render: (paymentMethod) => (
-                <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{getPaymentMethodIcon(paymentMethod.code)}</span>
-                    <div>
-                        <div className="font-medium text-gray-900">{paymentMethod.name}</div>
-                        <div className="text-sm text-gray-500">{paymentMethod.code}</div>
+                <Link href={route('admin.payment-methods.show', paymentMethod.id)} className="block hover:text-indigo-600 transition">
+                    <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{getPaymentMethodIcon(paymentMethod.code)}</span>
+                        <div>
+                            <div className="font-medium text-gray-900">{paymentMethod.name}</div>
+                            <div className="text-sm text-gray-500">{paymentMethod.code}</div>
+                        </div>
                     </div>
-                </div>
+                </Link>
             )
         },
         {
@@ -167,11 +169,13 @@ export default function PaymentMethodsList() {
             title: 'Description',
             sortable: false,
             render: (paymentMethod) => (
-                <div className="max-w-xs">
-                    <p className="text-sm text-gray-600 truncate">
-                        {paymentMethod.description || 'Aucune description'}
-                    </p>
-                </div>
+                <Link href={route('admin.payment-methods.show', paymentMethod.id)} className="block hover:text-indigo-600 transition">
+                    <div className="max-w-xs">
+                        <p className="text-sm text-gray-600 truncate">
+                            {paymentMethod.description || 'Aucune description'}
+                        </p>
+                    </div>
+                </Link>
             )
         },
         {

@@ -44,7 +44,7 @@ export default function Index({ newsletters, stats }) {
             key: 'email',
             label: 'Email',
             render: (newsletter) => (
-                <div className="flex items-center">
+                <div className="flex items-center hover:text-indigo-600 transition">
                     <div className="flex-shrink-0 h-8 w-8">
                         <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                             <EnvelopeIcon className="h-4 w-4 text-blue-600" />

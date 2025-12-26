@@ -17,3 +17,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Credentials and sensitive files
+CREDENTIALS.md
+test_admin_access.php

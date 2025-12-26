@@ -145,28 +145,32 @@ export default function OrdersList() {
             key: 'order_reference',
             label: 'Référence',
             render: (order) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {order.order_reference || `#${order.id}`}
+                <Link href={route('admin.orders.show', order.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">
+                            {order.order_reference || `#${order.id}`}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            ID: {order.id}
+                        </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                        ID: {order.id}
-                    </div>
-                </div>
+                </Link>
             )
         },
         {
             key: 'customer',
             label: 'Client',
             render: (order) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {order.customer?.first_name} {order.customer?.last_name}
+                <Link href={route('admin.orders.show', order.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">
+                            {order.customer?.first_name} {order.customer?.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            {order.customer?.email}
+                        </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                        {order.customer?.email}
-                    </div>
-                </div>
+                </Link>
             )
         },
         {

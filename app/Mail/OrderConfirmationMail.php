@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Sell;
 use App\Services\AppSettingsService;
+use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -23,6 +24,9 @@ class OrderConfirmationMail extends Mailable implements ShouldQueue
     public function __construct(Sell $order)
     {
         $this->order = $order;
+        
+        // Logger l'envoi de l'email
+        LogService::order()->emailSent($order);
     }
 
     /**

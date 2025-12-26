@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test des Pages d'Erreur - ENMA E-Commerce</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .status-code {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        .status-code.error-404 { color: #f59e0b; }
+        .status-code.error-403 { color: #ef4444; }
+        .status-code.error-500 { color: #dc2626; }
+        .status-code.error-503 { color: #8b5cf6; }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .card-description {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        .test-button {
+            display: inline-block;
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .test-button:hover {
+            opacity: 0.9;
+        }
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .info-section h2 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .info-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .info-section li {
+            padding: 0.5rem 0;
+            color: #4b5563;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-section li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        .info-section li:last-child {
+            border-bottom: none;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .warning strong {
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test des Pages d'Erreur</h1>
+        
+        <div class="cards-grid">
+            <!-- 404 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="status-code error-404">404</div>
+                    <div class="card-title">Page Non Trouvée</div>
+                </div>
+                <div class="card-description">
+                    Testez l'affichage de la page d'erreur lorsqu'une URL n'existe pas.
+                </div>
+                <a href="/page-inexistante-pour-test-404" class="test-button">
+                    Tester l'Erreur 404
+                </a>
+            </div>
+
+            <!-- 403 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="status-code error-403">403</div>
+                    <div class="card-title">Accès Refusé</div>
+                </div>
+                <div class="card-description">
+                    Tentez d'accéder à l'admin sans être authentifié avec le bon rôle.
+                </div>
+                <a href="/admin" class="test-button">
+                    Tester l'Erreur 403
+                </a>
+            </div>
+
+            <!-- 500 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="status-code error-500">500</div>
+                    <div class="card-title">Erreur Serveur</div>
+                </div>
+                <div class="card-description">
+                    Simulez une erreur serveur (nécessite une modification temporaire du code).
+                </div>
+                <button onclick="alert('Pour tester une 500, ajoutez throw new Exception() dans un contrôleur')" class="test-button">
+                    Info Test 500
+                </button>
+            </div>
+
+            <!-- 503 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="status-code error-503">503</div>
+                    <div class="card-title">Maintenance</div>
+                </div>
+                <div class="card-description">
+                    Activez le mode maintenance pour voir cette page d'erreur.
+                </div>
+                <button onclick="alert('Commande: php artisan down')" class="test-button">
+                    Info Test 503
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>📋 Informations sur la Gestion des Erreurs</h2>
+            <ul>
+                <li>Page d'erreur unique : <code>resources/js/Pages/Error.jsx</code></li>
+                <li>Design moderne et responsive avec Tailwind CSS</li>
+                <li>Messages personnalisés par code d'erreur</li>
+                <li>Actions rapides : Accueil, Boutique, Retour</li>
+                <li>Suggestions de navigation pour 404</li>
+                <li>Lien vers le support</li>
+                <li>Compatible avec Inertia.js</li>
+                <li>Gestion automatique par Laravel</li>
+            </ul>
+
+            <h2 style="margin-top: 2rem;">🛠️ Commandes Utiles</h2>
+            
+            <div class="code-block">
+                # Mode maintenance ON
+                php artisan down --message="Mise à jour en cours"<br><br>
+                
+                # Mode maintenance OFF
+                php artisan up<br><br>
+                
+                # Voir les logs d'erreurs
+                tail -f storage/logs/laravel.log<br><br>
+                
+                # Nettoyer les caches
+                php artisan optimize:clear
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ Important :</strong> En production, assurez-vous que APP_DEBUG=false dans le fichier .env pour ne pas exposer d'informations sensibles.
+            </div>
+
+            <h2 style="margin-top: 2rem;">📚 Documentation</h2>
+            <p style="color: #4b5563; margin-top: 0.5rem;">
+                Consultez la documentation complète : 
+                <a href="/docs/ERROR_HANDLING.md" style="color: #667eea; text-decoration: none;">
+                    <strong>docs/ERROR_HANDLING.md</strong>
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

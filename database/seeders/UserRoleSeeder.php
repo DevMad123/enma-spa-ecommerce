@@ -17,8 +17,8 @@ class UserRoleSeeder extends Seeder
     {
         // 1) Assignations robustes par email et nom de rôle (ne dépend pas des IDs)
         $pairsByEmail = [
-            ['email' => 'admin@test.com', 'role' => 'Admin'],
-            ['email' => 'admin@test.com', 'role' => 'Manager'],
+            ['email' => 'admin@enma-shop.com', 'role' => 'Admin'],
+            ['email' => 'admin@enma-shop.com', 'role' => 'Manager'],
             ['email' => 'john@example.com', 'role' => 'Staff'],
             ['email' => 'john@example.com', 'role' => 'Customer'],
         ];

@@ -137,29 +137,33 @@ export default function SubcategoriesList() {
             key: 'image',
             label: 'Image',
             render: (subcategory) => (
-                <div className="flex-shrink-0 h-12 w-12">
-                    {subcategory.image ? (
-                        <img
-                            className="h-12 w-12 rounded-lg object-cover"
-                            src={normalizeImageUrl(subcategory.image)}
-                            alt={subcategory.name}
-                        />
-                    ) : (
-                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <TagIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                    )}
-                </div>
+                <Link href={route('admin.subcategories.show', subcategory.id)} className="block hover:opacity-80 transition">
+                    <div className="flex-shrink-0 h-12 w-12">
+                        {subcategory.image ? (
+                            <img
+                                className="h-12 w-12 rounded-lg object-cover"
+                                src={normalizeImageUrl(subcategory.image)}
+                                alt={subcategory.name}
+                            />
+                        ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <TagIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                        )}
+                    </div>
+                </Link>
             )
         },
         {
             key: 'name',
             label: 'Nom',
             render: (subcategory) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">{subcategory.name}</div>
-                    <div className="text-sm text-gray-500">Slug: {subcategory.slug || 'N/A'}</div>
-                </div>
+                <Link href={route('admin.subcategories.show', subcategory.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">{subcategory.name}</div>
+                        <div className="text-sm text-gray-500">Slug: {subcategory.slug || 'N/A'}</div>
+                    </div>
+                </Link>
             )
         },
         {

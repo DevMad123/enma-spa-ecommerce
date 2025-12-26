@@ -106,20 +106,24 @@ export default function SizesList() {
             key: 'id',
             label: 'ID',
             render: (size) => (
-                <span className="text-sm font-medium text-gray-900">#{size.id}</span>
+                <Link href={route('admin.sizes.show', size.id)} className="block hover:text-indigo-600 transition">
+                    <span className="text-sm font-medium text-gray-900">#{size.id}</span>
+                </Link>
             )
         },
         {
             key: 'size',
             label: 'Taille',
             render: (size) => (
-                <div className="flex items-center gap-2">
-                    <div className="inline-flex items-center">
-                        <span className="bg-gray-100 border border-gray-300 px-3 py-1 rounded-lg text-gray-700 font-semibold text-sm">
-                            {size.size}
-                        </span>
+                <Link href={route('admin.sizes.show', size.id)} className="block hover:text-indigo-600 transition">
+                    <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center">
+                            <span className="bg-gray-100 border border-gray-300 px-3 py-1 rounded-lg text-gray-700 font-semibold text-sm">
+                                {size.size}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                </Link>
             )
         },
         {

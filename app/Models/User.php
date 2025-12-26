@@ -234,7 +234,7 @@ class User extends Authenticatable implements MustVerifyEmail
     // Helper pour vérifier si c'est un admin (pour compatibilité avec le middleware existant)
     public function getIsAdminAttribute()
     {
-        return $this->hasRole('admin');
+        return $this->hasRole('Admin') || $this->hasRole('Manager');
     }
 
     // Scope pour filtrer par rôle

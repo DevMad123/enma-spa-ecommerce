@@ -214,8 +214,7 @@ Route::get('/order/success/{sell}', [CartController::class, 'orderSuccess'])->na
 // -------------------
 // Routes Admin protégées (InertiaJS)
 // -------------------
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-// Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard admin
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

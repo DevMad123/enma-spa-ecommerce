@@ -94,36 +94,40 @@ export default function SuppliersList() {
             key: 'image',
             label: 'Logo',
             render: (supplier) => (
-                <div className="flex-shrink-0 h-12 w-12">
-                    {supplier.image ? (
-                        <img
-                            className="h-12 w-12 rounded-lg object-cover"
-                            src={supplier.image?.startsWith('http') ? supplier.image : `/${supplier.image}`}
-                            alt={supplier.supplier_name}
-                        />
-                    ) : (
-                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <BuildingOfficeIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                    )}
-                </div>
+                <Link href={route('admin.suppliers.show', supplier.id)} className="block hover:opacity-80 transition">
+                    <div className="flex-shrink-0 h-12 w-12">
+                        {supplier.image ? (
+                            <img
+                                className="h-12 w-12 rounded-lg object-cover"
+                                src={supplier.image?.startsWith('http') ? supplier.image : `/${supplier.image}`}
+                                alt={supplier.supplier_name}
+                            />
+                        ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <BuildingOfficeIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                        )}
+                    </div>
+                </Link>
             )
         },
         {
             key: 'supplier_info',
             label: 'Fournisseur',
             render: (supplier) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900 flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
-                        {supplier.supplier_name}
-                    </div>
-                    {supplier.company_name && (
-                        <div className="text-sm text-gray-500">
-                            {supplier.company_name}
+                <Link href={route('admin.suppliers.show', supplier.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900 flex items-center">
+                            <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
+                            {supplier.supplier_name}
                         </div>
-                    )}
-                </div>
+                        {supplier.company_name && (
+                            <div className="text-sm text-gray-500">
+                                {supplier.company_name}
+                            </div>
+                        )}
+                    </div>
+                </Link>
             )
         },
         {

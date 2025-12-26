@@ -8,6 +8,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders()
@@ -39,6 +42,27 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Gestion des erreurs HTTP pour Inertia (404, 403, 500, etc.)
+        $exceptions->respond(function ($response, $exception, $request) {
+            // Pour les requêtes API, retourner du JSON
+            if ($request->is('api/*')) {
+                return $response;
+            }
+
+            // Pour les requêtes web, retourner le composant Inertia Error
+            $status = $response->getStatusCode();
+            
+            // Erreurs HTTP à gérer avec Inertia (404, 403, 500, 503, etc.)
+            if (in_array($status, [403, 404, 419, 429, 500, 503])) {
+                return Inertia::render('Error', ['status' => $status])
+                    ->toResponse($request)
+                    ->setStatusCode($status);
+            }
+
+            return $response;
+        });
+
+        // Gestion spécifique pour AuthenticationException
         $exceptions->renderable(function (AuthenticationException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([

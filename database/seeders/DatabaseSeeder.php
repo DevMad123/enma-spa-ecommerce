@@ -23,8 +23,8 @@ class DatabaseSeeder extends Seeder
             ['id' => 1],
             [
                 'name' => 'Admin',
-                'email' => 'admin@test.com',
-                'password' => bcrypt('admin123'),
+                'email' => 'admin@enma-shop.com',
+                'password' => bcrypt('Admin@Enma2025!'), // Changez ce mot de passe en production !
                 'email_verified_at' => now(),
             ]
         );
@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'John Doe',
                 'email' => 'john@example.com',
-                'password' => bcrypt('123.321A'),
+                'password' => bcrypt('User@Demo2025!'), // Mot de passe de démonstration
                 'email_verified_at' => now(),
             ]
         );

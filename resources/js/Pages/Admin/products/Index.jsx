@@ -154,29 +154,33 @@ export default function ProductsList() {
             key: 'image',
             label: 'Image',
             render: (product) => (
-                <div className="flex-shrink-0 h-12 w-12">
-                    {product.image ? (
-                        <img
-                            className="h-12 w-12 rounded-lg object-cover"
-                            src={product.image?.startsWith('http') ? product.image : `/${product.image}`}
-                            alt={product.name}
-                        />
-                    ) : (
-                        <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <CubeIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                    )}
-                </div>
+                <Link href={route('admin.products.show', product.id)} className="block hover:opacity-80 transition">
+                    <div className="flex-shrink-0 h-12 w-12">
+                        {product.image ? (
+                            <img
+                                className="h-12 w-12 rounded-lg object-cover"
+                                src={product.image?.startsWith('http') ? product.image : `/${product.image}`}
+                                alt={product.name}
+                            />
+                        ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <CubeIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                        )}
+                    </div>
+                </Link>
             )
         },
         {
             key: 'name',
             label: 'Produit',
             render: (product) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-500">SKU: {product.sku || 'N/A'}</div>
-                </div>
+                <Link href={route('admin.products.show', product.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        <div className="text-sm text-gray-500">SKU: {product.sku || 'N/A'}</div>
+                    </div>
+                </Link>
             )
         },
         {

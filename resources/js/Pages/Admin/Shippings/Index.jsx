@@ -156,38 +156,42 @@ export default function ShippingsList() {
             key: 'name',
             label: 'Mode de livraison',
             render: (shipping) => (
-                <div className="flex items-center">
-                    <div className="flex-shrink-0 h-8 w-8">
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <TruckIcon className="h-4 w-4 text-indigo-600" />
-                        </div>
-                    </div>
-                    <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                            {shipping.name}
-                        </div>
-                        {shipping.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                                {shipping.description}
+                <Link href={route('admin.shippings.show', shipping.id)} className="block hover:text-indigo-600 transition">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0 h-8 w-8">
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <TruckIcon className="h-4 w-4 text-indigo-600" />
                             </div>
-                        )}
+                        </div>
+                        <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                                {shipping.name}
+                            </div>
+                            {shipping.description && (
+                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                    {shipping.description}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                </Link>
             )
         },
         {
             key: 'price',
             label: 'Prix',
             render: (shipping) => (
-                <div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {shipping.price == 0 ? (
-                            <span className="text-green-600 font-semibold">Gratuit</span>
-                        ) : (
-                            formatCurrency(shipping.price)
-                        )}
+                <Link href={route('admin.shippings.show', shipping.id)} className="block hover:text-indigo-600 transition">
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">
+                            {shipping.price == 0 ? (
+                                <span className="text-green-600 font-semibold">Gratuit</span>
+                            ) : (
+                                formatCurrency(shipping.price)
+                            )}
+                        </div>
                     </div>
-                </div>
+                </Link>
             )
         },
         {

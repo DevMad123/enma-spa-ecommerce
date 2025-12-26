@@ -92,7 +92,7 @@ export default function BrandsList() {
             key: 'image',
             label: 'Logo',
             render: (brand) => (
-                <div className="flex-shrink-0 h-12 w-12">
+                <Link href={route('admin.brands.show', brand.id)} className="flex-shrink-0 h-12 w-12 block hover:opacity-80 transition">
                     {brand.image ? (
                         <img
                             className="h-12 w-12 rounded-lg object-cover"
@@ -104,14 +104,14 @@ export default function BrandsList() {
                             <TagIcon className="h-6 w-6 text-gray-400" />
                         </div>
                     )}
-                </div>
+                </Link>
             )
         },
         {
             key: 'brand_info',
             label: 'Marque',
             render: (brand) => (
-                <div>
+                <Link href={route('admin.brands.show', brand.id)} className="block hover:text-indigo-600 transition">
                     <div className="text-sm font-medium text-gray-900 flex items-center">
                         <TagIcon className="h-4 w-4 mr-2 text-gray-400" />
                         {brand.name}
@@ -124,7 +124,7 @@ export default function BrandsList() {
                             }
                         </div>
                     )}
-                </div>
+                </Link>
             )
         },
         {

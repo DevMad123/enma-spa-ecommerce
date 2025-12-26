@@ -104,7 +104,7 @@ export default function CustomersList() {
             key: 'image',
             label: 'Photo',
             render: (customer) => (
-                <div className="flex-shrink-0 h-12 w-12">
+                <Link href={route('admin.customers.show', customer.id)} className="flex-shrink-0 h-12 w-12 block hover:opacity-80 transition">
                     {customer.image ? (
                         <img
                             className="h-12 w-12 rounded-full object-cover"
@@ -116,14 +116,14 @@ export default function CustomersList() {
                             <UserIcon className="h-6 w-6 text-gray-400" />
                         </div>
                     )}
-                </div>
+                </Link>
             )
         },
         {
             key: 'customer_info',
             label: 'Client',
             render: (customer) => (
-                <div>
+                <Link href={route('admin.customers.show', customer.id)} className="block hover:text-indigo-600 transition">
                     <div className="text-sm font-medium text-gray-900 flex items-center">
                         <UserIcon className="h-4 w-4 mr-2 text-gray-400" />
                         {customer.first_name} {customer.last_name}
@@ -138,7 +138,7 @@ export default function CustomersList() {
                             {customer.phone_one}
                         </div>
                     )}
-                </div>
+                </Link>
             )
         },
         {

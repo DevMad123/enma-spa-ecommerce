@@ -296,11 +296,17 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                                 />
                                                 
-                                                <div className={`flex-shrink-0 p-2 rounded-full ${colorClass}`}>
+                                                <Link 
+                                                    href={route('admin.notifications.show', notification.id)}
+                                                    className={`flex-shrink-0 p-2 rounded-full ${colorClass} hover:opacity-80 transition`}
+                                                >
                                                     <IconComponent className="h-5 w-5" />
-                                                </div>
+                                                </Link>
                                                 
-                                                <div className="flex-1 min-w-0">
+                                                <Link 
+                                                    href={route('admin.notifications.show', notification.id)}
+                                                    className="flex-1 min-w-0 hover:text-indigo-600 transition"
+                                                >
                                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                                         <p className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
                                                             {notification.title}
@@ -317,7 +323,7 @@ export default function NotificationIndex({ notifications, stats, filters }) {
                                                     <p className="mt-1 text-sm text-gray-600">
                                                         {notification.message}
                                                     </p>
-                                                </div>
+                                                </Link>
                                                 
                                                 <div className="flex-shrink-0 flex items-center space-x-2">
                                                     {!notification.is_read && (

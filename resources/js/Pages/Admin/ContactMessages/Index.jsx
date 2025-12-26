@@ -60,19 +60,21 @@ export default function Index({ auth, messages, stats, statuses, filters }) {
             key: 'contact',
             label: 'Contact',
             render: (message) => (
-                <div>
+                <Link href={route('admin.contact-messages.show', message.id)} className="block hover:text-indigo-600 transition">
                     <div className="text-sm font-medium text-gray-900">{message.name}</div>
                     <div className="text-sm text-gray-500">{message.email}</div>
-                </div>
+                </Link>
             )
         },
         {
             key: 'subject',
             label: 'Sujet',
             render: (message) => (
-                <div className="text-sm text-gray-900 max-w-xs truncate" title={message.subject}>
-                    {message.subject}
-                </div>
+                <Link href={route('admin.contact-messages.show', message.id)} className="block hover:text-indigo-600 transition">
+                    <div className="text-sm text-gray-900 max-w-xs truncate" title={message.subject}>
+                        {message.subject}
+                    </div>
+                </Link>
             )
         },
         {
