@@ -16,7 +16,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { StarIcon } from '@heroicons/react/24/outline';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
-import ProductCardUnified from '@/Components/Frontend/ProductCard';
+import ProductCardUnified from '@/Components/Frontend/ProductCardNew';
 import ReviewCard from '@/Components/Frontend/ReviewCard';
 import ReviewForm from '@/Components/Frontend/ReviewForm';
 import { useNotification } from '@/Components/Notifications/NotificationProvider';

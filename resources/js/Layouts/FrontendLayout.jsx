@@ -14,6 +14,7 @@ import ThemeProvider from '@/Theme/ThemeProvider';
 import useMenuCategories from '@/Hooks/useMenuCategories';
 import { WishlistProvider, useWishlist } from '@/Contexts/WishlistContext';
 import useCustomizations from '@/Hooks/useCustomizations';
+import PremiumHeader from '@/Components/Frontend/PremiumHeader';
 
 // Contexte du panier
 const CartContext = createContext();
@@ -212,190 +213,18 @@ const FrontendLayout = ({ children, title }) => {
         <>
             <Head title={`${title} - ${appName}`} />
             <div className="min-h-screen bg-white">
-                {/* Header */}
-                <header className="bg-white shadow-lg sticky top-0 z-50 overflow-x-hidden">
-                    {/* Top Bar */}
-                    <div className="w-full text-center text-xs md:text-sm py-2 bg-gray-900 text-white">{appSettings?.announcement_text || `10 offerts sur votre 1ère commande avec le code FIRST10`}
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center space-x-4">
-                                    <span>📞 {phone}</span>
-                                    <span>📧 {contactEmail}</span>
-                                </div>
-                                <div className="hidden md:flex items-center space-x-4">
-                                    <span>🚚 Livraison gratuite dès {formatCurrency(appSettings?.free_shipping_threshold || 50000)}</span>
-                                    <span>🎁 Retours gratuits</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Header */}
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-                        <div className="flex items-center justify-between h-12 md:h-16">
-                            {/* Logo */}
-                            <div className="flex-shrink-0">
-                                <Link href={route('home')} className="flex items-center">
-                                    {customizations?.logo_image ? (
-                                        <img src={customizations.logo_image} alt={appName} className="h-6 md:h-8 w-auto max-w-[80px] md:max-w-[160px] object-contain" />
-                                    ) : (
-                                        <>
-                                            <div className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-base md:text-xl">
-                                                {firstLetter}
-                                            </div>
-                                            <span className="ml-2 hidden md:inline text-xl font-bold" style={ themeColor ? { color: themeColor } : {} }>
-                                                {appName}
-                                            </span>
-                                        </>
-                                    )}
-                                </Link>
-                            </div>
-
-                            {/* Bouton Catégories (desktop uniquement) */}
-                            <div className="hidden md:flex items-center ml-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setCategoriesOpen(true)}
-                                    className="inline-flex items-center px-3 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300"
-                                >
-                                    <Bars3Icon className="h-5 w-5 mr-2" />
-                                    Catégories
-                                </button>
-                            </div>
-
-                            {/* Navigation Desktop */}
-                            <nav className="ml-5 hidden md:flex space-x-3">
-                                {navigation.map((item) => (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className="text-gray-700 hover:text-amber-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </nav>
-
-                            {/* Search Bar */}
-                            <div className="hidden md:flex flex-1 max-w-md mx-8">
-                                <form onSubmit={handleSearch} className="w-full">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Rechercher une marque, un modèle..."
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                        />
-                                        <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                    </div>
-                                </form>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center space-x-4 ml-auto md:ml-0">
-                                {/* Mobile Search */}
-                                <button
-                                    onClick={() => setMobileSearchOpen(true)}
-                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 md:hidden"
-                                    aria-label="Rechercher"
-                                >
-                                    <MagnifyingGlassIcon className="h-6 w-6" />
-                                </button>
-                                {/* Wishlist */}
-                                <Link
-                                    href={route('frontend.wishlist.index')}
-                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative"
-                                    title="Ma Wishlist"
-                                >
-                                    <HeartIcon className="h-6 w-6" />
-                                    {getWishlistTotalItems() > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                            {getWishlistTotalItems()}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                {/* Cart */}
-                                <Link
-                                    href={route('frontend.cart.index')}
-                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 relative"
-                                    data-cart-icon
-                                >
-                                    <ShoppingCartIcon className="h-6 w-6" />
-                                    {getTotalItems() > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                            {getTotalItems()}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                {/* User Menu */}
-                                {auth.user ? (
-                                    <div className="relative group hidden md:block">
-                                        <button className="flex items-center space-x-1 p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200">
-                                            <UserIcon className="h-6 w-6" />
-                                            <span className="hidden md:block text-sm font-medium">{auth.user.name}</span>
-                                            <ChevronDownIcon className="h-4 w-4" />
-                                        </button>
-
-                                        <div className="fixed mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                            <div className="py-1">
-                                                <Link
-                                                    href={route('frontend.profile.index')}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Mon Profil
-                                                </Link>
-                                                <Link
-                                                    href={route('frontend.profile.orders')}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Mes Commandes
-                                                </Link>
-                                                <Link
-                                                    href="/logout"
-                                                    method="post"
-                                                    as="button"
-                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Déconnexion
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="hidden md:flex items-center space-x-2">
-                                        <Link
-                                            href={route('login')}
-                                            className="text-sm text-gray-600 hover:text-amber-600 transition-colors duration-200"
-                                        >
-                                            Connexion
-                                        </Link>
-                                        <span className="text-gray-400">|</span>
-                                        <Link
-                                            href={route('register')}
-                                            className="text-sm text-gray-600 hover:text-amber-600 transition-colors duration-200"
-                                        >
-                                            Inscription
-                                        </Link>
-                                    </div>
-                                )}
-
-                                {/* Mobile menu button */}
-                                <button
-                                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 md:hidden"
-                                >
-                                    {mobileMenuOpen ? (
-                                        <XMarkIcon className="h-6 w-6" />
-                                    ) : (
-                                        <Bars3Icon className="h-6 w-6" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                {/* Nouveau Header Premium */}
+                <PremiumHeader 
+                    auth={auth}
+                    appName={appName}
+                    appSettings={appSettings}
+                    customizations={customizations}
+                    categories={categories}
+                    cartItemsCount={getTotalItems()}
+                    wishlistItemsCount={getWishlistTotalItems()}
+                    onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    navigation={navigation}
+                />
 
                     {/* Mobile Drawer Menu */}
                     {mobileMenuOpen && (
@@ -504,7 +333,87 @@ const FrontendLayout = ({ children, title }) => {
                             </div>
                         </div>
                     )}
-                </header>
+
+                {/* Mobile Drawer Menu */}
+                {mobileMenuOpen && (
+                    <div className="fixed inset-0 z-50">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+                        <div className="absolute inset-y-0 right-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto transform transition-all duration-300">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold">Menu</h3>
+                                <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer">
+                                    <XMarkIcon className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            {/* Navigation principale (mobile) */}
+                            <nav className="mt-2 mb-4">
+                                <ul className="space-y-1">
+                                    {[{ name: 'Accueil', href: route('home') }, ...navigation].map((item) => (
+                                        <li key={item.name}>
+                                            <Link
+                                                href={item.href}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50"
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
+
+                            {/* Compte */}
+                            <div className="mt-4">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Compte</h4>
+                                {auth.user ? (
+                                    <div className="space-y-2">
+                                        <Link
+                                            href={route('frontend.profile.index')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            Mon Profil
+                                        </Link>
+                                        <Link
+                                            href={route('frontend.profile.orders')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            Mes Commandes
+                                        </Link>
+                                        <Link
+                                            href={route('logout')}
+                                            method="post"
+                                            as="button"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            Déconnexion
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Link
+                                            href={route('login')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            Connexion
+                                        </Link>
+                                        <Link
+                                            href={route('register')}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                                        >
+                                            Inscription
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Main Content */}
                 <main className="flex-1">
@@ -591,13 +500,3 @@ const LayoutWithProviders = ({ children, title, wishlistItems = [] }) => {
 };
 
 export default LayoutWithProviders;
-
-
-
-
-
-
-
-
-
-import { formatCurrency } from '@/Utils/LocaleUtils';

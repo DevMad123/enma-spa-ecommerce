@@ -1,6 +1,6 @@
 import React from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
-import ProductCardNew from '@/Components/Frontend/ProductCard';
+import ProductCardNew from '@/Components/Frontend/ProductCardNew';
 import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowRightIcon,

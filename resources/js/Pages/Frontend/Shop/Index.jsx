@@ -14,7 +14,7 @@ import {
 import { useCart } from '@/Layouts/FrontendLayout';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
-import ProductCardUnified from '@/Components/Frontend/ProductCard';
+import ProductCardUnified from '@/Components/Frontend/ProductCardNew';
 import { useNotification } from '@/Components/Notifications/NotificationProvider';
 import { formatVariablePrice } from '@/Utils/productPrice';
 import { formatCurrency } from '@/Utils/LocaleUtils';

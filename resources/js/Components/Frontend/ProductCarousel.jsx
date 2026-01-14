@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import ProductCard from '@/Components/Frontend/ProductCard';
+import ProductCardNew from '@/Components/Frontend/ProductCardNew';
 
 const ProductMiniCard = ({ product }) => (
   <div className="min-w-[220px] sm:min-w-[240px] md:min-w-[260px] mr-4 last:mr-0 snap-start">
-    <ProductCard product={product} variant="carousel" />
+    <ProductCardNew product={product} variant="carousel" />
   </div>
 );
 
