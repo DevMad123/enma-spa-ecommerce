@@ -9,7 +9,7 @@ import {
     XMarkIcon,
     ChevronDownIcon
 } from '@heroicons/react/24/outline';
-import MegaMenu from './MegaMenu';
+import MegaMenu, { MegaMenuMobile } from './MegaMenu';
 
 const PremiumHeader = ({
     auth = {},
@@ -25,11 +25,15 @@ const PremiumHeader = ({
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [megaMenuOpen, setMegaMenuOpen] = useState(null);
-    const [activeCategory, setActiveCategory] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const searchInputRef = useRef(null);
 
-    // Fermer la recherche au clic extérieur
+    // Animation de la recherche : focus automatique et fermeture au clic extérieur
     useEffect(() => {
+        if (searchOpen && searchInputRef.current) {
+            setTimeout(() => searchInputRef.current.focus(), 100);
+        }
+
         const handleClickOutside = (event) => {
             if (searchInputRef.current && !searchInputRef.current.contains(event.target)) {
                 setSearchOpen(false);
@@ -38,10 +42,6 @@ const PremiumHeader = ({
 
         if (searchOpen) {
             document.addEventListener('mousedown', handleClickOutside);
-            // Focus automatique sur l'input
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 100);
         }
 
         return () => {
@@ -64,15 +64,19 @@ const PremiumHeader = ({
         }
     };
 
-    const themeColor = customizations?.primary_color || '#f59e0b';
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen(!mobileMenuOpen);
+        onMobileMenuToggle();
+    };
+
     const firstLetter = appName.charAt(0).toUpperCase();
 
     return (
-        <header className="bg-white shadow-lg sticky top-0 z-50">
-            {/* Bloc 1 - Top Header */}
-            <div className="bg-white border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
+        <header className="bg-white sticky top-0 z-50 shadow-sm">
+            {/* BLOC 1 - TOP HEADER */}
+            <div className="bg-white h-[70px]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                    <div className="flex items-center justify-between h-full">
                         {/* Logo */}
                         <Link href={route('home')} className="flex items-center">
                             {customizations?.logo_image ? (
@@ -83,57 +87,52 @@ const PremiumHeader = ({
                                 />
                             ) : (
                                 <>
-                                    <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                                    <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xl">
                                         {firstLetter}
                                     </div>
-                                    <span 
-                                        className="ml-3 text-2xl font-bold" 
-                                        style={{ color: themeColor }}
-                                    >
+                                    <span className="ml-3 text-2xl font-bold text-black">
                                         {appName}
                                     </span>
                                 </>
                             )}
                         </Link>
 
-                        {/* Actions e-commerce */}
-                        <div className="flex items-center space-x-6">
+                        {/* Icônes e-commerce */}
+                        <div className="flex items-center space-x-4">
                             {/* Search */}
-                            <div className="relative">
+                            <div className="relative flex items-center">
                                 {searchOpen ? (
                                     <div 
                                         ref={searchInputRef}
-                                        className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 z-50 md:relative md:inset-auto md:bg-transparent md:pt-0"
+                                        className="flex items-center"
+                                        style={{
+                                            width: searchOpen ? '260px' : '0px',
+                                            transition: 'width 350ms ease-in-out'
+                                        }}
                                     >
-                                        <form 
-                                            onSubmit={handleSearch}
-                                            className="w-full max-w-md mx-4 md:mx-0 md:w-80"
-                                        >
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    placeholder="Rechercher une marque, un modèle..."
-                                                    className="w-full pl-12 pr-12 py-3 bg-white border-2 border-gray-200 rounded-full shadow-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
-                                                    autoFocus
-                                                />
-                                                <MagnifyingGlassIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-                                                <button
-                                                    type="button"
-                                                    onClick={toggleSearch}
-                                                    className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                                                >
-                                                    <XMarkIcon className="h-5 w-5" />
-                                                </button>
-                                            </div>
+                                        <form onSubmit={handleSearch} className="w-full">
+                                            <input
+                                                type="text"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                placeholder="Rechercher..."
+                                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-sm"
+                                                style={{
+                                                    borderColor: '#e5e5e5'
+                                                }}
+                                            />
                                         </form>
+                                        <button
+                                            onClick={toggleSearch}
+                                            className="ml-2 p-2 text-gray-600 hover:text-black transition-colors"
+                                        >
+                                            <XMarkIcon className="h-5 w-5" />
+                                        </button>
                                     </div>
                                 ) : (
                                     <button
                                         onClick={toggleSearch}
-                                        className="p-2 text-gray-600 hover:text-amber-600 transition-all duration-300 hover:bg-gray-50 rounded-full"
-                                        aria-label="Rechercher"
+                                        className="p-2 text-gray-600 hover:text-black transition-colors"
                                     >
                                         <MagnifyingGlassIcon className="h-6 w-6" />
                                     </button>
@@ -143,12 +142,11 @@ const PremiumHeader = ({
                             {/* Wishlist */}
                             <Link
                                 href={route('frontend.wishlist.index')}
-                                className="relative p-2 text-gray-600 hover:text-amber-600 transition-all duration-300 hover:bg-gray-50 rounded-full"
-                                aria-label="Liste de souhaits"
+                                className="relative p-2 text-gray-600 hover:text-black transition-colors"
                             >
                                 <HeartIcon className="h-6 w-6" />
                                 {wishlistItemsCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                                         {wishlistItemsCount > 99 ? '99+' : wishlistItemsCount}
                                     </span>
                                 )}
@@ -158,10 +156,10 @@ const PremiumHeader = ({
                             <div className="relative group">
                                 {auth.user ? (
                                     <div className="relative">
-                                        <button className="flex items-center space-x-2 p-2 text-gray-600 hover:text-amber-600 transition-all duration-300 hover:bg-gray-50 rounded-full">
+                                        <button className="p-2 text-gray-600 hover:text-black transition-colors">
                                             <UserIcon className="h-6 w-6" />
                                         </button>
-                                        {/* Dropdown Account */}
+                                        {/* Dropdown */}
                                         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                                             <div className="py-2">
                                                 <Link
@@ -190,8 +188,7 @@ const PremiumHeader = ({
                                 ) : (
                                     <Link
                                         href={route('login')}
-                                        className="p-2 text-gray-600 hover:text-amber-600 transition-all duration-300 hover:bg-gray-50 rounded-full"
-                                        aria-label="Se connecter"
+                                        className="p-2 text-gray-600 hover:text-black transition-colors"
                                     >
                                         <UserIcon className="h-6 w-6" />
                                     </Link>
@@ -201,42 +198,59 @@ const PremiumHeader = ({
                             {/* Cart */}
                             <Link
                                 href={route('frontend.cart.index')}
-                                className="relative p-2 text-gray-600 hover:text-amber-600 transition-all duration-300 hover:bg-gray-50 rounded-full"
-                                aria-label="Panier"
+                                className="relative p-2 text-gray-600 hover:text-black transition-colors"
                             >
                                 <ShoppingCartIcon className="h-6 w-6" />
                                 {cartItemsCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                                         {cartItemsCount > 99 ? '99+' : cartItemsCount}
                                     </span>
                                 )}
                             </Link>
 
-                            {/* Mobile menu button */}
+                            {/* Mobile Menu Button */}
                             <button
-                                onClick={onMobileMenuToggle}
-                                className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 md:hidden"
-                                aria-label="Menu mobile"
+                                onClick={toggleMobileMenu}
+                                className="p-2 text-gray-600 hover:text-black transition-colors md:hidden"
                             >
-                                <Bars3Icon className="h-6 w-6" />
+                                {mobileMenuOpen ? (
+                                    <XMarkIcon className="h-6 w-6" />
+                                ) : (
+                                    <Bars3Icon className="h-6 w-6" />
+                                )}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Bloc 2 - Menu principal */}
-            <div className="bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-100 hidden md:block">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <nav className="flex items-center justify-center h-12">
-                        <div className="flex items-center space-x-8">
+            {/* BLOC 2 - MENU PRINCIPAL */}
+            <div 
+                className="hidden md:block h-[55px] border-t" 
+                style={{ 
+                    backgroundColor: '#FAFAFA',
+                    borderTopColor: '#eeeeee',
+                    borderTopWidth: '1px'
+                }}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                    <nav className="flex items-center justify-center h-full">
+                        <div className="flex items-center space-x-12">
                             {/* Sneakers avec MegaMenu */}
                             <div
                                 className="relative group"
                                 onMouseEnter={() => setMegaMenuOpen('sneakers')}
                                 onMouseLeave={() => setMegaMenuOpen(null)}
                             >
-                                <button className="flex items-center text-gray-700 hover:text-amber-600 font-medium transition-colors duration-200">
+                                <button 
+                                    className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
+                                    style={{
+                                        fontFamily: 'Barlow',
+                                        fontSize: '15px',
+                                        fontWeight: 500,
+                                        letterSpacing: '0.025em'
+                                    }}
+                                >
                                     Sneakers
                                     <ChevronDownIcon className="ml-1 h-4 w-4" />
                                 </button>
@@ -257,7 +271,15 @@ const PremiumHeader = ({
                                 onMouseEnter={() => setMegaMenuOpen('streetwear')}
                                 onMouseLeave={() => setMegaMenuOpen(null)}
                             >
-                                <button className="flex items-center text-gray-700 hover:text-amber-600 font-medium transition-colors duration-200">
+                                <button 
+                                    className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
+                                    style={{
+                                        fontFamily: 'Barlow',
+                                        fontSize: '15px',
+                                        fontWeight: 500,
+                                        letterSpacing: '0.025em'
+                                    }}
+                                >
                                     Streetwears
                                     <ChevronDownIcon className="ml-1 h-4 w-4" />
                                 </button>
@@ -275,7 +297,13 @@ const PremiumHeader = ({
                             {/* Livraison en 24h */}
                             <Link
                                 href={route('livraison')}
-                                className="text-gray-700 hover:text-amber-600 font-medium transition-colors duration-200"
+                                className="text-black hover:text-gray-600 transition-colors duration-200"
+                                style={{
+                                    fontFamily: 'Barlow',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.025em'
+                                }}
                             >
                                 Livraison en 24h
                             </Link>
@@ -283,27 +311,104 @@ const PremiumHeader = ({
                             {/* Le Outline */}
                             <Link
                                 href={route('a-propos-de-nous')}
-                                className="text-gray-700 hover:text-amber-600 font-medium transition-colors duration-200"
+                                className="text-black hover:text-gray-600 transition-colors duration-200"
+                                style={{
+                                    fontFamily: 'Barlow',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.025em'
+                                }}
                             >
                                 Le Outline
                             </Link>
-
-                            {/* Autres liens de navigation */}
-                            {navigation.map((item) => (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className="text-gray-700 hover:text-amber-600 font-medium transition-colors duration-200"
-                                >
-                                    {item.name}
-                                </Link>
-                            ))}
                         </div>
                     </nav>
                 </div>
             </div>
+
+            {/* Mobile Menu */}
+            {mobileMenuOpen && (
+                <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+                    <div className="px-4 py-6 space-y-6">
+                        {/* Navigation principale */}
+                        <div className="space-y-6">
+                            {/* Sneakers Section */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-black mb-4">Sneakers</h3>
+                                <MegaMenuMobile
+                                    type="sneakers"
+                                    categories={categories}
+                                    isOpen={true}
+                                    onClose={() => setMobileMenuOpen(false)}
+                                />
+                            </div>
+
+                            {/* Streetwears Section */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-black mb-4">Streetwears</h3>
+                                <MegaMenuMobile
+                                    type="streetwear"
+                                    categories={categories}
+                                    isOpen={true}
+                                    onClose={() => setMobileMenuOpen(false)}
+                                />
+                            </div>
+
+                            {/* Autres liens */}
+                            <div className="pt-4 border-t border-gray-200 space-y-4">
+                                <Link
+                                    href={route('livraison')}
+                                    className="block text-lg font-medium text-black hover:text-gray-600"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Livraison en 24h
+                                </Link>
+                                <Link
+                                    href={route('a-propos-de-nous')}
+                                    className="block text-lg font-medium text-black hover:text-gray-600"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Le Outline
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Mobile Search */}
+                        <div className="pt-4 border-t border-gray-200">
+                            <form onSubmit={handleSearch} className="w-full">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Rechercher..."
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                                />
+                            </form>
+                        </div>
+
+                        {/* Mobile Auth Links */}
+                        {!auth.user && (
+                            <div className="pt-4 border-t border-gray-200 flex flex-col space-y-2">
+                                <Link
+                                    href={route('login')}
+                                    className="text-lg font-medium text-black hover:text-gray-600"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Se connecter
+                                </Link>
+                                <Link
+                                    href={route('register')}
+                                    className="text-lg font-medium text-black hover:text-gray-600"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Créer un compte
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </header>
     );
 };
-
 export default PremiumHeader;

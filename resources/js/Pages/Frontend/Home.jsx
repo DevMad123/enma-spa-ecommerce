@@ -1,213 +1,731 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
-import ProductCardNew from '@/Components/Frontend/ProductCardNew';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import {
     ArrowRightIcon,
-    StarIcon,
-    HeartIcon,
-    ShoppingCartIcon,
     ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    FireIcon,
+    SparklesIcon,
+    TruckIcon,
+    ShieldCheckIcon,
+    CreditCardIcon,
+    HeartIcon,
+    BoltIcon,
+    StarIcon,
+    EyeIcon,
+    PlayIcon
 } from '@heroicons/react/24/outline';
-import { useCart } from '@/Layouts/FrontendLayout';
+import { 
+    HeartIcon as HeartSolid,
+    StarIcon as StarSolid 
+} from '@heroicons/react/24/solid';
+import { formatCurrency } from '@/Utils/LocaleUtils';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
-import { formatVariablePrice } from '@/Utils/productPrice';
-import { formatCurrency } from '@/Utils/LocaleUtils';
-import { NotificationProvider } from '@/Components/Notifications/NotificationProvider';
-import NewsletterSection from '@/Components/Newsletter/NewsletterSection';
-import CategoryCarousel from '@/Components/Frontend/CategoryCarousel';
-import FeaturesCarousel from '@/Components/Features/FeaturesCarousel';
-import ProductCarousel from '@/Components/Frontend/ProductCarousel';
-import BrandCarousel from '@/Components/Frontend/BrandCarousel';
-import GalleryGrid from '@/Components/Frontend/GalleryGrid';
-import useCustomizations from '@/Hooks/useCustomizations';
 
-const ProductCard = ({ product, appSettings }) => {
-    const { addToCart } = useCart();
-    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
+// Modern Hero Section - WeTheNew Style
+const ModernHeroSection = () => {
+    return (
+        <section className="relative w-full min-h-screen bg-black text-white overflow-hidden" style={{ fontFamily: 'Barlow' }}>
+            {/* Background Video or Image */}
+            <div className="absolute inset-0">
+                <img
+                    src="/images/hero-bg-sneakers.jpg"
+                    alt="Hero Background"
+                    className="w-full h-full object-cover opacity-60"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+            </div>
+
+            {/* Hero Content */}
+            <div className="relative z-10 flex flex-col justify-center min-h-screen px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto w-full">
+                    <div className="text-center">
+                        {/* Badge */}
+                        <div className="inline-flex items-center px-6 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-8">
+                            <SparklesIcon className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-medium tracking-wide">NOUVELLE COLLECTION</span>
+                        </div>
+
+                        {/* Main Title */}
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
+                            <span className="block">ELEVATE</span>
+                            <span className="block text-white/60">YOUR STYLE</span>
+                        </h1>
+
+                        {/* Subtitle */}
+                        <p className="text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
+                            Découvrez les sneakers les plus exclusives et authentiques du moment. Design premium, qualité garantie.
+                        </p>
+
+                        {/* CTA Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <Link
+                                href="/shop"
+                                className="group relative bg-white text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 min-w-[200px]"
+                            >
+                                SHOP NOW
+                                <ArrowRightIcon className="w-5 h-5 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                            <Link
+                                href="/collections"
+                                className="group relative border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-all duration-300 min-w-[200px]"
+                            >
+                                COLLECTIONS
+                                <EyeIcon className="w-5 h-5 ml-2 inline-block" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Scroll Indicator */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+                <div className="w-6 h-10 border-2 border-white/50 rounded-full p-1">
+                    <div className="w-1 h-3 bg-white/50 rounded-full animate-pulse"></div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// Stats Section - Premium Numbers
+const StatsSection = () => {
+    const stats = [
+        { value: "50K+", label: "SNEAKERS VENDUES" },
+        { value: "100%", label: "AUTHENTICITÉ GARANTIE" },
+        { value: "24H", label: "LIVRAISON EXPRESS" },
+        { value: "500+", label: "MARQUES PARTENAIRES" }
+    ];
 
     return (
-        <div className="group relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-            {/* Badge de promotion */}
-            {product.discount_percentage > 0 && (
-                <div className="absolute top-4 left-4 z-10">
-                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        -{product.discount_percentage}%
-                    </span>
+        <section className="py-20 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                    {stats.map((stat, index) => (
+                        <div key={index} className="text-center">
+                            <div className="text-4xl md:text-5xl font-bold text-black mb-2" style={{ fontFamily: 'Barlow' }}>
+                                {stat.value}
+                            </div>
+                            <div className="text-sm text-gray-600 font-medium tracking-wide">
+                                {stat.label}
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            )}
-
-
-            {/* Bouton favoris */}
-            <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <WishlistButton
-                    product={product}
-                    size="default"
-                />
             </div>
+        </section>
+    );
+};
 
-            {/* Image du produit */}
-            <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-100">
-                <img
-                    src={product.image || '/images/placeholder.jpg'}
-                    alt={product.name}
-                    className="h-64 w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                />
+// Features Section
+const FeaturesSection = () => {
+    const features = [
+        {
+            icon: <TruckIcon className="w-8 h-8" />,
+            title: "LIVRAISON GRATUITE",
+            description: "Livraison gratuite dès 50€ d'achat"
+        },
+        {
+            icon: <ShieldCheckIcon className="w-8 h-8" />,
+            title: "AUTHENTICITÉ GARANTIE", 
+            description: "100% authentique ou remboursé"
+        },
+        {
+            icon: <CreditCardIcon className="w-8 h-8" />,
+            title: "PAIEMENT SÉCURISÉ",
+            description: "Paiement en 3x sans frais"
+        }
+    ];
+
+    return (
+        <section className="py-20 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {features.map((feature, index) => (
+                        <div key={index} className="text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-black text-white rounded-full mb-6">
+                                {feature.icon}
+                            </div>
+                            <h3 className="text-lg font-bold text-black mb-2">{feature.title}</h3>
+                            <p className="text-gray-600">{feature.description}</p>
+                        </div>
+                    ))}
+                </div>
             </div>
+        </section>
+    );
+};
 
-            <div className="p-6">
-                {/* Catégorie */}
-                <p className="text-sm text-amber-600 font-medium mb-2">
-                    {product.category?.name}
-                </p>
+// Modern Premium Product Card - WeTheNew Inspired
+const PremiumProductCard = ({ product }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+    const productUrl = product?.slug ? `/products/${product.slug}` : `/products/${product?.id || '#'}`;
 
-                {/* Nom du produit */}
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                    <Link href={route('frontend.shop.show', product.id)} className="hover:text-amber-600 transition-colors">
-                        {product.name}
-                    </Link>
-                </h3>
-
-                {/* Description courte */}
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {product.description}
-                </p>
-
-                {/* Evaluations */}
-                <div className="flex items-center mb-4">
-                    <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                            <StarIcon
-                                key={i}
-                                className={`h-4 w-4 ${i < Math.floor(product.average_rating || 4.5)
-                                    ? 'text-yellow-400 fill-current'
-                                    : 'text-gray-300'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                    <span className="ml-2 text-sm text-gray-600">
-                        ({product.reviews_count || 0})
-                    </span>
+    return (
+        <div 
+            className="group relative bg-white rounded-lg overflow-hidden transition-all duration-500 hover:shadow-2xl"
+            style={{ fontFamily: 'Barlow' }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {/* Image Container */}
+            <div className="relative aspect-square bg-gray-50 overflow-hidden">
+                {/* Badges */}
+                <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
+                    {product?.is_new && (
+                        <span className="bg-black text-white text-xs px-3 py-1 rounded-full font-medium">
+                            NEW
+                        </span>
+                    )}
+                    {product?.current_sale_price && product?.price && product.price > product.current_sale_price && (
+                        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                            SALE
+                        </span>
+                    )}
+                    {product?.is_limited && (
+                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                            LIMITED
+                        </span>
+                    )}
                 </div>
 
-                {/* Prix unifié variable/simple */}
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        {(() => {
-                            const fp = formatVariablePrice(product);
-                            return (
-                                <>
-                                    <span className="text-2xl font-bold text-gray-900">
-                                        {fp.hasRange && <span>À partir de </span>}
-                                        <span>{formatCurrency(fp.min)}</span>
-                                    </span>
-                                    {fp.compareAt && (
-                                        <span className="ml-2 text-lg text-gray-500 line-through">
-                                            {formatCurrency(fp.compareAt)}
-                                        </span>
-                                    )}
-                                </>
-                            );
-                        })()}
-                    </div>
-                </div>
-
-                {/* Bouton d'ajout au panier */}
-                <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
-                    <CartButton
+                {/* Wishlist Button */}
+                <div className="absolute top-3 right-3 z-20">
+                    <WishlistButton 
                         product={product}
-                        className="w-full"
-                        variant="gradient"
+                        className="bg-white/90 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-md transition-all"
                     />
+                </div>
+
+                {/* Product Image */}
+                <Link href={productUrl}>
+                    <img
+                        src={product?.image || '/images/placeholder.jpg'}
+                        alt={product?.name || 'Produit'}
+                        className={`w-full h-full object-cover transition-all duration-700 ${
+                            isHovered ? 'scale-110' : 'scale-100'
+                        } ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        onLoad={() => setIsLoaded(true)}
+                    />
+                </Link>
+
+                {/* Quick View Overlay */}
+                <div className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="absolute bottom-4 left-4 right-4">
+                        <Link
+                            href={productUrl}
+                            className="w-full bg-white text-black py-3 px-6 rounded-full text-center font-semibold transition-all duration-300 hover:bg-gray-100 block"
+                        >
+                            VOIR LE PRODUIT
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Product Info */}
+            <div className="p-6">
+                {/* Brand */}
+                {product?.brand && (
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">
+                        {typeof product.brand === 'string' ? product.brand : product.brand?.name || ''}
+                    </p>
+                )}
+
+                {/* Product Name */}
+                <Link href={productUrl}>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight hover:text-gray-700 transition-colors">
+                        {product?.name || 'Nom du produit'}
+                    </h3>
+                </Link>
+
+                {/* Ratings */}
+                {product?.rating && (
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                                <StarIcon
+                                    key={i}
+                                    className={`w-4 h-4 ${
+                                        i < Math.floor(typeof product.rating === 'number' ? product.rating : parseFloat(product.rating) || 0)
+                                            ? 'text-yellow-400 fill-current'
+                                            : 'text-gray-300'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                            ({product.reviews_count || 0})
+                        </span>
+                    </div>
+                )}
+
+                {/* Price */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {product?.current_sale_price && product?.price && product.price > product.current_sale_price ? (
+                            <>
+                                <span className="text-xl font-bold text-black">
+                                    {formatCurrency(product.current_sale_price)}
+                                </span>
+                                <span className="text-sm text-gray-400 line-through">
+                                    {formatCurrency(product.price)}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-xl font-bold text-black">
+                                {formatCurrency(product?.price || 0)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-// Carte Catégorie (fallback si manquante)
-const CategoryCard = ({ category }) => {
-    const href = category?.slug ? route('frontend.shop.category', category.slug) : route('frontend.shop.index');
-    const img = category?.image || '/images/category-placeholder.jpg';
-    const name = category?.name || 'Catégorie';
+// Hero Product Showcase - Featured Drop
+const HeroProductShowcase = ({ product }) => {
+    if (!product) return null;
 
     return (
-        <Link
-            href={href}
-            className="group block rounded-2xl border border-gray-200 hover:border-gray-300 bg-white overflow-hidden"
-        >
-            <div className="aspect-[4/3] w-full overflow-hidden bg-gray-100">
-                <img
-                    src={img}
-                    alt={name}
-                    loading="lazy"
-                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+        <section className="py-20 bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    {/* Product Image */}
+                    <div className="relative">
+                        <div className="aspect-square bg-white/5 rounded-3xl overflow-hidden backdrop-blur-sm">
+                            <img
+                                src={product.image || '/images/placeholder.jpg'}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        {/* Decorative Elements */}
+                        <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full opacity-20 blur-xl"></div>
+                        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full opacity-15 blur-xl"></div>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="space-y-8">
+                        {/* Badge */}
+                        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                            <FireIcon className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-semibold">FEATURED DROP</span>
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="text-4xl lg:text-6xl font-bold leading-tight" style={{ fontFamily: 'Barlow' }}>
+                            {product.name}
+                        </h2>
+
+                        {/* Description */}
+                        <p className="text-xl text-gray-300 leading-relaxed">
+                            {product.description || "Découvrez cette pièce exceptionnelle qui allie style, performance et authenticité. Une création unique pour les passionnés."}
+                        </p>
+
+                        {/* Price */}
+                        <div className="text-3xl font-bold">
+                            {product.current_sale_price && product.price > product.current_sale_price ? (
+                                <span className="text-yellow-400">{formatCurrency(product.current_sale_price)}</span>
+                            ) : (
+                                <span>{formatCurrency(product.price)}</span>
+                            )}
+                        </div>
+
+                        {/* CTA */}
+                        <div className="flex gap-4">
+                            <Link
+                                href={`/products/${product.slug || product.id}`}
+                                className="bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center"
+                            >
+                                SHOP NOW
+                                <ArrowRightIcon className="w-5 h-5 ml-2" />
+                            </Link>
+                            <button className="border border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-black transition-all duration-300">
+                                EN SAVOIR PLUS
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="p-3 text-center">
-                <div className="text-sm font-medium text-gray-900">{name}</div>
-            </div>
-        </Link>
+        </section>
     );
 };
 
-const CustomHero = ({ customizations, appSettings }) => {
-    if (!customizations?.hero_enabled) return null;
-    const hero = customizations;
-    const product = hero?.hero_product;
-    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
-    const price = product ? (product.current_sale_price ?? product.price) : null;
-    const currency = appSettings?.currency || 'XOF';
+// Modern Product Slider - WeTheNew Style
+const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isVisible, setIsVisible] = useState(false);
 
-    const productSchema = product ? {
-        '@context': 'https://schema.org/',
-        '@type': 'Product',
-        name: product.name,
-        offers: {
-            '@type': 'Offer',
-            priceCurrency: currency,
-            price: String(price ?? ''),
-            availability: 'https://schema.org/InStock',
-            url: route('frontend.shop.show', product.id),
-        },
-    } : null;
+    useEffect(() => {
+        setIsVisible(true);
+    }, []);
+
+    const itemsPerView = {
+        mobile: 1.2,
+        tablet: 2.5,
+        desktop: 4
+    };
+
+    const maxIndex = Math.max(0, products.length - Math.floor(itemsPerView.desktop));
+
+    const nextSlide = () => {
+        setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
+    };
+
+    const prevSlide = () => {
+        setCurrentIndex(prev => Math.max(prev - 1, 0));
+    };
+
+    if (!products.length) return null;
 
     return (
-        <section
-            className="relative w-full max-h-[400px] md:max-h-none min-h-[45vh] md:min-h-[65vh] flex items-center overflow-hidden"
-            style={{
-                backgroundImage: hero?.hero_background_image ? `url(${hero.hero_background_image})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-            }}
-        >
-            {productSchema && (
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
-            )}
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 w-full">
-                <div className="max-w-2xl text-white">
-                    {hero?.hero_title && (
-                        <h1 className="text-xl md:text-5xl font-bold mb-3 md:mb-4 leading-tight">{hero.hero_title}</h1>
-                    )}
-                    {hero?.hero_subtitle && (
-                        <p className="text-sm md:text-xl text-gray-200 mb-6 md:mb-8">{hero.hero_subtitle}</p>
-                    )}
-                    {product && (
-                        <div className="bg-white/10 backdrop-blur rounded-xl p-3 md:p-4 inline-flex items-center space-x-3 md:space-x-4">
-                            <div>
-                                <div className="text-base md:text-xl font-semibold">{product.name}</div>
-                                <div className="text-sm md:text-lg">
-                                    <span className="font-bold">{formatCurrency(product.current_sale_price ?? product.price)}</span>
-                                    {product.current_sale_price && product.price && product.price > product.current_sale_price && (
-                                        <span className="ml-2 line-through opacity-70">{formatCurrency(product.price)}</span>
-                                    )}
+        <section className={`py-16 md:py-24 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-12">
+                    <div>
+                        <h2 className="text-3xl md:text-5xl font-bold text-black font-['Barlow'] mb-2">
+                            {title}
+                        </h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="hidden md:flex items-center space-x-3">
+                        <button
+                            onClick={prevSlide}
+                            disabled={currentIndex === 0}
+                            className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center group"
+                        >
+                            <ChevronLeftIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </button>
+                        <button
+                            onClick={nextSlide}
+                            disabled={currentIndex >= maxIndex}
+                            className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center group"
+                        >
+                            <ChevronRightIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Slider Container */}
+                <div className="relative overflow-hidden">
+                    <div 
+                        className="flex transition-transform duration-500 ease-out gap-6"
+                        style={{ 
+                            transform: `translateX(-${currentIndex * (100 / itemsPerView.desktop)}%)`
+                        }}
+                    >
+                        {products.map((product, index) => (
+                            <div
+                                key={product?.id || Math.random()}
+                                className="flex-none w-[calc(83.33%-12px)] md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]"
+                            >
+                                <PremiumProductCard product={product} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Mobile Navigation */}
+                <div className="flex md:hidden items-center justify-center mt-8 space-x-4">
+                    <button
+                        onClick={prevSlide}
+                        disabled={currentIndex === 0}
+                        className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center"
+                    >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.ceil(products.length / itemsPerView.mobile) }).map((_, index) => (
+                            <div
+                                key={index}
+                                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                    index === Math.floor(currentIndex / itemsPerView.mobile)
+                                        ? 'bg-black w-6'
+                                        : 'bg-gray-300'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        onClick={nextSlide}
+                        disabled={currentIndex >= maxIndex}
+                        className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center"
+                    >
+                        <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// Product Grid Section - Inspiration WeTheNew
+const ProductGrid = ({ products = [] }) => {
+    // Clean Product Card sans hover effects
+    const CleanProductCard = ({ product }) => {
+        const productUrl = product?.slug ? `/products/${product.slug}` : `/products/${product?.id || '#'}`;
+        
+        return (
+            <Link href={productUrl} className="block">
+                <div className="bg-white">
+                    {/* Image Container */}
+                    <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
+                        {/* Badge si nécessaire */}
+                        {product?.is_new && (
+                            <div className="absolute top-3 left-3 z-10">
+                                <span className="bg-black text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    NOUVEAU
+                                </span>
+                            </div>
+                        )}
+                        {product?.current_sale_price && product?.price && product.price > product.current_sale_price && (
+                            <div className="absolute top-3 right-3 z-10">
+                                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    PROMO
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Image centrée - aucun effet hover */}
+                        <img
+                            src={product?.image || '/images/placeholder.jpg'}
+                            alt={product?.name || 'Produit'}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+
+                    {/* Informations produit */}
+                    <div className="space-y-2">
+                        {/* Nom produit - 15px */}
+                        <h3 className="text-[15px] font-medium text-gray-900 line-clamp-2">
+                            {product?.name || 'Nom du produit'}
+                        </h3>
+                        
+                        {/* Catégorie */}
+                        {product?.category?.name && (
+                            <p className="text-xs text-gray-500 uppercase tracking-wider">
+                                {typeof product.category.name === 'string' ? product.category.name : String(product.category.name)}
+                            </p>
+                        )}
+
+                        {/* Prix - 14px */}
+                        <div className="flex items-center space-x-2">
+                            {product?.current_sale_price && product?.price && product.price > product.current_sale_price ? (
+                                <>
+                                    <span className="text-[14px] font-bold text-black">
+                                        {formatCurrency(product.current_sale_price)}
+                                    </span>
+                                    <span className="text-[12px] text-gray-400 line-through">
+                                        {formatCurrency(product.price)}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-[14px] font-bold text-black">
+                                    {formatCurrency(product?.price || 0)}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    };
+
+    if (!products.length) return null;
+
+    return (
+        <section className="py-16 md:py-24 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-black font-['Barlow'] mb-4">
+                        SÉLECTION
+                    </h2>
+                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+                        Découvrez notre sélection de produits premium
+                    </p>
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+                    {products.slice(0, 12).map((product) => (
+                        <CleanProductCard key={product?.id || Math.random()} product={product} />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// Featured Products Section
+const FeaturedProductsSection = ({ products = [] }) => {
+    return (
+        <section className="py-20 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+                    <div>
+                        <div className="inline-flex items-center px-3 py-1 bg-black text-white text-xs font-bold rounded-full mb-4">
+                            <SparklesIcon className="w-3 h-3 mr-1" />
+                            MUST HAVE
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold text-black">
+                            FEATURED
+                            <span className="block text-gray-400">PRODUCTS</span>
+                        </h2>
+                    </div>
+                    <Link 
+                        href="/shop"
+                        className="inline-flex items-center text-black hover:text-gray-600 font-medium group"
+                    >
+                        Voir tout
+                        <ArrowRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {products.slice(0, 8).map((product) => (
+                        <PremiumProductCard key={product?.id || Math.random()} product={product} />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// Categories Grid - Premium Style
+const CategoriesGrid = ({ categories = [] }) => {
+    return (
+        <section className="py-16 md:py-24 bg-black text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl md:text-6xl font-bold mb-6 font-['Barlow']">
+                        EXPLORE
+                        <span className="block text-gray-400">CATEGORIES</span>
+                    </h2>
+                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                        Découvrez nos collections soigneusement sélectionnées pour chaque style et passion.
+                    </p>
+                </div>
+
+                {/* Categories Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {categories.slice(0, 6).map((category, index) => (
+                        <Link
+                            key={category?.id || index}
+                            href={`/category/${category?.slug || category?.id}`}
+                            className="group relative aspect-[4/5] bg-gray-900 rounded-3xl overflow-hidden"
+                        >
+                            {/* Image */}
+                            <img
+                                src={category.image || '/images/category-placeholder.jpg'}
+                                alt={category.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            />
+                            
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/60 transition-colors duration-500" />
+                            
+                            {/* Content */}
+                            <div className="absolute inset-0 flex flex-col justify-end p-8">
+                                <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                    <h3 className="text-2xl font-bold text-white mb-2 font-['Barlow']">
+                                        {category?.name || 'Catégorie'}
+                                    </h3>
+                                    <p className="text-gray-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                        {category?.description || 'Découvrez notre sélection'}
+                                    </p>
+                                    <div className="flex items-center text-white font-medium">
+                                        <span className="mr-2">Explorer</span>
+                                        <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                                    </div>
                                 </div>
                             </div>
-                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-4 py-2 md:px-5 md:py-2.5 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition">Acheter</a>
+
+                            {/* Hover Effect Border */}
+                            <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/20 rounded-3xl transition-colors duration-500"></div>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// Newsletter Section - Modern Design
+const ModernNewsletterSection = () => {
+    const [email, setEmail] = useState('');
+    const [isSubscribed, setIsSubscribed] = useState(false);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // Handle newsletter subscription
+        setIsSubscribed(true);
+        setEmail('');
+        setTimeout(() => setIsSubscribed(false), 3000);
+    };
+
+    return (
+        <section className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                    <div className="w-full h-full" style={{
+                        backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                        backgroundSize: '50px 50px'
+                    }}></div>
+                </div>
+
+                <div className="relative z-10">
+                    {/* Header */}
+                    <div className="mb-12">
+                        <h2 className="text-4xl md:text-6xl font-bold mb-6 font-['Barlow']">
+                            STAY IN
+                            <span className="block bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                THE LOOP
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
+                            Soyez les premiers informés des drops exclusifs, des offres spéciales et des dernières tendances sneakers.
+                        </p>
+                    </div>
+
+                    {/* Newsletter Form */}
+                    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+                        <div className="relative">
+                            <input
+                                type="email"
+                                placeholder="Votre email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-white/40 transition-all duration-300"
+                                required
+                            />
+                            <button 
+                                type="submit"
+                                className="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-full hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105"
+                            >
+                                {isSubscribed ? '✓' : 'JOIN'}
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-4">
+                            En vous inscrivant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+                        </p>
+                    </form>
+
+                    {/* Success Message */}
+                    {isSubscribed && (
+                        <div className="mt-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg">
+                            <p className="text-green-300">Merci ! Vous êtes maintenant abonné à notre newsletter.</p>
                         </div>
                     )}
                 </div>
@@ -216,86 +734,7 @@ const CustomHero = ({ customizations, appSettings }) => {
     );
 };
 
-const HeroSlider = ({ slides = [], appSettings }) => {
-    const [index, setIndex] = React.useState(0);
-    const [touchStart, setTouchStart] = React.useState(null);
-    const [touchEnd, setTouchEnd] = React.useState(null);
-
-    React.useEffect(() => {
-        if (!slides.length) return;
-        const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 5000);
-        return () => clearInterval(id);
-    }, [slides.length]);
-
-    const prev = () => setIndex((i) => (i - 1 + slides.length) % slides.length);
-    const next = () => setIndex((i) => (i + 1) % slides.length);
-
-    const onTouchStart = (e) => setTouchStart(e.changedTouches[0].clientX);
-    const onTouchMove = (e) => setTouchEnd(e.changedTouches[0].clientX);
-    const onTouchEnd = () => {
-        if (touchStart !== null && touchEnd !== null) {
-            const delta = touchEnd - touchStart;
-            if (Math.abs(delta) > 40) {
-                delta > 0 ? prev() : next();
-            }
-        }
-        setTouchStart(null); setTouchEnd(null);
-    };
-
-    if (!slides.length) return null;
-    const product = slides[index]?.product;
-    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
-
-    return (
-        <section className="relative overflow-hidden w-full" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-            <div className="relative h-[48vh] max-h-[400px] sm:h-[60vh] sm:max-h-none">
-                <div className="absolute inset-0">
-                    <div className="h-full w-full flex transition-transform duration-700" style={{ transform: `translateX(-${index * 100}%)` }}>
-                        {slides.map((s, i) => (
-                            <div key={i} className="min-w-full h-full" style={{
-                                backgroundImage: s.background_image ? `url(${s.background_image})` : undefined,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center'
-                            }} />
-                        ))}
-                    </div>
-                    <div className="absolute inset-0 bg-black/40" />
-                </div>
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 w-full flex justify-end h-full items-center">
-                    <div className="bg-white/80 backdrop-blur rounded-xl p-4 md:p-8 max-w-md">
-                        {product?.name && (<h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-2">{product.name}</h2>)}
-                        {slides[index]?.tagline && (<p className="text-gray-700 mb-4">{slides[index].tagline}</p>)}
-                        {product && (
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="text-xl font-semibold text-gray-900">{formatCurrency(product.current_sale_price ?? product.price)}</span>
-                                {(product.price && product.current_sale_price && product.price > product.current_sale_price) && (
-                                    <span className="text-gray-500 line-through">{formatCurrency(product.price)}</span>
-                                )}
-                            </div>
-                        )}
-                        {product?.id && (
-                            <a href={route('frontend.shop.show', product.id)} className="inline-flex items-center px-4 py-2.5 bg-gray-900 text-white rounded-lg font-semibold hover:bg-black transition">Découvrir</a>
-                        )}
-                    </div>
-                </div>
-                {/* Arrows */}
-                <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 p-2 rounded-full shadow" aria-label="Précédent">
-                    <ChevronLeftIcon className="h-5 w-5" />
-                </button>
-                <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-900 p-2 rounded-full shadow" aria-label="Suivant">
-                    <ChevronRightIcon className="h-5 w-5" />
-                </button>
-                {/* Dots */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                    {slides.map((_, i) => (
-                        <button key={i} onClick={() => setIndex(i)} className={`h-2 w-2 rounded-full ${i === index ? 'bg-white' : 'bg-white/50'}`} aria-label={`Aller au slide ${i+1}`} />
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-};
-
+// Main Home Content Component
 function HomeContent({
     featuredProducts = [],
     newProducts = [],
@@ -307,152 +746,43 @@ function HomeContent({
     featuredCategoryProducts = [],
     galleryItems = [],
 }) {
-    const { customizations } = useCustomizations();
-    const appName = appSettings?.app_name || 'ENMA SPA';
-    const currencySymbol = appSettings?.currency_symbol || 'F CFA';
+    // Featured product for hero showcase
+    const heroProduct = featuredProducts?.[0] || null;
+
     return (
         <>
-            {/* Hero Section (slider if available else custom/default) */}
-            {Array.isArray(customizations?.hero_slides) && customizations.hero_slides.length > 0 ? (
-                <HeroSlider slides={customizations.hero_slides} appSettings={appSettings} />
-            ) : customizations?.hero_enabled ? (
-                <CustomHero customizations={customizations} appSettings={appSettings} />
-            ) : (
-                <section className="relative min-h-[calc(100vh_-_100px)] flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-500 to-red-600">
-                        <div className="absolute inset-0 bg-black/20" />
-                        <div className="absolute inset-0 bg-[url('/images/hero-pattern.svg')] opacity-10" />
-                    </div>
-                    <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                        <div className="max-w-4xl mx-auto">
-                            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                                Bienvenue chez
-                                <span className="block bg-gradient-to-r from-yellow-300 to-white bg-clip-text text-transparent">{appName}</span>
-                            </h1>
-                            <p className="text-xl md:text-2xl mb-8 text-gray-100 max-w-3xl mx-auto">Découvrez notre collection unique de produits de qualité supérieure. Une expérience shopping exceptionnelle vous attend.</p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                                <Link href={route('frontend.shop.index')} className="bg-white text-amber-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105">
-                                    <span>Découvrir la boutique</span>
-                                    <ArrowRightIcon className="h-5 w-5" />
-                                </Link>
-                                <Link href={route('a-propos-de-nous')} className="border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-amber-600 transition-all duration-200">En savoir plus</Link>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-                        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-                            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
-                        </div>
-                    </div>
-                </section>
-            )}
+            {/* Modern Hero Section */}
+            <ModernHeroSection />
 
-            {/* Slide 1: Features Carousel */}
-            <FeaturesCarousel />
+            {/* Stats Section */}
+            <StatsSection />
 
-            {/* Categories Carousel */}
-            <CategoryCarousel categories={categories || []} title="Catégories" />
-            {false && (
-                <section className="py-20 bg-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                                Explorez nos catégories
-                            </h2>
-                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                                Découvrez notre large gamme de produits soigneusement sélectionnés pour vous
-                            </p>
-                        </div>
+            {/* Hero Product Showcase */}
+            {heroProduct && <HeroProductShowcase product={heroProduct} />}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {categories.slice(0, 6).map((category) => (
-                                <CategoryCard key={category.id} category={category} />
-                            ))}
-                        </div>
+            {/* Features Section */}
+            <FeaturesSection />
 
-                        <div className="text-center mt-12">
-                            <Link
-                                href={route('frontend.shop.index')}
-                                className="inline-flex items-center bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                            >
-                                Voir toutes les catégories
-                                <ArrowRightIcon className="ml-2 h-5 w-5" />
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-            )}
-            {/* New In Carousel */}
+            {/* Trending Products Slider */}
+            <ModernProductSlider 
+                title="TRENDING NOW" 
+                products={featuredProducts} 
+            />
 
-            {newProducts.length > 0 && (
-                <ProductCarousel
-                    products={newProducts}
-                    title="New In"
-                    viewMoreHref={route('nouveautes')}
-                    currencySymbol={currencySymbol}
-                />
-            )}
+            {/* New Arrivals Grid */}
+            <ProductGrid products={newProducts} />
 
-            {/* Catégorie mise en avant (Section 6) */}
-            {featuredCategory && (featuredCategoryProducts?.length > 0) && (
-                <ProductCarousel
-                    products={featuredCategoryProducts}
-                    title={featuredCategory.name}
-                    viewMoreHref={route('frontend.shop.category', featuredCategory.id)}
-                    currencySymbol={currencySymbol}
-                />
-            )}
+            {/* Categories Grid */}
+            <CategoriesGrid categories={categories} />
 
-            {/* Marques (Section 7) */}
-            {Array.isArray(brands) && brands.length > 0 && (
-                <BrandCarousel brands={brands} title="Nos marques" />
-            )}
+            {/* Best Sellers Slider */}
+            <ModernProductSlider 
+                title="BEST SELLERS" 
+                products={newProducts.slice(0, 8)} 
+            />
 
-            {/* Galerie lifestyle (Section 8) */}
-            {Array.isArray(galleryItems) && galleryItems.length > 0 && (
-                <GalleryGrid items={galleryItems} title="Gallerie" />
-            )}
-
-{/* Featured Products Section */}
-            {featuredProducts.length > 0 && (customizations?.featured_section_enabled !== false) && (
-                <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                                Produits vedettes
-                            </h2>
-                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                                Nos coups de cœur sélectionnés spécialement pour vous
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {featuredProducts.slice(0, 8).map((product) => (
-                                <ProductCardNew key={product.id} product={product} variant="default" />
-                            ))}
-                        </div>
-
-                        <div className="text-center mt-12">
-                            <Link
-                                href={route('frontend.shop.index')}
-                                className="inline-flex items-center bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                            >
-                                Voir tous les produits
-                                <ArrowRightIcon className="ml-2 h-5 w-5" />
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-            )}
-            {/* Newsletter Section (toggle) */}
-            {customizations?.newsletter_enabled !== false && (
-                <NewsletterSection
-                    title="Restez informé de nos nouveautés"
-                    subtitle="Inscrivez-vous à notre newsletter et recevez 10% de réduction sur votre première commande"
-                    variant="colored"
-                    showFeatures={true}
-                />
-            )}
+            {/* Newsletter */}
+            <ModernNewsletterSection />
         </>
     );
 }
