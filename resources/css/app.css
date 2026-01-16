@@ -9,6 +9,20 @@
   --theme-color-hex: #23ad94;
 }
 
+/* Animation pour le texte défilant */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
 /* Animations personnalisées */
 @keyframes fade-in {
   from {

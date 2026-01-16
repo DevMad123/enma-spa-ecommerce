@@ -13,107 +13,217 @@ import {
     HeartIcon,
     BoltIcon,
     StarIcon,
-    EyeIcon,
-    PlayIcon
+    TagIcon
 } from '@heroicons/react/24/outline';
-import { 
-    HeartIcon as HeartSolid,
-    StarIcon as StarSolid 
-} from '@heroicons/react/24/solid';
 import { formatCurrency } from '@/Utils/LocaleUtils';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
+import ModernProductCard from '@/Components/Frontend/ModernProductCard';
+import ProductSlider from '@/Components/Frontend/ProductSlider';
 
-// Modern Hero Section - WeTheNew Style
-const ModernHeroSection = () => {
+// Hero Slider Section
+const HeroSlider = () => {
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    // Données des slides (vous pouvez les remplacer par des données dynamiques)
+    const slides = [
+        {
+            id: 1,
+            title: "NOUVEAUX DROPS",
+            subtitle: "Découvrez les dernières sorties exclusives de vos marques préférées",
+            ctaText: "DÉCOUVRIR",
+            ctaLink: '/shop',
+            image: "/images/slides/slide1.jpg", // Remplacez par vos vraies images
+            mobileImage: "/images/slides/slide1-mobile.jpg"
+        },
+        {
+            id: 2,
+            title: "COLLECTION STREET",
+            subtitle: "L'authenticité streetwear rencontre la performance premium",
+            ctaText: "SHOP NOW",
+            ctaLink: '/shop',
+            image: "/images/slides/slide2.jpg",
+            mobileImage: "/images/slides/slide2-mobile.jpg"
+        },
+        {
+            id: 3,
+            title: "ÉDITIONS LIMITÉES",
+            subtitle: "Pièces rares et collaborations exclusives pour vrais passionnés",
+            ctaText: "VOIR TOUT",
+            ctaLink: '/shop',
+            image: "/images/slides/slide3.jpg",
+            mobileImage: "/images/slides/slide3-mobile.jpg"
+        }
+    ];
+
+    // Auto-play slider
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % slides.length);
+        }, 5000);
+
+        return () => clearInterval(timer);
+    }, [slides.length]);
+
+    const nextSlide = () => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+    };
+
+    const prevSlide = () => {
+        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    };
+
+    const goToSlide = (index) => {
+        setCurrentSlide(index);
+    };
+
     return (
-        <section className="relative w-full min-h-screen bg-black text-white overflow-hidden" style={{ fontFamily: 'Barlow' }}>
-            {/* Background Video or Image */}
-            <div className="absolute inset-0">
-                <img
-                    src="/images/hero-bg-sneakers.jpg"
-                    alt="Hero Background"
-                    className="w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
-            </div>
+        <section className="relative w-full overflow-hidden">
+            {/* Container du slider avec hauteurs responsives */}
+            <div 
+                className="relative h-[680px] w-full"
+                style={{ fontFamily: 'Barlow' }}
+            >
+                {/* Slides */}
+                <div 
+                    className="flex transition-transform duration-700 ease-in-out h-full"
+                    style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                    {slides.map((slide, index) => (
+                        <div
+                            key={slide.id}
+                            className="min-w-full h-full relative flex items-center"
+                        >
+                            {/* Image de fond */}
+                            <div className="absolute inset-0">
+                                <img
+                                    src={slide.image}
+                                    alt={slide.title}
+                                    className="w-full h-full object-cover hidden md:block"
+                                />
+                                <img
+                                    src={slide.mobileImage || slide.image}
+                                    alt={slide.title}
+                                    className="w-full h-full object-cover md:hidden"
+                                />
+                                {/* Overlay sombre léger */}
+                                <div className="absolute inset-0 bg-black/40"></div>
+                            </div>
 
-            {/* Hero Content */}
-            <div className="relative z-10 flex flex-col justify-center min-h-screen px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto w-full">
-                    <div className="text-center">
-                        {/* Badge */}
-                        <div className="inline-flex items-center px-6 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-8">
-                            <SparklesIcon className="w-4 h-4 mr-2" />
-                            <span className="text-sm font-medium tracking-wide">NOUVELLE COLLECTION</span>
+                            {/* Contenu du slide */}
+                            <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
+                                <div className="max-w-7xl mx-auto">
+                                    {/* Desktop: texte à gauche, Mobile: texte centré */}
+                                    <div className="text-center md:text-left max-w-2xl md:max-w-none">
+                                        {/* Titre */}
+                                        <h1 
+                                            className="text-white font-bold leading-tight mb-4"
+                                            style={{ 
+                                                fontSize: '26px',
+                                                '@media (min-width: 768px)': {
+                                                    fontSize: '42px'
+                                                }
+                                            }}
+                                        >
+                                            <span className="text-2xl md:text-5xl font-bold">
+                                                {slide.title}
+                                            </span>
+                                        </h1>
+
+                                        {/* Sous-texte */}
+                                        <p className="text-white/90 text-base md:text-lg mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
+                                            {slide.subtitle}
+                                        </p>
+
+                                        {/* Bouton CTA */}
+                                        <Link
+                                            href={slide.ctaLink}
+                                            className="inline-flex items-center justify-center px-8 py-4 bg-black text-white font-semibold rounded-none hover:bg-gray-800 transition-all duration-300 transform hover:scale-105"
+                                            style={{
+                                                padding: '16px 32px',
+                                                fontSize: '14px',
+                                                letterSpacing: '0.5px'
+                                            }}
+                                        >
+                                            {slide.ctaText}
+                                            <ArrowRightIcon className="w-4 h-4 ml-2" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Main Title */}
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
-                            <span className="block">ELEVATE</span>
-                            <span className="block text-white/60">YOUR STYLE</span>
-                        </h1>
-
-                        {/* Subtitle */}
-                        <p className="text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
-                            Découvrez les sneakers les plus exclusives et authentiques du moment. Design premium, qualité garantie.
-                        </p>
-
-                        {/* CTA Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                            <Link
-                                href="/shop"
-                                className="group relative bg-white text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 min-w-[200px]"
-                            >
-                                SHOP NOW
-                                <ArrowRightIcon className="w-5 h-5 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link
-                                href="/collections"
-                                className="group relative border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-black transition-all duration-300 min-w-[200px]"
-                            >
-                                COLLECTIONS
-                                <EyeIcon className="w-5 h-5 ml-2 inline-block" />
-                            </Link>
-                        </div>
-                    </div>
+                    ))}
                 </div>
-            </div>
 
-            {/* Scroll Indicator */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-                <div className="w-6 h-10 border-2 border-white/50 rounded-full p-1">
-                    <div className="w-1 h-3 bg-white/50 rounded-full animate-pulse"></div>
+                {/* Flèches de navigation */}
+                <button
+                    onClick={prevSlide}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-200 z-20"
+                    aria-label="Slide précédent"
+                >
+                    <ChevronLeftIcon className="w-5 h-5" />
+                </button>
+
+                <button
+                    onClick={nextSlide}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-200 z-20"
+                    aria-label="Slide suivant"
+                >
+                    <ChevronRightIcon className="w-5 h-5" />
+                </button>
+
+                {/* Indicateurs (dots) */}
+                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                    {slides.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => goToSlide(index)}
+                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                currentSlide === index 
+                                    ? 'bg-white' 
+                                    : 'bg-white/50 hover:bg-white/70'
+                            }`}
+                            aria-label={`Aller au slide ${index + 1}`}
+                        />
+                    ))}
                 </div>
             </div>
         </section>
     );
 };
 
-// Stats Section - Premium Numbers
-const StatsSection = () => {
-    const stats = [
-        { value: "50K+", label: "SNEAKERS VENDUES" },
-        { value: "100%", label: "AUTHENTICITÉ GARANTIE" },
-        { value: "24H", label: "LIVRAISON EXPRESS" },
-        { value: "500+", label: "MARQUES PARTENAIRES" }
+// Scrolling Text Section - WeTheNew Style
+const ScrollingTextSection = () => {
+    const scrollingTexts = [
+        { icon: <ShieldCheckIcon className="w-4 h-4" />, text: "SNEAKERS AUTHENTIQUES" },
+        { icon: <TruckIcon className="w-4 h-4" />, text: "LIVRAISON RAPIDE" },
+        { icon: <CreditCardIcon className="w-4 h-4" />, text: "PAIEMENT SÉCURISÉ" },
+        { icon: <StarIcon className="w-4 h-4" />, text: "QUALITÉ PREMIUM" }
     ];
 
     return (
-        <section className="py-20 bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                    {stats.map((stat, index) => (
-                        <div key={index} className="text-center">
-                            <div className="text-4xl md:text-5xl font-bold text-black mb-2" style={{ fontFamily: 'Barlow' }}>
-                                {stat.value}
+        <section className="w-full h-[60px] bg-white border-y border-gray-100 overflow-hidden">
+            <div className="flex items-center h-full animate-scroll">
+                {/* Dupliquer le contenu pour un défilement infini */}
+                {[...Array(3)].map((_, groupIndex) => (
+                    <div key={groupIndex} className="flex items-center whitespace-nowrap">
+                        {scrollingTexts.map((item, index) => (
+                            <div 
+                                key={`${groupIndex}-${index}`} 
+                                className="flex items-center mx-8 text-black"
+                                style={{ fontFamily: 'Barlow' }}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <span className="text-gray-600">{item.icon}</span>
+                                    <span className="text-[16px] font-medium tracking-wide uppercase">
+                                        {item.text}
+                                    </span>
+                                </div>
+                                <span className="mx-4 text-gray-300">–</span>
                             </div>
-                            <div className="text-sm text-gray-600 font-medium tracking-wide">
-                                {stat.label}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ))}
             </div>
         </section>
     );
@@ -158,219 +268,63 @@ const FeaturesSection = () => {
     );
 };
 
-// Modern Premium Product Card - WeTheNew Inspired
-const PremiumProductCard = ({ product }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-    const productUrl = product?.slug ? `/products/${product.slug}` : `/products/${product?.id || '#'}`;
-
-    return (
-        <div 
-            className="group relative bg-white rounded-lg overflow-hidden transition-all duration-500 hover:shadow-2xl"
-            style={{ fontFamily: 'Barlow' }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            {/* Image Container */}
-            <div className="relative aspect-square bg-gray-50 overflow-hidden">
-                {/* Badges */}
-                <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
-                    {product?.is_new && (
-                        <span className="bg-black text-white text-xs px-3 py-1 rounded-full font-medium">
-                            NEW
-                        </span>
-                    )}
-                    {product?.current_sale_price && product?.price && product.price > product.current_sale_price && (
-                        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium">
-                            SALE
-                        </span>
-                    )}
-                    {product?.is_limited && (
-                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-medium">
-                            LIMITED
-                        </span>
-                    )}
-                </div>
-
-                {/* Wishlist Button */}
-                <div className="absolute top-3 right-3 z-20">
-                    <WishlistButton 
-                        product={product}
-                        className="bg-white/90 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-md transition-all"
-                    />
-                </div>
-
-                {/* Product Image */}
-                <Link href={productUrl}>
-                    <img
-                        src={product?.image || '/images/placeholder.jpg'}
-                        alt={product?.name || 'Produit'}
-                        className={`w-full h-full object-cover transition-all duration-700 ${
-                            isHovered ? 'scale-110' : 'scale-100'
-                        } ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        onLoad={() => setIsLoaded(true)}
-                    />
-                </Link>
-
-                {/* Quick View Overlay */}
-                <div className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="absolute bottom-4 left-4 right-4">
-                        <Link
-                            href={productUrl}
-                            className="w-full bg-white text-black py-3 px-6 rounded-full text-center font-semibold transition-all duration-300 hover:bg-gray-100 block"
-                        >
-                            VOIR LE PRODUIT
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-6">
-                {/* Brand */}
-                {product?.brand && (
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">
-                        {typeof product.brand === 'string' ? product.brand : product.brand?.name || ''}
-                    </p>
-                )}
-
-                {/* Product Name */}
-                <Link href={productUrl}>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight hover:text-gray-700 transition-colors">
-                        {product?.name || 'Nom du produit'}
-                    </h3>
-                </Link>
-
-                {/* Ratings */}
-                {product?.rating && (
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                                <StarIcon
-                                    key={i}
-                                    className={`w-4 h-4 ${
-                                        i < Math.floor(typeof product.rating === 'number' ? product.rating : parseFloat(product.rating) || 0)
-                                            ? 'text-yellow-400 fill-current'
-                                            : 'text-gray-300'
-                                    }`}
-                                />
-                            ))}
-                        </div>
-                        <span className="text-sm text-gray-600">
-                            ({product.reviews_count || 0})
-                        </span>
-                    </div>
-                )}
-
-                {/* Price */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {product?.current_sale_price && product?.price && product.price > product.current_sale_price ? (
-                            <>
-                                <span className="text-xl font-bold text-black">
-                                    {formatCurrency(product.current_sale_price)}
-                                </span>
-                                <span className="text-sm text-gray-400 line-through">
-                                    {formatCurrency(product.price)}
-                                </span>
-                            </>
-                        ) : (
-                            <span className="text-xl font-bold text-black">
-                                {formatCurrency(product?.price || 0)}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Hero Product Showcase - Featured Drop
-const HeroProductShowcase = ({ product }) => {
-    if (!product) return null;
-
-    return (
-        <section className="py-20 bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    {/* Product Image */}
-                    <div className="relative">
-                        <div className="aspect-square bg-white/5 rounded-3xl overflow-hidden backdrop-blur-sm">
-                            <img
-                                src={product.image || '/images/placeholder.jpg'}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                        {/* Decorative Elements */}
-                        <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full opacity-20 blur-xl"></div>
-                        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full opacity-15 blur-xl"></div>
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="space-y-8">
-                        {/* Badge */}
-                        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
-                            <FireIcon className="w-4 h-4 mr-2" />
-                            <span className="text-sm font-semibold">FEATURED DROP</span>
-                        </div>
-
-                        {/* Title */}
-                        <h2 className="text-4xl lg:text-6xl font-bold leading-tight" style={{ fontFamily: 'Barlow' }}>
-                            {product.name}
-                        </h2>
-
-                        {/* Description */}
-                        <p className="text-xl text-gray-300 leading-relaxed">
-                            {product.description || "Découvrez cette pièce exceptionnelle qui allie style, performance et authenticité. Une création unique pour les passionnés."}
-                        </p>
-
-                        {/* Price */}
-                        <div className="text-3xl font-bold">
-                            {product.current_sale_price && product.price > product.current_sale_price ? (
-                                <span className="text-yellow-400">{formatCurrency(product.current_sale_price)}</span>
-                            ) : (
-                                <span>{formatCurrency(product.price)}</span>
-                            )}
-                        </div>
-
-                        {/* CTA */}
-                        <div className="flex gap-4">
-                            <Link
-                                href={`/products/${product.slug || product.id}`}
-                                className="bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center"
-                            >
-                                SHOP NOW
-                                <ArrowRightIcon className="w-5 h-5 ml-2" />
-                            </Link>
-                            <button className="border border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-black transition-all duration-300">
-                                EN SAVOIR PLUS
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-};
-
-// Modern Product Slider - WeTheNew Style
-const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
+// Sneaker Brands Slider Section - WeTheNew Style
+const SneakerBrandsSlider = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [isVisible, setIsVisible] = useState(false);
+    
+    const brands = [
+        {
+            id: 1,
+            name: "AIR JORDAN",
+            slug: "air-jordan",
+            image: "/images/brands/air-jordan.jpg"
+        },
+        {
+            id: 2,
+            name: "NIKE",
+            slug: "nike", 
+            image: "/images/brands/nike.jpg"
+        },
+        {
+            id: 3,
+            name: "ADIDAS",
+            slug: "adidas",
+            image: "/images/brands/adidas.webp"
+        },
+        {
+            id: 4,
+            name: "NEW BALANCE",
+            slug: "new-balance",
+            image: "/images/brands/new-balance.jpg"
+        },
+        {
+            id: 5,
+            name: "PUMA",
+            slug: "puma",
+            image: "/images/brands/puma.webp"
+        },
+        {
+            id: 6,
+            name: "ASICS",
+            slug: "asics",
+            image: "/images/brands/asics.webp"
+        },
+        {
+            id: 7,
+            name: "REEBOK",
+            slug: "reebok",
+            image: "/images/brands/reebok.webp"
+        },
+        {
+            id: 8,
+            name: "CONVERSE",
+            slug: "converse",
+            image: "/images/brands/converse.webp"
+        }
+    ];
 
-    useEffect(() => {
-        setIsVisible(true);
-    }, []);
-
-    const itemsPerView = {
-        mobile: 1.2,
-        tablet: 2.5,
-        desktop: 4
-    };
-
-    const maxIndex = Math.max(0, products.length - Math.floor(itemsPerView.desktop));
+    const itemsPerView = { desktop: 4, tablet: 2, mobile: 1 };
+    const maxIndex = Math.max(0, brands.length - itemsPerView.desktop);
 
     const nextSlide = () => {
         setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
@@ -380,35 +334,32 @@ const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
         setCurrentIndex(prev => Math.max(prev - 1, 0));
     };
 
-    if (!products.length) return null;
-
     return (
-        <section className={`py-16 md:py-24 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <section className="py-[30px] md:py-[60px] bg-white" style={{ fontFamily: 'Barlow' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-12">
-                    <div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-black font-['Barlow'] mb-2">
-                            {title}
+                {/* Header avec titre et flèches */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-2xl md:text-3xl font-bold text-black">
+                            SNEAKERS
                         </h2>
-                        <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
                     </div>
 
-                    {/* Navigation */}
-                    <div className="hidden md:flex items-center space-x-3">
+                    {/* Navigation Arrows */}
+                    <div className="flex items-center space-x-2">
                         <button
                             onClick={prevSlide}
                             disabled={currentIndex === 0}
-                            className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center group"
+                            className="p-2 rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronLeftIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            <ChevronLeftIcon className="w-4 h-4" />
                         </button>
                         <button
                             onClick={nextSlide}
                             disabled={currentIndex >= maxIndex}
-                            className="w-12 h-12 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center group"
+                            className="p-2 rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronRightIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            <ChevronRightIcon className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -416,128 +367,71 @@ const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
                 {/* Slider Container */}
                 <div className="relative overflow-hidden">
                     <div 
-                        className="flex transition-transform duration-500 ease-out gap-6"
+                        className="flex transition-transform duration-300 ease-in-out space-x-6"
                         style={{ 
                             transform: `translateX(-${currentIndex * (100 / itemsPerView.desktop)}%)`
                         }}
                     >
-                        {products.map((product, index) => (
+                        {brands.map((brand) => (
                             <div
-                                key={product?.id || Math.random()}
-                                className="flex-none w-[calc(83.33%-12px)] md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]"
+                                key={brand.id}
+                                className="flex-none w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
                             >
-                                <PremiumProductCard product={product} />
+                                <Link
+                                    href={`/brand/${brand.slug}`}
+                                    className="block relative"
+                                >
+                                    {/* Brand Image Container - Format rectangulaire WeTheNew */}
+                                    <div 
+                                        className="relative w-full"
+                                        style={{ aspectRatio: '286/400' }}
+                                    >
+                                        <img
+                                            src={brand.image}
+                                            alt={brand.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        
+                                        {/* Brand Name - Centré en bas */}
+                                        <div className="bottom-0 p-4">
+                                            <div className="text-center">
+                                                <h3 
+                                                    className="text-black font-bold tracking-wide"
+                                                    style={{ 
+                                                        fontSize: '21px'
+                                                    }}
+                                                >
+                                                    {brand.name}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Mobile Navigation */}
-                <div className="flex md:hidden items-center justify-center mt-8 space-x-4">
-                    <button
-                        onClick={prevSlide}
-                        disabled={currentIndex === 0}
-                        className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center"
-                    >
-                        <ChevronLeftIcon className="w-4 h-4" />
-                    </button>
-                    <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.ceil(products.length / itemsPerView.mobile) }).map((_, index) => (
-                            <div
-                                key={index}
-                                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                                    index === Math.floor(currentIndex / itemsPerView.mobile)
-                                        ? 'bg-black w-6'
-                                        : 'bg-gray-300'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                    <button
-                        onClick={nextSlide}
-                        disabled={currentIndex >= maxIndex}
-                        className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center"
-                    >
-                        <ChevronRightIcon className="w-4 h-4" />
-                    </button>
+                {/* Mobile Navigation Dots */}
+                <div className="flex md:hidden items-center justify-center mt-8 space-x-1">
+                    {Array.from({ length: Math.ceil(brands.length / itemsPerView.mobile) }).map((_, index) => (
+                        <div
+                            key={index}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                index === Math.floor(currentIndex / itemsPerView.mobile)
+                                    ? 'bg-black w-6'
+                                    : 'bg-gray-300'
+                            }`}
+                        />
+                    ))}
                 </div>
             </div>
         </section>
     );
 };
 
-// Product Grid Section - Inspiration WeTheNew
+// Product Grid Section - Utilise ModernProductCard
 const ProductGrid = ({ products = [] }) => {
-    // Clean Product Card sans hover effects
-    const CleanProductCard = ({ product }) => {
-        const productUrl = product?.slug ? `/products/${product.slug}` : `/products/${product?.id || '#'}`;
-        
-        return (
-            <Link href={productUrl} className="block">
-                <div className="bg-white">
-                    {/* Image Container */}
-                    <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
-                        {/* Badge si nécessaire */}
-                        {product?.is_new && (
-                            <div className="absolute top-3 left-3 z-10">
-                                <span className="bg-black text-white text-xs px-2 py-1 rounded-md font-medium">
-                                    NOUVEAU
-                                </span>
-                            </div>
-                        )}
-                        {product?.current_sale_price && product?.price && product.price > product.current_sale_price && (
-                            <div className="absolute top-3 right-3 z-10">
-                                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-md font-medium">
-                                    PROMO
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Image centrée - aucun effet hover */}
-                        <img
-                            src={product?.image || '/images/placeholder.jpg'}
-                            alt={product?.name || 'Produit'}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-
-                    {/* Informations produit */}
-                    <div className="space-y-2">
-                        {/* Nom produit - 15px */}
-                        <h3 className="text-[15px] font-medium text-gray-900 line-clamp-2">
-                            {product?.name || 'Nom du produit'}
-                        </h3>
-                        
-                        {/* Catégorie */}
-                        {product?.category?.name && (
-                            <p className="text-xs text-gray-500 uppercase tracking-wider">
-                                {typeof product.category.name === 'string' ? product.category.name : String(product.category.name)}
-                            </p>
-                        )}
-
-                        {/* Prix - 14px */}
-                        <div className="flex items-center space-x-2">
-                            {product?.current_sale_price && product?.price && product.price > product.current_sale_price ? (
-                                <>
-                                    <span className="text-[14px] font-bold text-black">
-                                        {formatCurrency(product.current_sale_price)}
-                                    </span>
-                                    <span className="text-[12px] text-gray-400 line-through">
-                                        {formatCurrency(product.price)}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="text-[14px] font-bold text-black">
-                                    {formatCurrency(product?.price || 0)}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </Link>
-        );
-    };
-
     if (!products.length) return null;
 
     return (
@@ -556,7 +450,7 @@ const ProductGrid = ({ products = [] }) => {
                 {/* Products Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
                     {products.slice(0, 12).map((product) => (
-                        <CleanProductCard key={product?.id || Math.random()} product={product} />
+                        <ModernProductCard key={product?.id || Math.random()} product={product} />
                     ))}
                 </div>
             </div>
@@ -564,7 +458,7 @@ const ProductGrid = ({ products = [] }) => {
     );
 };
 
-// Featured Products Section
+// Featured Products Section - Utilise ModernProductCard
 const FeaturedProductsSection = ({ products = [] }) => {
     return (
         <section className="py-20 bg-white">
@@ -577,8 +471,8 @@ const FeaturedProductsSection = ({ products = [] }) => {
                             MUST HAVE
                         </div>
                         <h2 className="text-4xl md:text-5xl font-bold text-black">
-                            FEATURED
-                            <span className="block text-gray-400">PRODUCTS</span>
+                            PRODUITS
+                            <span className="block text-gray-400">PHARES</span>
                         </h2>
                     </div>
                     <Link 
@@ -593,7 +487,7 @@ const FeaturedProductsSection = ({ products = [] }) => {
                 {/* Products Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {products.slice(0, 8).map((product) => (
-                        <PremiumProductCard key={product?.id || Math.random()} product={product} />
+                        <ModernProductCard key={product?.id || Math.random()} product={product} />
                     ))}
                 </div>
             </div>
@@ -601,58 +495,46 @@ const FeaturedProductsSection = ({ products = [] }) => {
     );
 };
 
-// Categories Grid - Premium Style
-const CategoriesGrid = ({ categories = [] }) => {
+// Categories Section
+const CategoriesSection = ({ categories = [] }) => {
     return (
-        <section className="py-16 md:py-24 bg-black text-white">
+        <section className="py-20 bg-black text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-6xl font-bold mb-6 font-['Barlow']">
-                        EXPLORE
-                        <span className="block text-gray-400">CATEGORIES</span>
+                    <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                        SHOP BY
+                        <span className="block text-orange-400">CATEGORY</span>
                     </h2>
-                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                        Découvrez nos collections soigneusement sélectionnées pour chaque style et passion.
+                    <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                        Explorez nos collections exclusives
                     </p>
                 </div>
 
                 {/* Categories Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {categories.slice(0, 6).map((category, index) => (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {categories.slice(0, 4).map((category, index) => (
                         <Link
-                            key={category?.id || index}
-                            href={`/category/${category?.slug || category?.id}`}
-                            className="group relative aspect-[4/5] bg-gray-900 rounded-3xl overflow-hidden"
+                            key={category.id}
+                            href={`/category/${category.slug || category.id}`}
+                            className="group relative aspect-square bg-gray-900 rounded-2xl overflow-hidden"
                         >
-                            {/* Image */}
                             <img
                                 src={category.image || '/images/category-placeholder.jpg'}
                                 alt={category.name}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             />
-                            
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/60 transition-colors duration-500" />
-                            
-                            {/* Content */}
-                            <div className="absolute inset-0 flex flex-col justify-end p-8">
-                                <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                    <h3 className="text-2xl font-bold text-white mb-2 font-['Barlow']">
-                                        {category?.name || 'Catégorie'}
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
+                            <div className="absolute inset-0 flex items-end p-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">
+                                        {category.name}
                                     </h3>
-                                    <p className="text-gray-300 text-sm mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                                        {category?.description || 'Découvrez notre sélection'}
-                                    </p>
-                                    <div className="flex items-center text-white font-medium">
-                                        <span className="mr-2">Explorer</span>
-                                        <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                    </div>
+                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                                        Découvrir →
+                                    </span>
                                 </div>
                             </div>
-
-                            {/* Hover Effect Border */}
-                            <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/20 rounded-3xl transition-colors duration-500"></div>
                         </Link>
                     ))}
                 </div>
@@ -661,73 +543,34 @@ const CategoriesGrid = ({ categories = [] }) => {
     );
 };
 
-// Newsletter Section - Modern Design
-const ModernNewsletterSection = () => {
-    const [email, setEmail] = useState('');
-    const [isSubscribed, setIsSubscribed] = useState(false);
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Handle newsletter subscription
-        setIsSubscribed(true);
-        setEmail('');
-        setTimeout(() => setIsSubscribed(false), 3000);
-    };
-
+// Newsletter Section
+const NewsletterSection = () => {
     return (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white">
+        <section className="py-20 bg-white">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="w-full h-full" style={{
-                        backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                        backgroundSize: '50px 50px'
-                    }}></div>
-                </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-black mb-6">
+                    RESTEZ
+                    <span className="block text-orange-400 uppercase">Informé(e)</span>
+                </h2>
+                <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Soyez les premiers informés des nouveautés, des drops exclusifs et des offres spéciales
+                </p>
 
-                <div className="relative z-10">
-                    {/* Header */}
-                    <div className="mb-12">
-                        <h2 className="text-4xl md:text-6xl font-bold mb-6 font-['Barlow']">
-                            STAY IN
-                            <span className="block bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                THE LOOP
-                            </span>
-                        </h2>
-                        <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
-                            Soyez les premiers informés des drops exclusifs, des offres spéciales et des dernières tendances sneakers.
-                        </p>
+                {/* Newsletter Form */}
+                <div className="max-w-md mx-auto">
+                    <div className="flex">
+                        <input
+                            type="email"
+                            placeholder="Votre email"
+                            className="flex-1 px-6 py-4 border-2 border-black rounded-l-full focus:outline-none focus:border-orange-400"
+                        />
+                        <button className="px-8 py-4 bg-black text-white font-bold rounded-r-full hover:bg-gray-800 transition-colors">
+                            S'INSCRIRE
+                        </button>
                     </div>
-
-                    {/* Newsletter Form */}
-                    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-                        <div className="relative">
-                            <input
-                                type="email"
-                                placeholder="Votre email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-white/40 transition-all duration-300"
-                                required
-                            />
-                            <button 
-                                type="submit"
-                                className="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-full hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105"
-                            >
-                                {isSubscribed ? '✓' : 'JOIN'}
-                            </button>
-                        </div>
-                        <p className="text-sm text-gray-400 mt-4">
-                            En vous inscrivant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
-                        </p>
-                    </form>
-
-                    {/* Success Message */}
-                    {isSubscribed && (
-                        <div className="mt-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg">
-                            <p className="text-green-300">Merci ! Vous êtes maintenant abonné à notre newsletter.</p>
-                        </div>
-                    )}
+                    <p className="text-sm text-gray-500 mt-4">
+                        En vous inscrivant, vous acceptez nos conditions d'utilisation
+                    </p>
                 </div>
             </div>
         </section>
@@ -746,43 +589,70 @@ function HomeContent({
     featuredCategoryProducts = [],
     galleryItems = [],
 }) {
-    // Featured product for hero showcase
-    const heroProduct = featuredProducts?.[0] || null;
+    // Fonction pour filtrer les produits en solde (basée sur la structure de la base de données)
+    const filterSaleProducts = (products) => 
+        products.filter(product => {
+            const currentPrice = parseFloat(product?.current_sale_price || 0);
+            const previousPrice = parseFloat(product?.previous_sale_price || 0);
+            const hasDiscount = product?.discount && parseFloat(product.discount) > 0;
+            
+            // Produit en solde si :
+            // - previous_sale_price existe et est supérieur au current_sale_price
+            // - OU il y a une remise appliquée
+            return (previousPrice > 0 && currentPrice > 0 && previousPrice > currentPrice) || hasDiscount;
+        });
 
     return (
         <>
-            {/* Modern Hero Section */}
-            <ModernHeroSection />
+            {/* Hero Slider */}
+            <HeroSlider />
 
-            {/* Stats Section */}
-            <StatsSection />
+            {/* Scrolling Text Section */}
+            <ScrollingTextSection />
 
-            {/* Hero Product Showcase */}
-            {heroProduct && <HeroProductShowcase product={heroProduct} />}
+            {/* Nouveautés Slider */}
+            <ProductSlider 
+                title="NOUVEAUTÉS"
+                icon={<SparklesIcon />}
+                products={newProducts}
+                backgroundColor="bg-white"
+                filterType="new"
+            />
+
+            {/* En Solde Slider */}
+            <ProductSlider 
+                title="EN SOLDE"
+                icon={<TagIcon className="text-black" />}
+                products={featuredProducts}
+                backgroundColor="bg-white"
+                filterType="sale"
+            />
+
+            {/* Featured Products */}
+            <FeaturedProductsSection products={featuredProducts} />
+
+            {/* Sneaker Brands Slider */}
+            <SneakerBrandsSlider />
 
             {/* Features Section */}
             <FeaturesSection />
 
-            {/* Trending Products Slider */}
-            <ModernProductSlider 
-                title="TRENDING NOW" 
-                products={featuredProducts} 
+            {/* Tendances Slider */}
+            <ProductSlider 
+                title="TENDANCES"
+                products={featuredProducts}
+                backgroundColor="bg-white"
+                filterType="trending"
             />
 
-            {/* New Arrivals Grid */}
+            {/* Product Grid */}
             <ProductGrid products={newProducts} />
 
-            {/* Categories Grid */}
-            <CategoriesGrid categories={categories} />
-
-            {/* Best Sellers Slider */}
-            <ModernProductSlider 
-                title="BEST SELLERS" 
-                products={newProducts.slice(0, 8)} 
-            />
+            {/* Categories */}
+            <CategoriesSection categories={categories} />
 
             {/* Newsletter */}
-            <ModernNewsletterSection />
+            <NewsletterSection />
         </>
     );
 }

@@ -72,18 +72,15 @@ const WishlistButton = ({ product, className = "", size = "default" }) => {
             disabled={isLoading}
             className={`
                 ${currentSize.button}
-                bg-white/90 backdrop-blur-sm rounded-full 
-                border border-gray-200 shadow-sm
-                hover:bg-white hover:shadow-md
+                bg-white/0
                 transition-all duration-200 group
                 ${isLoading ? 'opacity-50 cursor-not-allowed animate-pulse' : ''}
-                ${isInWishlist ? 'animate-pulse-glow' : ''}
                 ${className}
             `}
             title={
                 !auth.user 
                     ? "Connectez-vous pour ajouter à votre wishlist"
-                    : isInWishlist 
+                    : inWishlist 
                         ? "Retirer de la wishlist" 
                         : "Ajouter à la wishlist"
             }
@@ -108,6 +105,7 @@ const WishlistButton = ({ product, className = "", size = "default" }) => {
                         group-hover:text-red-500 
                         group-hover:scale-110
                         transition-all duration-200
+                        ${inWishlist ? 'group-hover:text-red-500' : ''}
                     `} 
                 />
             )}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Affichage des Prix Produits</title>
+    <style>
+        body {
+            font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .price-example {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .current-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #dc2626;
+        }
+        .original-price {
+            font-size: 14px;
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+        .normal-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        .badge {
+            background: #dc2626;
+            color: white;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Système de Prix des Produits</h1>
+    
+    <div class="test-section">
+        <h2>📊 Structure de la Base de Données</h2>
+        <p>Champs utilisés dans la table <strong>products</strong> :</p>
+        <div class="code-block">
+• current_sale_price : Prix de vente actuel
+• previous_sale_price : Prix précédent (pour calcul des soldes)
+• discount : Montant de remise (fixe ou pourcentage)
+• discount_type : Type de remise (0 = fixe, 1 = pourcentage)
+• is_new, is_popular, is_trending : Badges produits
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🏷️ Exemples d'Affichage des Prix</h2>
+        
+        <h3>Cas 1: Produit en solde (previous_sale_price > current_sale_price)</h3>
+        <div class="price-example">
+            <span class="badge">EN SOLDE</span>
+            <span class="current-price">89,99 €</span>
+            <span class="original-price">129,99 €</span>
+        </div>
+        <div class="code-block">
+current_sale_price: 89.99
+previous_sale_price: 129.99
+→ Affiche: Prix soldé (rouge) + Prix barré
+        </div>
+
+        <h3>Cas 2: Produit avec remise pourcentage</h3>
+        <div class="price-example">
+            <span class="badge">EN SOLDE</span>
+            <span class="current-price">67,99 €</span>
+            <span class="original-price">79,99 €</span>
+        </div>
+        <div class="code-block">
+current_sale_price: 79.99
+discount: 15
+discount_type: 1 (pourcentage)
+→ Prix final: 79.99 - (79.99 * 15/100) = 67,99 €
+        </div>
+
+        <h3>Cas 3: Produit avec remise fixe</h3>
+        <div class="price-example">
+            <span class="badge">EN SOLDE</span>
+            <span class="current-price">69,99 €</span>
+            <span class="original-price">79,99 €</span>
+        </div>
+        <div class="code-block">
+current_sale_price: 79.99
+discount: 10
+discount_type: 0 (fixe)
+→ Prix final: 79.99 - 10 = 69,99 €
+        </div>
+
+        <h3>Cas 4: Produit normal (sans solde)</h3>
+        <div class="price-example">
+            <span class="normal-price">99,99 €</span>
+        </div>
+        <div class="code-block">
+current_sale_price: 99.99
+previous_sale_price: null ou 0
+discount: null ou 0
+→ Affiche: Prix normal (noir)
+        </div>
+
+        <h3>Cas 5: Plage de prix (variantes)</h3>
+        <div class="price-example">
+            <span class="normal-price">89,99 € - 149,99 €</span>
+        </div>
+        <div class="code-block">
+price_range: { min: 89.99, max: 149.99 }
+→ Affiche: Plage de prix
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Composants Modifiés</h2>
+        <ul>
+            <li><strong>ModernProductCard.jsx</strong> : Logique d'affichage des prix mise à jour</li>
+            <li><strong>ProductSlider.jsx</strong> : Filtrage des produits en solde corrigé</li>
+            <li><strong>Home.jsx</strong> : Utilisation des nouveaux filtres (filterType)</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Filtres Disponibles</h2>
+        <div class="code-block">
+filterType="sale"     → Produits en solde
+filterType="new"      → Nouveaux produits (is_new = 1)  
+filterType="popular"  → Produits populaires (is_popular = 1)
+filterType="trending" → Produits tendances (is_trending = 1)
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Badges Disponibles</h2>
+        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+            <span class="badge" style="background: #dc2626;">EN SOLDE</span>
+            <span class="badge" style="background: #f97316;">SUR COMMANDE</span>
+            <span class="badge" style="background: #059669;">⚡ 24H</span>
+            <span class="badge" style="background: #000;">NOUVEAU</span>
+            <span class="badge" style="background: #7c3aed;">POPULAIRE</span>
+            <span class="badge" style="background: #2563eb;">TRENDING</span>
+        </div>
+    </div>
+
+</body>
+</html>
