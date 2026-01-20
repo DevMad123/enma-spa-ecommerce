@@ -15,6 +15,7 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Barlow', ...defaultTheme.fontFamily.sans],
+                barlow: ['Barlow', 'sans-serif'],
             },
             colors: {
                 primary: 'rgb(var(--theme-color) / <alpha-value>)',

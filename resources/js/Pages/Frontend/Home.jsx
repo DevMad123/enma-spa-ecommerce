@@ -192,7 +192,7 @@ const HeroSlider = () => {
     );
 };
 
-// Scrolling Text Section - WeTheNew Style
+// Scrolling Text Section
 const ScrollingTextSection = () => {
     const scrollingTexts = [
         { icon: <ShieldCheckIcon className="w-4 h-4" />, text: "SNEAKERS AUTHENTIQUES" },
@@ -268,7 +268,7 @@ const FeaturesSection = () => {
     );
 };
 
-// Sneaker Brands Slider Section - WeTheNew Style
+// Sneaker Brands Slider Section
 const SneakerBrandsSlider = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     
@@ -381,7 +381,7 @@ const SneakerBrandsSlider = () => {
                                     href={`/brand/${brand.slug}`}
                                     className="block relative"
                                 >
-                                    {/* Brand Image Container - Format rectangulaire WeTheNew */}
+                                    {/* Brand Image Container - Format rectangulaire */}
                                     <div 
                                         className="relative w-full"
                                         style={{ aspectRatio: '286/400' }}

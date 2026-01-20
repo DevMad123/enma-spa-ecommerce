@@ -24,7 +24,7 @@ import { formatCurrency } from '@/Utils/LocaleUtils';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
 
-// Modern Hero Section - WeTheNew Style
+// Modern Hero Section
 const ModernHeroSection = () => {
     return (
         <section className="relative w-full min-h-screen bg-black text-white overflow-hidden" style={{ fontFamily: 'Barlow' }}>
@@ -158,7 +158,7 @@ const FeaturesSection = () => {
     );
 };
 
-// Modern Premium Product Card - WeTheNew Inspired
+// Modern Premium Product Card
 const PremiumProductCard = ({ product }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -355,7 +355,7 @@ const HeroProductShowcase = ({ product }) => {
     );
 };
 
-// Modern Product Slider - WeTheNew Style
+// Modern Product Slider
 const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
@@ -466,7 +466,7 @@ const ModernProductSlider = ({ title = "TENDANCES", products = [] }) => {
     );
 };
 
-// Product Grid Section - Inspiration WeTheNew
+// Product Grid Section
 const ProductGrid = ({ products = [] }) => {
     // Clean Product Card sans hover effects
     const CleanProductCard = ({ product }) => {

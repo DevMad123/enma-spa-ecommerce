@@ -1,7 +1,7 @@
 # Refonte UI Premium - Header et Composants
 
 ## 🎯 Objectif
-Refonte complète du header et des composants produits pour créer une expérience e-commerce moderne, premium et orientée conversion, inspirée des meilleurs sites sneakers (Nike, Wethenew, StockX).
+Refonte complète du header et des composants produits pour créer une expérience e-commerce moderne, premium et orientée conversion, inspirée des meilleurs sites sneakers.
 
 ## 🛠 Modifications apportées
 
@@ -17,7 +17,7 @@ Refonte complète du header et des composants produits pour créer une expérien
 - **Responsive:** Mobile first avec drawer menu
 
 ### 2. MegaMenu Moderne (MegaMenu.jsx)
-✅ **Design inspiré d'Afriksneakers et sites premium:**
+✅ **Design inspiré de sites premium:**
 - **Layout 2 colonnes:** Catégories à gauche + Sous-catégories à droite
 - **Interactivité:** Hover sur catégorie met à jour les sous-catégories
 - **Contenu riche:** 
