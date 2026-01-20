@@ -81,7 +81,7 @@ const AfrikSneakersImageGallery = ({ images, productName, productImage }) => {
 };
 
 // Sélecteur de tailles style AfrikSneakers
-const AfrikSneakersSizeSelector = ({ sizes, selectedSize, onSizeChange, isSizeEnabled }) => {
+const SizeSelector = ({ sizes, selectedSize, onSizeChange, isSizeEnabled }) => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900 font-barlow">
@@ -555,7 +555,8 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
 
               {/* 4. SÉLECTEUR DE POINTURE */}
               {Array.isArray(product.sizes) && product.sizes.length > 0 && (
-                <AfrikSneakersSizeSelector
+                console.log('Rendering SizeSelector with sizes:', product.sizes),
+                <SizeSelector
                   sizes={product.sizes}
                   selectedSize={selectedSize}
                   onSizeChange={setSelectedSize}
