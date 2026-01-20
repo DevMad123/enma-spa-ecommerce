@@ -91,185 +91,25 @@ const MegaMenu_old = ({ isOpen, type, categories = [] }) => {
 
     return (
         <div 
-            className="absolute top-full transform -translate-x-1/2 bg-white z-50 transition-all duration-300 ease-out shadow-xl border border-gray-100"
+            className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white z-50 transition-all duration-300 ease-out shadow-xl border border-gray-100"
             style={{
                 width: '90vw',
                 maxWidth: '1200px',
                 minWidth: '800px',
                 padding: '40px',
-                left: '-400px',
             }}
         >
-            <div className="w-full">
-                <div className="flex gap-8">
-                    {/* COLONNE GAUCHE - CATEGORIES (30%) */}
-                    <div className="w-80 flex-shrink-0 pr-8">
-                        <div className="space-y-2">
-                            {brands.map((brand) => (
-                                <button
-                                    key={brand.id}
-                                    onMouseEnter={() => handleCategoryHover(brand)}
-                                    className={`w-full text-left px-4 py-3 transition-all duration-200 ${
-                                        activeCategory === brand.id
-                                            ? 'bg-gray-50 text-black font-semibold'
-                                            : 'text-gray-700 hover:bg-gray-50 hover:text-black hover:font-semibold'
-                                    }`}
-                                    style={{
-                                        fontSize: '15px',
-                                        backgroundColor: activeCategory === brand.id ? '#f7f7f7' : 'transparent',
-                                        fontWeight: activeCategory === brand.id ? 600 : 400
-                                    }}
-                                >
-                                    {brand.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Lien voir tout */}
-                        <div className="mt-8 pt-6 border-t border-gray-100">
-                            <Link
-                                href={route('frontend.shop.index', { category: type })}
-                                className="inline-flex items-center text-black hover:text-gray-600 transition-colors duration-200"
-                                style={{ fontSize: '14px', fontWeight: 500 }}
-                            >
-                                Voir tout →
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* COLONNE DROITE - SOUS-CATEGORIES (Reste de l'espace) */}
-                    <div className="flex-1 pl-8 border-l border-gray-100 min-w-0">
-                        <div className="mb-6">
-                            <h4 
-                                className="text-black font-semibold mb-6"
-                                style={{ fontSize: '16px', fontWeight: 600 }}
-                            >
-                                {brands.find(b => b.id === activeCategory)?.name || 'Collection'}
-                            </h4>
-                            
-                            <div className="grid grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-4">
-                                {subcategories.map((subcategory, index) => (
-                                    <Link
-                                        key={index}
-                                        href={route('frontend.shop.index', { 
-                                            search: subcategory,
-                                            category: type 
-                                        })}
-                                        className="text-gray-700 hover:text-black transition-colors duration-200 py-2 truncate"
-                                        style={{ fontSize: '14px', fontWeight: 400 }}
-                                        title={subcategory}
-                                    >
-                                        {subcategory}
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Section tendances */}
-                        <div className="mt-8 pt-6 border-t border-gray-100">
-                            <h5 
-                                className="text-black font-semibold mb-4"
-                                style={{ fontSize: '14px', fontWeight: 600 }}
-                            >
-                                🔥 Tendances
-                            </h5>
-                            <div className="grid grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-3">
-                                {type === 'sneakers' ? (
-                                    <>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Jordan 1' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Jordan 1 Retro"
-                                        >
-                                            Jordan 1 Retro
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Dunk Low' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Nike Dunk Low"
-                                        >
-                                            Nike Dunk Low
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'New Balance 550' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="New Balance 550"
-                                        >
-                                            New Balance 550
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Yeezy 350' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Yeezy 350 V2"
-                                        >
-                                            Yeezy 350 V2
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Supreme Box Logo' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Supreme Box Logo"
-                                        >
-                                            Supreme Box Logo
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Off-White Hoodie' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Off-White Hoodies"
-                                        >
-                                            Off-White Hoodies
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Fear of God Essentials' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="FOG Essentials"
-                                        >
-                                            FOG Essentials
-                                        </Link>
-                                        <Link 
-                                            href={route('frontend.shop.index', { search: 'Palm Angels' })}
-                                            className="text-gray-600 hover:text-black transition-colors duration-200 truncate"
-                                            style={{ fontSize: '13px' }}
-                                            title="Palm Angels Track"
-                                        >
-                                            Palm Angels Track
-                                        </Link>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Call to action */}
-                        <div className="mt-8 pt-6 border-t border-gray-100">
-                            <Link
-                                href={route('frontend.shop.index', { category: type })}
-                                className="inline-flex items-center justify-center px-6 py-3 bg-black text-white hover:bg-gray-800 transition-colors duration-200"
-                                style={{ fontSize: '14px', fontWeight: 500 }}
-                            >
-                                Explorer toute la collection →
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Ancien contenu ici... */}
+            <div>Ancien MegaMenu</div>
         </div>
     );
 };
 
-// NOUVEAU MEGAMENU PHENOMENAL
-const MegaMenuFenomenal = ({ isOpen, type, categories = [] }) => {
+// NOUVEAU MEGAMENU PHENOMENAL - Inspiré de Fenom.com
+const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
     const [activeCategory, setActiveCategory] = useState('sneakers-homme');
     
-    // Structure des données
+    // Structure des données selon le design Fenom
     const navigationItems = [
         {
             id: 'sneakers-homme',
@@ -352,127 +192,129 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [] }) => {
 
     return (
         <div 
-            className="absolute left-1/2 transform -translate-x-1/2 bg-white z-50 megamenu-shadow megamenu-fenomenal"
-            style={{
-                top: '100%',
-                height: '460px',
-                width: '90vw',
-                maxWidth: '1200px',
-                fontFamily: 'Barlow, sans-serif'
-            }}
+            className="flex absolute top-full left-1/2 -translate-x-[30%] bg-white z-50"
+  style={{
+    '--tw-translate-x': translateX,
+    width: '90vw',
+    maxWidth: '1200px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    left: 0,
+    right: 0,
+  }}
         >
-                <div className="flex h-full">
-                    {/* COLONNE GAUCHE - Navigation principale */}
-                    <div 
-                        className="bg-black text-white flex-none"
-                        style={{ width: '260px' }}
-                    >
-                        <div className="py-4">
-                            {navigationItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => handleCategoryChange(item.id)}
-                                    onMouseEnter={() => handleCategoryChange(item.id)}
-                                    className={`w-full text-left px-5 py-4 text-sm font-semibold uppercase tracking-wide transition-colors duration-200 flex items-center justify-between group megamenu-nav-item ${
-                                        activeCategory === item.id
-                                            ? 'bg-gray-800 active'
-                                            : 'hover:bg-gray-800'
-                                    }`}
-                                    style={{
-                                        fontSize: '14px',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.05em',
-                                        paddingTop: '16px',
-                                        paddingBottom: '16px'
-                                    }}
+            <div className="flex h-full flex-1">
+                {/* COLONNE GAUCHE - Navigation principale */}
+                <div 
+                    className="bg-black text-white flex-none"
+                    style={{ width: '260px' }}
+                >
+                    <div className="py-4">
+                        {navigationItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => handleCategoryChange(item.id)}
+                                onMouseEnter={() => handleCategoryChange(item.id)}
+                                className={`w-full text-left px-5 py-4 text-sm font-semibold uppercase tracking-wide transition-colors duration-200 flex items-center justify-between group megamenu-nav-item ${
+                                    activeCategory === item.id
+                                        ? 'bg-gray-800 active'
+                                        : 'hover:bg-gray-800'
+                                }`}
+                                style={{
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    letterSpacing: '0.05em',
+                                    paddingTop: '16px',
+                                    paddingBottom: '16px'
+                                }}
+                            >
+                                {item.name}
+                                <svg 
+                                    className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
+                                    fill="currentColor" 
+                                    viewBox="0 0 20 20"
                                 >
-                                    {item.name}
-                                    <svg 
-                                        className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
-                                        fill="currentColor" 
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
-                            ))}
-                        </div>
+                                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        ))}
                     </div>
+                </div>
 
-                    {/* COLONNE CENTRALE - Collections */}
-                    <div 
-                        className="bg-white flex-none px-8 py-8"
-                        style={{ width: '380px' }}
+                {/* COLONNE CENTRALE - Collections */}
+                <div 
+                    className="bg-white flex-none px-8 py-8"
+                    style={{ width: '250px' }}
+                >
+                    <h3 
+                        className="text-gray-900 font-bold mb-6"
+                        style={{
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase'
+                        }}
                     >
-                        <h3 
-                            className="text-gray-900 font-bold mb-6"
-                            style={{
-                                fontSize: '13px',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                textTransform: 'uppercase'
-                            }}
-                        >
-                            COLLECTIONS
-                        </h3>
-                        
-                        <div className="space-y-3">
-                            {currentItem.collections.map((collection, index) => (
-                                <Link
-                                    key={index}
-                                    href={route('frontend.shop.index', { 
-                                        search: collection,
-                                        category: type 
-                                    })}
-                                    className="block text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
-                                    style={{
-                                        fontSize: '14px',
-                                        fontWeight: 400,
-                                        lineHeight: '2'
-                                    }}
-                                >
-                                    {collection}
-                                </Link>
-                            ))}
-                        </div>
+                        COLLECTIONS
+                    </h3>
+                    
+                    <div className="space-y-3">
+                        {currentItem.collections.map((collection, index) => (
+                            <Link
+                                key={index}
+                                href={route('frontend.shop.index', { 
+                                    search: collection,
+                                    category: type 
+                                })}
+                                className="block text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
+                                style={{
+                                    fontSize: '14px',
+                                    fontWeight: 400,
+                                    lineHeight: '2'
+                                }}
+                            >
+                                {collection}
+                            </Link>
+                        ))}
                     </div>
+                </div>
 
-                    {/* COLONNE DROITE - Marques/Catégories */}
-                    <div className="bg-white flex-1 px-8 py-8">
-                        <h3 
-                            className="text-gray-900 font-bold mb-6"
-                            style={{
-                                fontSize: '13px',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                textTransform: 'uppercase'
-                            }}
-                        >
-                            {currentItem.name}
-                        </h3>
-                        
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                            {currentItem.brands.map((brand, index) => (
-                                <Link
-                                    key={index}
-                                    href={route('frontend.shop.index', { 
-                                        search: brand,
-                                        category: type 
-                                    })}
-                                    className="text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
-                                    style={{
-                                        fontSize: '14px',
-                                        fontWeight: 400,
-                                        lineHeight: '2'
-                                    }}
-                                >
-                                    {brand}
-                                </Link>
-                            ))}
-                        </div>
+                {/* COLONNE DROITE - Marques/Catégories */}
+                <div className="bg-white flex-1 px-8 py-8">
+                    <h3 
+                        className="text-gray-900 font-bold mb-6"
+                        style={{
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase'
+                        }}
+                    >
+                        {currentItem.name}
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                        {currentItem.brands.map((brand, index) => (
+                            <Link
+                                key={index}
+                                href={route('frontend.shop.index', { 
+                                    search: brand,
+                                    category: type 
+                                })}
+                                className="text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
+                                style={{
+                                    fontSize: '14px',
+                                    fontWeight: 400,
+                                    lineHeight: '2'
+                                }}
+                            >
+                                {brand}
+                            </Link>
+                        ))}
                     </div>
                 </div>
             </div>
+        </div>
     );
 };
 

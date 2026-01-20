@@ -7,7 +7,7 @@ import WishlistButton from '@/Components/Frontend/WishlistButton';
 // Modern Product Card - Composant réutilisable
 const ModernProductCard = ({ product }) => {
     const [isLoaded, setIsLoaded] = useState(false);
-    const productUrl = product?.slug ? `/shop/products/${product.slug}` : `/shop/products/${product?.id || '#'}`;
+    const productUrl = product?.slug ? `/shop/product/${product.slug}` : `/shop/product/${product?.id || '#'}`;
 
     // Calcul des prix avec gestion des soldes
     const calculatePrices = () => {

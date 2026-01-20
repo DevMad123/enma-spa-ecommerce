@@ -1,0 +1,60 @@
+/* MegaMenu Fenomenal Styles */
+
+.megamenu-fenomenal {
+  font-family: 'Barlow', sans-serif;
+}
+
+.megamenu-fenomenal * {
+  font-family: inherit;
+}
+
+/* Animation pour l'apparition du MegaMenu */
+.megamenu-fenomenal {
+  animation: megamenu-fade-in 0.2s ease-out forwards;
+}
+
+@keyframes megamenu-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Styles pour les éléments de navigation gauche */
+.megamenu-nav-item {
+  transition: all 0.2s ease;
+}
+
+.megamenu-nav-item:hover {
+  background-color: #111111;
+}
+
+.megamenu-nav-item.active {
+  background-color: #111111;
+}
+
+/* Styles pour les liens collections et marques */
+.megamenu-link {
+  transition: all 0.15s ease;
+}
+
+.megamenu-link:hover {
+  text-decoration: underline;
+  color: #000000;
+}
+
+/* Shadow premium pour le conteneur principal */
+.megamenu-shadow {
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .megamenu-fenomenal {
+    height: auto !important;
+  }
+}

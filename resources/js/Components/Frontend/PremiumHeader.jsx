@@ -9,7 +9,7 @@ import {
     XMarkIcon,
     ChevronDownIcon
 } from '@heroicons/react/24/outline';
-import MegaMenu, { MegaMenuMobile } from './MegaMenu';
+import MegaMenuFenomenal, { MegaMenuFenomenalMobile } from './MegaMenuNew';
 
 const PremiumHeader = ({
     auth = {},
@@ -27,6 +27,23 @@ const PremiumHeader = ({
     const [megaMenuOpen, setMegaMenuOpen] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const searchInputRef = useRef(null);
+    const megaMenuRef = useRef(null);
+    const megaMenuTimeoutRef = useRef(null);
+
+    // Fonction pour ouvrir le MegaMenu
+    const openMegaMenu = (menuType) => {
+        if (megaMenuTimeoutRef.current) {
+            clearTimeout(megaMenuTimeoutRef.current);
+        }
+        setMegaMenuOpen(menuType);
+    };
+
+    // Fonction pour fermer le MegaMenu avec délai
+    const closeMegaMenu = () => {
+        megaMenuTimeoutRef.current = setTimeout(() => {
+            setMegaMenuOpen(null);
+        }, 150); // Délai de 150ms pour éviter la fermeture accidentelle
+    };
 
     // Animation de la recherche : focus automatique et fermeture au clic extérieur
     useEffect(() => {
@@ -38,16 +55,20 @@ const PremiumHeader = ({
             if (searchInputRef.current && !searchInputRef.current.contains(event.target)) {
                 setSearchOpen(false);
             }
+            // Fermer le MegaMenu si on clique en dehors
+            if (megaMenuOpen && megaMenuRef.current && !megaMenuRef.current.contains(event.target)) {
+                setMegaMenuOpen(null);
+            }
         };
 
-        if (searchOpen) {
+        if (searchOpen || megaMenuOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [searchOpen]);
+    }, [searchOpen, megaMenuOpen]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -238,9 +259,10 @@ const PremiumHeader = ({
                         <div className="flex items-center space-x-12">
                             {/* Sneakers avec MegaMenu */}
                             <div
+                                ref={megaMenuRef}
                                 className="relative group"
-                                onMouseEnter={() => setMegaMenuOpen('sneakers')}
-                                onMouseLeave={() => setMegaMenuOpen(null)}
+                                onMouseEnter={() => openMegaMenu('sneakers')}
+                                onMouseLeave={closeMegaMenu}
                             >
                                 <button 
                                     className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
@@ -254,7 +276,7 @@ const PremiumHeader = ({
                                     Sneakers
                                     <ChevronDownIcon className="ml-1 h-4 w-4" />
                                 </button>
-                                <MegaMenu 
+                                <MegaMenuFenomenal 
                                     isOpen={megaMenuOpen === 'sneakers'}
                                     type="sneakers"
                                     categories={categories.filter(cat => 
@@ -262,14 +284,15 @@ const PremiumHeader = ({
                                         cat.name.toLowerCase().includes('basket') ||
                                         cat.name.toLowerCase().includes('chaussure')
                                     )}
+                                    translateX="-24%"
                                 />
                             </div>
 
                             {/* Streetwears avec MegaMenu */}
                             <div
                                 className="relative group"
-                                onMouseEnter={() => setMegaMenuOpen('streetwear')}
-                                onMouseLeave={() => setMegaMenuOpen(null)}
+                                onMouseEnter={() => openMegaMenu('streetwear')}
+                                onMouseLeave={closeMegaMenu}
                             >
                                 <button 
                                     className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
@@ -283,7 +306,7 @@ const PremiumHeader = ({
                                     Streetwears
                                     <ChevronDownIcon className="ml-1 h-4 w-4" />
                                 </button>
-                                <MegaMenu 
+                                <MegaMenuFenomenal 
                                     isOpen={megaMenuOpen === 'streetwear'}
                                     type="streetwear"
                                     categories={categories.filter(cat => 
@@ -291,6 +314,7 @@ const PremiumHeader = ({
                                         cat.name.toLowerCase().includes('vêtement') ||
                                         cat.name.toLowerCase().includes('mode')
                                     )}
+                                    translateX="-35%"
                                 />
                             </div>
 
@@ -335,7 +359,7 @@ const PremiumHeader = ({
                             {/* Sneakers Section */}
                             <div>
                                 <h3 className="text-lg font-semibold text-black mb-4">Sneakers</h3>
-                                <MegaMenuMobile
+                                <MegaMenuFenomenalMobile
                                     type="sneakers"
                                     categories={categories}
                                     isOpen={true}
@@ -346,7 +370,7 @@ const PremiumHeader = ({
                             {/* Streetwears Section */}
                             <div>
                                 <h3 className="text-lg font-semibold text-black mb-4">Streetwears</h3>
-                                <MegaMenuMobile
+                                <MegaMenuFenomenalMobile
                                     type="streetwear"
                                     categories={categories}
                                     isOpen={true}
