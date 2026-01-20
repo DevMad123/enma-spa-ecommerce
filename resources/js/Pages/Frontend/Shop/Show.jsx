@@ -552,10 +552,9 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
                   )}
                 </div>
               </div>
-
+                  {console.log('Rendering SizeSelector with sizes:', product)}
               {/* 4. SÉLECTEUR DE POINTURE */}
               {Array.isArray(product.sizes) && product.sizes.length > 0 && (
-                console.log('Rendering SizeSelector with sizes:', product.sizes),
                 <SizeSelector
                   sizes={product.sizes}
                   selectedSize={selectedSize}
