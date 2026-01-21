@@ -67,8 +67,8 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
     
     // Définir les langues par défaut si elles ne sont pas fournies
     const defaultLanguages = {
+        'fr-CI': 'Français (Côte d\'Ivoire)',
         'fr-FR': 'Français (France)',
-        'fr-SN': 'Français (Sénégal)',
         'en-US': 'English (United States)',
         'en-GB': 'English (United Kingdom)',
         'ar-MA': 'العربية (المغرب)',
@@ -98,7 +98,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
     const { data, setData, post, processing, errors } = useForm({
         general: {
             currency: getSetting('currency') || getSetting('default_currency') || 'XOF',
-            language: getSetting('language') || getSetting('locale') || 'fr-FR',
+            language: getSetting('language') || getSetting('locale') || 'fr-CI',
             site_name: getSetting('site_name') || '',
             site_description: getSetting('site_description') || '',
             contact_email: getSetting('site_email') || getSetting('contact_email') || '',
@@ -312,7 +312,7 @@ export default function SettingsIndex({ settings, currencies = {}, languages = {
                                     {currentImage && currentImage.value ? 'Remplacer l\'image' : 'Cliquez pour uploader'}
                                 </span>
                                 <span className="text-xs text-gray-500 mt-1">
-                                    JPG, PNG, WEBP, AVIF � 2 Mo max
+                                    JPG, PNG, WEBP, AVIF � 2 Mo max
                                 </span>
                             </div>
                         )}

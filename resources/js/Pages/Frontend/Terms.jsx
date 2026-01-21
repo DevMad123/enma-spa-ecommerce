@@ -230,7 +230,7 @@ export default function Terms() {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <h4 className="font-semibold text-gray-900 mb-2">France métropolitaine :</h4>
+                            <h4 className="font-semibold text-gray-900 mb-2">Côte d'Ivoire :</h4>
                             <ul className="text-sm space-y-1">
                                 <li>• Standard : 3-5 jours ouvrés</li>
                                 <li>• Express : 1-2 jours ouvrés</li>

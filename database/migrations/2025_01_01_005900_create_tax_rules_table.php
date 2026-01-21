@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('tax_rules', function (Blueprint $table) {
             $table->id();
-            $table->string('country_code', 2)->unique(); // Code ISO 3166-1 alpha-2 (FR, BE, etc.)
-            $table->string('country_name'); // Nom du pays (France, Belgique, etc.)
+            $table->string('country_code', 2)->unique(); // Code ISO 3166-1 alpha-2 (CI, FR, etc.)
+            $table->string('country_name'); // Nom du pays (Côte d'Ivoire, France, etc.)
             $table->decimal('tax_rate', 8, 4)->default(0); // Taux de TVA (0.2000 = 20%)
             $table->boolean('is_default')->default(false); // Pays par défaut
             $table->boolean('delivery_allowed')->default(true); // Livraison autorisée

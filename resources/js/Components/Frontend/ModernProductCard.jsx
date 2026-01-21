@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { BoltIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '@/Utils/LocaleUtils';
+import { formatVariablePrice, getDiscountPercentage } from '@/Utils/productPrice';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
 
 // Modern Product Card - Composant réutilisable
@@ -9,75 +10,39 @@ const ModernProductCard = ({ product }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const productUrl = product?.slug ? `/shop/product/${product.slug}` : `/shop/product/${product?.id || '#'}`;
 
-    // Calcul des prix avec gestion des soldes
-    const calculatePrices = () => {
-        let currentPrice = parseFloat(product?.current_sale_price || 0);
-        let originalPrice = parseFloat(product?.previous_sale_price || 0);
-        let isOnSale = false;
-        let discountAmount = 0;
-
-        // Si on a un prix précédent et qu'il est supérieur au prix actuel
-        if (originalPrice > 0 && currentPrice > 0 && originalPrice > currentPrice) {
-            isOnSale = true;
-        }
-        
-        // Gestion des remises additionnelles
-        if (product?.discount && parseFloat(product.discount) > 0) {
-            discountAmount = parseFloat(product.discount);
-            
-            if (product?.discount_type === 1) {
-                // Remise en pourcentage
-                const discountValue = (currentPrice * discountAmount) / 100;
-                currentPrice = currentPrice - discountValue;
-                isOnSale = true;
-                if (!originalPrice || originalPrice === 0) {
-                    originalPrice = parseFloat(product?.current_sale_price || 0);
-                }
-            } else {
-                // Remise fixe
-                currentPrice = currentPrice - discountAmount;
-                isOnSale = true;
-                if (!originalPrice || originalPrice === 0) {
-                    originalPrice = parseFloat(product?.current_sale_price || 0);
-                }
-            }
-        }
-
-        // Gestion des plages de prix pour les variantes
-        if (product?.price_range && (product.price_range.min !== product.price_range.max)) {
-            return {
-                isRange: true,
-                minPrice: product.price_range.min,
-                maxPrice: product.price_range.max,
-                isOnSale: false
-            };
-        }
-
-        return {
-            isRange: false,
-            currentPrice: Math.max(0, currentPrice),
-            originalPrice: originalPrice,
-            isOnSale: isOnSale
-        };
-    };
-
-    const priceData = calculatePrices();
+    // Utilisation des nouvelles fonctions utilitaires
+    const priceInfo = useMemo(() => formatVariablePrice(product), [product]);
+    const discountPercent = useMemo(() => getDiscountPercentage(product), [product]);
 
     return (
         <div className="group cursor-pointer" style={{ fontFamily: 'Barlow, -apple-system, BlinkMacSystemFont, sans-serif' }}>
             <div className="relative aspect-square bg-gray-50 overflow-hidden mb-3">
                 {/* Badges */}
                 <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
-                    {/* Badge EN SOLDE */}
-                    {priceData.isOnSale && (
-                        <span className="bg-black text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide">
-                            EN SOLDE
+                    {/* Badge de réduction */}
+                    {discountPercent > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                            -{discountPercent}%
                         </span>
                     )}
                     
-                    {/* Badge SUR COMMANDE */}
-                    {product?.is_pre_order && (
-                        <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide">
+                    {/* Badge Variable */}
+                    {priceInfo.isVariable && (
+                        <span className="bg-gray-100 text-black text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                            VARIABLE
+                        </span>
+                    )}
+
+                    {/* Badge rupture de stock */}
+                    {(product?.available_quantity ?? 1) <= 0 && (
+                        <span className="bg-gray-700 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                            ÉPUISÉ
+                        </span>
+                    )}
+
+                    {/* Badge sur commande */}
+                    {product?.on_order && (
+                        <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
                             SUR COMMANDE
                         </span>
                     )}
@@ -96,20 +61,6 @@ const ModernProductCard = ({ product }) => {
                             NOUVEAU
                         </span>
                     )}
-
-                    {/* Badge POPULAIRE */}
-                    {/*product?.is_popular && (
-                        <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide">
-                            POPULAIRE
-                        </span>
-                    )*/}
-
-                    {/* Badge TENDANCE */}
-                    {/*product?.is_trending && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide">
-                            TRENDING
-                        </span>
-                    )*/}
                 </div>
 
                 {/* Bouton Wishlist */}
@@ -150,25 +101,20 @@ const ModernProductCard = ({ product }) => {
 
                     {/* Prix */}
                     <div className="flex items-center gap-2 pt-1">
-                        {priceData.isRange ? (
-                            // Plage de prix pour les variantes
-                            <span className="text-lg font-semibold text-gray-900">
-                                {formatCurrency(priceData.minPrice)} - {formatCurrency(priceData.maxPrice)}
-                            </span>
-                        ) : priceData.isOnSale ? (
+                        {priceInfo.hasDiscount && priceInfo.compareAt ? (
                             // Produit en solde
                             <>
-                                <span className="text-lg font-semibold text-black-900">
-                                    {formatCurrency(priceData.currentPrice)}
+                                <span className="text-lg font-semibold text-black">
+                                    {priceInfo.text}
                                 </span>
                                 <span className="text-sm text-gray-400 line-through">
-                                    {formatCurrency(priceData.originalPrice)}
+                                    {formatCurrency(priceInfo.compareAt)}
                                 </span>
                             </>
                         ) : (
-                            // Prix normal
-                            <span className="text-lg font-semibold text-gray-900">
-                                {formatCurrency(priceData.currentPrice)}
+                            // Prix normal ou variable
+                            <span className={`text-lg font-semibold ${priceInfo.isVariable ? 'text-black' : 'text-gray-900'}`}>
+                                {priceInfo.text}
                             </span>
                         )}
                     </div>

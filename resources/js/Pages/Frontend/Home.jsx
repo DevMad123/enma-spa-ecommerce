@@ -116,19 +116,11 @@ const HeroSlider = () => {
                                     {/* Desktop: texte à gauche, Mobile: texte centré */}
                                     <div className="text-center md:text-left max-w-2xl md:max-w-none">
                                         {/* Titre */}
-                                        <h1 
-                                            className="text-white font-bold leading-tight mb-4"
-                                            style={{ 
-                                                fontSize: '26px',
-                                                '@media (min-width: 768px)': {
-                                                    fontSize: '42px'
-                                                }
-                                            }}
-                                        >
+                                        <h2 className="text-white font-bold leading-tight mb-4">
                                             <span className="text-2xl md:text-5xl font-bold">
                                                 {slide.title}
                                             </span>
-                                        </h1>
+                                        </h2>
 
                                         {/* Sous-texte */}
                                         <p className="text-white/90 text-base md:text-lg mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
@@ -659,7 +651,6 @@ function HomeContent({
 
 export default function Home({ wishlistItems, ...props }) {
     const { appSettings } = usePage().props;
-
     return (
         <FrontendLayout
             title="Accueil"

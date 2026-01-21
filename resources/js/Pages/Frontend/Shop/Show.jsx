@@ -23,8 +23,124 @@ import { useNotification } from '@/Components/Notifications/NotificationProvider
 import { PulseButton } from '@/Components/Animations/AnimationComponents';
 import { formatCurrency } from '@/Utils/LocaleUtils';
 
-// Galerie d'images style AfrikSneakers
-const AfrikSneakersImageGallery = ({ images, productName, productImage }) => {
+// Composant Accordéon Premium (style Wethenew)
+const ProductAccordion = ({ product, appSettings }) => {
+  const [openSection, setOpenSection] = useState(null);
+
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
+  const sections = [
+    {
+      id: 'description',
+      title: 'DESCRIPTION',
+      content: (
+        <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+          {product.description && (
+            <p className="text-gray-700">{product.description}</p>
+          )}
+          {product.brand?.name && (
+            <p><span className="font-medium text-gray-800">Marque :</span> {product.brand.name}</p>
+          )}
+          {product.sku && (
+            <p><span className="font-medium text-gray-800">Référence :</span> {product.sku}</p>
+          )}
+          <p><span className="font-medium text-gray-800">Catégorie :</span> {product.category?.name || 'Mode'}</p>
+        </div>
+      )
+    },
+    {
+      id: 'authenticity',
+      title: 'AUTHENTICITÉ',
+      content: (
+        <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+          <p className="text-gray-700 font-medium">Garantie d'authenticité à 100%</p>
+          <p>Tous nos produits sont rigoureusement contrôlés par nos experts avant expédition.</p>
+          <p>Nous travaillons exclusivement avec des revendeurs agréés et des partenaires de confiance pour vous garantir des articles authentiques.</p>
+          <p>Chaque commande est livrée avec une preuve de contrôle qualité et un scellé de sécurité.</p>
+          <p className="text-gray-800 font-medium">Votre satisfaction et votre confiance sont notre priorité.</p>
+        </div>
+      )
+    },
+    {
+      id: 'shipping',
+      title: 'LIVRAISON & RETOUR',
+      content: (
+        <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+          <div>
+            <p className="font-medium text-gray-800 mb-2">Livraison</p>
+            <p>• Livraison rapide 24h - 48h en Côte d'Ivoire</p>
+            <p>• Livraison gratuite dès {formatCurrency(appSettings?.free_shipping_threshold || 50000)}</p>
+            <p>• Suivi de commande en temps réel</p>
+          </div>
+          <div>
+            <p className="font-medium text-gray-800 mb-2">Retours</p>
+            <p>• Retours gratuits sous 30 jours</p>
+            <p>• Produits non portés et dans leur emballage d'origine</p>
+            <p>• Remboursement intégral ou échange possible</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'payment',
+      title: 'MOYENS DE PAIEMENT',
+      content: (
+        <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+          <p className="font-medium text-gray-800">Paiement 100% sécurisé</p>
+          <div className="space-y-1">
+            <p>• Carte bancaire (Visa, Mastercard, American Express)</p>
+            <p>• PayPal</p>
+            <p>• Paiement mobile (Apple Pay, Google Pay)</p>
+            <p>• Virement bancaire</p>
+          </div>
+          <p className="text-gray-700">Toutes vos données sont chiffrées et protégées par certificat SSL.</p>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div className="border-t border-gray-200 pt-6">
+      <div className="space-y-0">
+        {sections.map((section, index) => (
+          <div key={section.id} className="border-b border-gray-100 last:border-b-0">
+            <button
+              onClick={() => toggleSection(section.id)}
+              className="w-full flex items-center justify-between py-5 px-0 text-left hover:bg-gray-50 transition-colors duration-200"
+            >
+              <h3 className="text-sm font-semibold text-black font-barlow tracking-wider uppercase">
+                {section.title}
+              </h3>
+              <div className="flex-shrink-0 ml-4">
+                {openSection === section.id ? (
+                  <MinusIcon className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <PlusIcon className="h-4 w-4 text-gray-600" />
+                )}
+              </div>
+            </button>
+            <div 
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                openSection === section.id 
+                  ? 'max-h-96 opacity-100 pb-5' 
+                  : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="pr-8">
+                {section.content}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Galerie d'images
+const ImageGallery = ({ images, productName, productImage }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   
   const allImages = useMemo(() => {
@@ -80,53 +196,118 @@ const AfrikSneakersImageGallery = ({ images, productName, productImage }) => {
   );
 };
 
-// Sélecteur de tailles style AfrikSneakers
-const SizeSelector = ({ sizes, selectedSize, onSizeChange, isSizeEnabled }) => {
+// Composant d'attributs unifié (Tailles/Pointures et Couleurs)
+const AttributeSelector = ({ 
+  items, 
+  selectedItem, 
+  onItemChange, 
+  isItemEnabled, 
+  type = 'size', // 'size' ou 'color'
+  autoDetectLabel = true 
+}) => {
+  // Logique de détection automatique du label pour les tailles
+  const getAttributeLabel = () => {
+    if (type === 'color') return 'Couleur';
+    if (!autoDetectLabel || !items?.length) return 'Taille';
+    
+    // Vérifier si toutes les valeurs sont uniquement des chiffres
+    const allNumeric = items.every(item => {
+      const value = item.size || item.name || item.value || '';
+      return /^\d+$/.test(value.toString().trim());
+    });
+    
+    return allNumeric ? 'Pointure' : 'Taille';
+  };
+
+  // Rendu pour les couleurs
+  const renderColorItem = (item) => {
+    const disabled = isItemEnabled ? !isItemEnabled(item.id) : false;
+    const selected = selectedItem?.id === item.id;
+    
+    return (
+      <button
+        key={item.id}
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          if (selected) {
+            onItemChange(null);
+          } else {
+            onItemChange(item);
+          }
+        }}
+        className={`relative w-10 h-10 border-2 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed ${
+          selected 
+            ? 'border-black scale-110' 
+            : disabled 
+              ? 'border-gray-200'
+              : 'border-gray-300 hover:border-gray-500'
+        }`}
+        style={{ backgroundColor: item.hex_code || item.color_code || '#ccc' }}
+        title={item.name}
+      >
+        {selected && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <CheckIcon className="h-4 w-4 text-white drop-shadow-lg" />
+          </div>
+        )}
+        {disabled && (
+          <div className="absolute inset-0 bg-gray-200 bg-opacity-75 flex items-center justify-center">
+            <div className="w-6 h-0.5 bg-gray-400 rotate-45"></div>
+          </div>
+        )}
+      </button>
+    );
+  };
+
+  // Rendu pour les tailles
+  const renderSizeItem = (item) => {
+    const disabled = isItemEnabled ? !isItemEnabled(item.id) : false;
+    const selected = selectedItem?.id === item.id;
+    
+    return (
+      <button
+        key={item.id}
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          if (selected) {
+            onItemChange(null);
+          } else {
+            onItemChange(item);
+          }
+        }}
+        className={`aspect-square h-12 border transition-all duration-200 font-barlow font-medium disabled:opacity-30 disabled:cursor-not-allowed ${
+          selected 
+            ? 'border-black bg-black text-white' 
+            : disabled 
+              ? 'border-gray-200 text-gray-400 line-through'
+              : 'border-gray-300 text-gray-900 hover:border-black'
+        }`}
+      >
+        {item.size || item.name || item.value}
+      </button>
+    );
+  };
+
+  if (!items || items.length === 0) return null;
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900 font-barlow">
-        Pointure
+        {getAttributeLabel()}
       </h3>
-      <div className="grid grid-cols-3 gap-3">
-        {sizes.map((size) => {
-          const disabled = !isSizeEnabled(size.id);
-          const selected = selectedSize?.id === size.id;
-          return (
-            <button
-              key={size.id}
-              disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                if (selected) {
-                  onSizeChange(null);
-                } else {
-                  onSizeChange(size);
-                }
-              }}
-              className={`aspect-square h-12 border transition-all duration-200 font-barlow font-medium disabled:opacity-30 disabled:cursor-not-allowed ${
-                selected 
-                  ? 'border-black bg-black text-white' 
-                  : disabled 
-                    ? 'border-gray-200 text-gray-400 line-through'
-                    : 'border-gray-300 text-gray-900 hover:border-black'
-              }`}
-            >
-              {size.size}
-            </button>
-          );
-        })}
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
+        {items.map((item) => 
+          type === 'color' ? renderColorItem(item) : renderSizeItem(item)
+        )}
       </div>
     </div>
   );
 };
 
-// Simplifié pour AfrikSneakers - les couleurs seront gérées différemment
-const ProductVariants = ({ colors, sizes, selectedColor, selectedSize, onColorChange, onSizeChange, isColorEnabled = () => true, isSizeEnabled = () => true }) => {
-  return null; // Géré directement dans le composant principal
-};
-
-// Composant pour les avis avec style adapté AfrikSneakers
-const AfrikSneakersReviewSection = ({ reviews, averageRating: avgFromProps, product }) => {
+// Composant pour les avis
+const ReviewSection = ({ reviews, averageRating: avgFromProps, product }) => {
     const { auth } = usePage().props;
     const { showSuccess, showError, showInfo } = useNotification();
     const [showAllReviews, setShowAllReviews] = useState(false);
@@ -343,8 +524,8 @@ const AfrikSneakersReviewSection = ({ reviews, averageRating: avgFromProps, prod
     );
 };
 
-// Composant produits similaires style AfrikSneakers
-const AfrikSneakersRelatedProducts = ({ products }) => {
+// Composant produits similaires
+const RelatedProducts = ({ products }) => {
     if (!products || products.length === 0) return null;
     
     return (
@@ -359,7 +540,7 @@ const AfrikSneakersRelatedProducts = ({ products }) => {
     );
 };
 
-function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [], userCanReview = false }) {
+function ProductShow({ product, relatedProducts = [], reviews = [], userCanReview = false }) {
   const { addToCart } = useCart();
   const { showSuccess, showError } = useNotification();
   const { appSettings } = usePage().props;
@@ -370,41 +551,97 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
   const [variantLoading, setVariantLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
+  // Déterminer si le produit est variable (a des variants) ou simple
+  const isVariableProduct = Array.isArray(product.variants) && product.variants.length > 0;
+  const hasColors = Array.isArray(product.colors) && product.colors.length > 0;
+  const hasSizes = Array.isArray(product.sizes) && product.sizes.length > 0;
+
   // Availability maps from variants
   const availability = useMemo(() => {
     const byColor = new Map();
     const bySize = new Map();
-    if (Array.isArray(product.variants)) {
+    const availableColors = new Set();
+    const availableSizes = new Set();
+    
+    if (isVariableProduct) {
+      // Pour les produits variables : mapper selon les variants
       product.variants.forEach((v) => {
         const c = v.color_id ?? null;
         const s = v.size_id ?? null;
+        
         if (c !== null && s !== null) {
           if (!byColor.has(c)) byColor.set(c, new Set());
           byColor.get(c).add(s);
           if (!bySize.has(s)) bySize.set(s, new Set());
           bySize.get(s).add(c);
+          availableColors.add(c);
+          availableSizes.add(s);
+        } else {
+          if (c !== null) availableColors.add(c);
+          if (s !== null) availableSizes.add(s);
         }
       });
+    } else {
+      // Pour les produits simples : toutes les couleurs/tailles sont disponibles
+      if (hasColors) {
+        product.colors.forEach(color => {
+          availableColors.add(color.id);
+          // Pour produit simple, toutes les combinaisons sont possibles
+          if (hasSizes) {
+            if (!byColor.has(color.id)) byColor.set(color.id, new Set());
+            product.sizes.forEach(size => byColor.get(color.id).add(size.id));
+          }
+        });
+      }
+      if (hasSizes) {
+        product.sizes.forEach(size => {
+          availableSizes.add(size.id);
+          // Pour produit simple, toutes les combinaisons sont possibles
+          if (hasColors) {
+            if (!bySize.has(size.id)) bySize.set(size.id, new Set());
+            product.colors.forEach(color => bySize.get(size.id).add(color.id));
+          }
+        });
+      }
     }
-    return { byColor, bySize };
-  }, [product.variants]);
+    
+    return { byColor, bySize, availableColors, availableSizes };
+  }, [isVariableProduct, hasColors, hasSizes, product.variants, product.colors, product.sizes]);
 
   const isSizeEnabled = useCallback(
     (sizeId) => {
-      if (!selectedColor) return true;
+      // Pour les produits simples, toutes les tailles sont toujours disponibles
+      if (!isVariableProduct) {
+        return availability.availableSizes.has(sizeId);
+      }
+      
+      // Pour les produits variables : vérifier selon la couleur sélectionnée
+      if (!selectedColor) {
+        return availability.availableSizes.has(sizeId);
+      }
+      
       const set = availability.byColor.get(selectedColor.id);
       return !!(set && set.has(sizeId));
     },
-    [availability, selectedColor]
+    [availability, selectedColor, isVariableProduct]
   );
 
   const isColorEnabled = useCallback(
     (colorId) => {
-      if (!selectedSize) return true;
+      // Pour les produits simples, toutes les couleurs sont toujours disponibles
+      if (!isVariableProduct) {
+        return availability.availableColors.has(colorId);
+      }
+      
+      // Pour les produits variables : vérifier selon la taille sélectionnée
+      if (!selectedSize) {
+        return availability.availableColors.has(colorId);
+      }
+      
       const set = availability.bySize.get(selectedSize.id);
       return !!(set && set.has(colorId));
     },
-    [availability, selectedSize]
+    [availability, selectedSize, isVariableProduct]
   );
 
   // Auto-selection
@@ -417,14 +654,20 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
     }
   }, [product]);
 
-  // Fetch selected variant
+  // Fetch selected variant (seulement pour les produits variables)
   useEffect(() => {
-    const hasColors = Array.isArray(product.colors) && product.colors.length > 0;
-    const hasSizes = Array.isArray(product.sizes) && product.sizes.length > 0;
+    // Pour les produits simples, pas de variant à récupérer
+    if (!isVariableProduct) {
+      setSelectedVariant(null);
+      setVariantLoading(false);
+      return;
+    }
+
     if (!hasColors && !hasSizes) {
       setSelectedVariant(null);
       return;
     }
+    
     let cancelled = false;
     async function load() {
       const params = new URLSearchParams();
@@ -452,34 +695,137 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
     return () => {
       cancelled = true;
     };
-  }, [product.id, selectedColor?.id, selectedSize?.id]);
+  }, [product.id, selectedColor?.id, selectedSize?.id, isVariableProduct, hasColors, hasSizes]);
 
-  const effectivePrice = selectedVariant?.sale_price ?? product.current_sale_price ?? 0;
+  // Calculer le prix minimum des variants pour les produits variables
+  const minVariantPrice = useMemo(() => {
+    if (!isVariableProduct || !Array.isArray(product.variants) || product.variants.length === 0) {
+      return null;
+    }
+    const prices = product.variants
+      .map(variant => variant.sale_price)
+      .filter(price => price != null && price > 0);
+    
+    return prices.length > 0 ? Math.min(...prices) : null;
+  }, [isVariableProduct, product.variants]);
+
+  // Calculer le prix minimum pour une couleur spécifique
+  const minPriceForColor = useMemo(() => {
+    if (!isVariableProduct || !selectedColor || !Array.isArray(product.variants)) {
+      return null;
+    }
+    
+    const colorVariants = product.variants.filter(variant => variant.color_id === selectedColor.id);
+    const prices = colorVariants
+      .map(variant => variant.sale_price)
+      .filter(price => price != null && price > 0);
+    
+    return prices.length > 0 ? Math.min(...prices) : null;
+  }, [isVariableProduct, selectedColor, product.variants]);
+
+  // Calculer le prix minimum pour une taille spécifique
+  const minPriceForSize = useMemo(() => {
+    if (!isVariableProduct || !selectedSize || !Array.isArray(product.variants)) {
+      return null;
+    }
+    
+    const sizeVariants = product.variants.filter(variant => variant.size_id === selectedSize.id);
+    const prices = sizeVariants
+      .map(variant => variant.sale_price)
+      .filter(price => price != null && price > 0);
+    return prices.length > 0 ? Math.min(...prices) : null;
+  }, [isVariableProduct, selectedSize, product.variants]);
+
+  // Pour les produits variables, utiliser une logique intelligente selon les sélections
+  const effectivePrice = useMemo(() => {
+    if (isVariableProduct) {
+      // Si un variant exact est sélectionné (couleur ET taille), utiliser son prix
+      if (selectedVariant?.sale_price && selectedColor && selectedSize) {
+        return selectedVariant.sale_price;
+      }
+      
+      // Si couleur ET taille sélectionnées mais pas de variant trouvé, utiliser le minimum des deux
+      if (selectedColor && selectedSize) {
+        return Math.min(minPriceForColor || Infinity, minPriceForSize || Infinity) || minVariantPrice || product.current_sale_price || 0;
+      }
+      
+      // Si seulement couleur sélectionnée, utiliser le prix minimum pour cette couleur
+      if (selectedColor && minPriceForColor) {
+        return minPriceForColor;
+      }
+      
+      // Si seulement taille sélectionnée, utiliser le prix minimum pour cette taille
+      if (selectedSize && minPriceForSize) {
+        return minPriceForSize;
+      }
+      
+      // Aucune sélection : utiliser le prix minimum global
+      return minVariantPrice ?? product.current_sale_price ?? 0;
+    }
+    
+    // Produit simple : prix fixe
+    return product.current_sale_price ?? product.price ?? 0;
+  }, [
+    isVariableProduct, 
+    selectedVariant?.sale_price, 
+    selectedColor, 
+    selectedSize, 
+    minPriceForColor, 
+    minPriceForSize, 
+    minVariantPrice, 
+    product.current_sale_price, 
+    product.price
+  ]);
+  
   const compareAt = product.price && product.price > effectivePrice ? product.price : null;
-  const effectiveStock = selectedVariant?.stock ?? product.stock_quantity ?? product.available_quantity ?? 0;
+  
+  const effectiveStock = isVariableProduct 
+    ? (selectedVariant?.stock ?? product.stock_quantity ?? product.available_quantity ?? 0)
+    : (product.stock_quantity ?? product.available_quantity ?? 0);
 
-  const canAddToCart = (!product.sizes || product.sizes.length === 0 || selectedSize) && 
-                       (!product.colors || product.colors.length === 0 || selectedColor);
+  // Validation : pour produits simples ET variables, sélection obligatoire si attributs présents
+  const canAddToCart = (
+    (!hasSizes || selectedSize) && 
+    (!hasColors || selectedColor)
+  );
 
   const handleAddToCart = () => {
     if (!canAddToCart) return;
     
-    addToCart({
+    // Préparer les données du produit avec sélections
+    const cartData = {
       ...product,
       current_sale_price: effectivePrice,
       stock_quantity: effectiveStock,
-      sku: selectedVariant?.sku ?? product.sku,
-      selected_variant_id: selectedVariant?.id ?? null,
+      sku: isVariableProduct ? (selectedVariant?.sku ?? product.sku) : product.sku,
+      selected_variant_id: isVariableProduct ? (selectedVariant?.id ?? null) : null,
       selectedColor,
       selectedSize,
-    }, quantity);
+      // Métadonnées pour les produits simples avec attributs sélectionnés
+      isSimpleWithAttributes: !isVariableProduct && (hasColors || hasSizes),
+      simpleProductMeta: !isVariableProduct ? {
+        selected_color: selectedColor ? { id: selectedColor.id, name: selectedColor.name, hex: selectedColor.hex_code || selectedColor.color_code } : null,
+        selected_size: selectedSize ? { id: selectedSize.id, name: selectedSize.size || selectedSize.name } : null
+      } : null
+    };
     
-    showSuccess(`${product.name} ajouté au panier`, '✓ Produit ajouté');
+    addToCart(cartData, quantity);
+    
+    // Message de succès avec informations sur les sélections
+    let successMessage = `${product.name} ajouté au panier`;
+    const selections = [];
+    if (selectedColor) selections.push(selectedColor.name);
+    if (selectedSize) selections.push(selectedSize.size || selectedSize.name);
+    if (selections.length > 0) {
+      successMessage += ` (${selections.join(', ')})`;
+    }
+    
+    showSuccess(successMessage, '✓ Produit ajouté');
   };
 
   return (
     <div className="bg-white">
-      {/* Breadcrumb style AfrikSneakers */}
+      {/* Breadcrumb */}
       <div className="border-b border-gray-200 py-4">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex text-sm" aria-label="Breadcrumb">
@@ -508,13 +854,13 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
         </div>
       </div>
 
-      {/* Container principal style AfrikSneakers */}
+      {/* Container principal */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           {/* COLONNE GAUCHE - GALERIE */}
           <div className="lg:col-span-1">
-            <AfrikSneakersImageGallery 
+            <ImageGallery 
               images={product.images} 
               productImage={product.image} 
               productName={product.name} 
@@ -552,45 +898,91 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
                   )}
                 </div>
               </div>
-                  {console.log('Rendering SizeSelector with sizes:', product)}
-              {/* 4. SÉLECTEUR DE POINTURE */}
-              {Array.isArray(product.sizes) && product.sizes.length > 0 && (
-                <SizeSelector
-                  sizes={product.sizes}
-                  selectedSize={selectedSize}
-                  onSizeChange={setSelectedSize}
-                  isSizeEnabled={isSizeEnabled}
+
+              {/* 4. SÉLECTEUR DE COULEUR */}
+              {hasColors && (
+                <AttributeSelector
+                  items={product.colors}
+                  selectedItem={selectedColor}
+                  onItemChange={setSelectedColor}
+                  isItemEnabled={isColorEnabled}
+                  type="color"
                 />
               )}
 
-              {/* 5. BOUTON AJOUTER AU PANIER */}
+              {/* 5. SÉLECTEUR DE POINTURE/TAILLE */}
+              {hasSizes && (
+                <AttributeSelector
+                  items={product.sizes}
+                  selectedItem={selectedSize}
+                  onItemChange={setSelectedSize}
+                  isItemEnabled={isSizeEnabled}
+                  type="size"
+                  autoDetectLabel={true}
+                />
+              )}
+
+              {/* 6. SÉLECTEUR DE QUANTITÉ */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 font-barlow">
+                  Quantité
+                </h3>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    className="flex items-center justify-center w-10 h-10 border border-gray-300 text-gray-600 hover:text-black hover:border-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <MinusIcon className="h-4 w-4" />
+                  </button>
+                  
+                  <span className="text-lg font-medium text-gray-900 font-barlow min-w-[3rem] text-center">
+                    {quantity}
+                  </span>
+                  
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    disabled={effectiveStock > 0 && quantity >= effectiveStock}
+                    className="flex items-center justify-center w-10 h-10 border border-gray-300 text-gray-600 hover:text-black hover:border-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                  </button>
+                  
+                  {effectiveStock > 0 && (
+                    <span className="text-sm text-gray-500 font-barlow ml-4">
+                      {effectiveStock} en stock
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 7. BOUTON AJOUTER AU PANIER */}
               <button
                 onClick={handleAddToCart}
-                disabled={!canAddToCart}
+                disabled={!canAddToCart || (effectiveStock > 0 && quantity > effectiveStock)}
                 className="w-full h-14 bg-black text-white font-barlow font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors duration-300"
               >
-                {!canAddToCart 
-                  ? 'Sélectionnez une taille' 
-                  : `Ajouter au panier`
-                }
+                {(() => {
+                  if (effectiveStock > 0 && quantity > effectiveStock) return 'Stock insuffisant';
+                  if (!canAddToCart) {
+                    const needsColor = hasColors && !selectedColor;
+                    const needsSize = hasSizes && !selectedSize;
+                    
+                    if (needsColor && needsSize) return 'Sélectionnez couleur et taille';
+                    if (needsColor) return 'Sélectionnez une couleur';
+                    if (needsSize) return 'Sélectionnez une taille';
+                  }
+                  return 'Ajouter au panier';
+                })()} 
               </button>
 
-              {/* 6. INFOS LIVRAISON */}
+              {/* 8. INFOS LIVRAISON */}
               <div className="text-sm text-gray-600 text-center font-barlow">
                 Livraison rapide 24h – 48h
               </div>
 
-              {/* 7. DESCRIPTION COURTE */}
-              {product.description && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3 font-barlow">Description</h3>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed font-barlow text-sm">
-                      {product.description}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* 9. ACCORDÉON DESCRIPTION */}
+              <ProductAccordion product={product} appSettings={appSettings} />
 
               {/* Informations additionnelles */}
               <div className="border-t border-gray-200 pt-6 space-y-3">
@@ -614,7 +1006,7 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
 
         {/* Section des avis */}
         <div className="mt-20 border-t border-gray-200 pt-16">
-          <AfrikSneakersReviewSection 
+          <ReviewSection 
             reviews={reviews} 
             averageRating={(() => {
               const fromReviews = (Array.isArray(reviews) && reviews.length > 0)
@@ -628,7 +1020,7 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
 
         {/* Produits similaires */}
         <div className="mt-20 border-t border-gray-200 pt-16">
-          <AfrikSneakersRelatedProducts products={relatedProducts} />
+          <RelatedProducts products={relatedProducts} />
         </div>
       </div>
     </div>
@@ -638,7 +1030,7 @@ function AfrikSneakersProductShow({ product, relatedProducts = [], reviews = [],
 export default function ProductShowWithCart({ wishlistItems, ...props }) {
   return (
     <FrontendLayout title={`${props.product.name} - ENMA SPA`} wishlistItems={wishlistItems}>
-      <AfrikSneakersProductShow {...props} />
+      <ProductShow {...props} />
     </FrontendLayout>
   );
 }

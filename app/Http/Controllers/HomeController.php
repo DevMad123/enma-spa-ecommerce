@@ -27,21 +27,36 @@ class HomeController extends Controller
             ]);
         }
         // Produits mis en avant
-        $featuredProducts = Product::with(['category', 'brand'])
+        $featuredProducts = Product::with([
+                'category', 'brand', 
+                'variants.color', 'variants.size', 
+                'colors', 'sizes', 
+                'images'
+            ])
             ->where('status', 1)
             ->where('is_popular', 1)
             ->limit(8)
             ->get();
 
         // Nouveautés
-        $newProducts = Product::with(['category', 'brand'])
+        $newProducts = Product::with([
+                'category', 'brand', 
+                'variants.color', 'variants.size', 
+                'colors', 'sizes', 
+                'images'
+            ])
             ->where('status', 1)
             ->orderBy('created_at', 'desc')
             ->limit(12)
             ->get();
 
         // Meilleures ventes
-        $bestSellers = Product::with(['category', 'brand'])
+        $bestSellers = Product::with([
+                'category', 'brand', 
+                'variants.color', 'variants.size', 
+                'colors', 'sizes', 
+                'images'
+            ])
             ->where('status', 1)
             ->where('is_popular', 1)
             ->limit(4)
@@ -78,7 +93,12 @@ class HomeController extends Controller
         if ($custom && $custom->featured_category_id) {
             $featuredCategory = ProductCategory::find($custom->featured_category_id);
             if ($featuredCategory) {
-                $featuredCategoryProducts = Product::with(['category', 'brand'])
+                $featuredCategoryProducts = Product::with([
+                        'category', 'brand', 
+                        'variants.color', 'variants.size', 
+                        'colors', 'sizes', 
+                        'images'
+                    ])
                     ->where('status', 1)
                     ->where('category_id', $featuredCategory->id)
                     ->orderBy('created_at', 'desc')

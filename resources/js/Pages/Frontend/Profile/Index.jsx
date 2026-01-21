@@ -78,7 +78,7 @@ const ProfileTab = ({ user, customer }) => {
         address_2: customer?.address_2 || '',
         city: customer?.city || '',
         postal_code: customer?.postal_code || '',
-        country: customer?.country || 'France',
+        country: customer?.country || 'Côte d\'Ivoire',
     });
 
     const handleSubmit = (e) => {
@@ -304,7 +304,7 @@ const ProfileTab = ({ user, customer }) => {
                                         }
                                     `}
                                 >
-                                    <option value="France">France</option>
+                                    <option value="CI">Côte d'Ivoire</option>
                                     <option value="Belgique">Belgique</option>
                                     <option value="Suisse">Suisse</option>
                                     <option value="Canada">Canada</option>

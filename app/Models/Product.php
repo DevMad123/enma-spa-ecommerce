@@ -71,16 +71,47 @@ class Product extends Model
         return $this->hasMany(ProductAttribute::class);
     }
 
-    // Colors available via variants
-    public function colors()
+    // Colors available via variants (pour produits variables)
+    public function variantColors()
     {
         return $this->belongsToMany(ProductColor::class, 'product_variants', 'product_id', 'color_id')->distinct();
     }
 
-    // Sizes available via variants
-    public function sizes()
+    // Sizes available via variants (pour produits variables)
+    public function variantSizes()
     {
         return $this->belongsToMany(ProductSize::class, 'product_variants', 'product_id', 'size_id')->distinct();
+    }
+    
+    // Colors pour produits simples (relation directe)
+    public function directColors()
+    {
+        return $this->belongsToMany(ProductColor::class, 'product_product_color', 'product_id', 'product_color_id');
+    }
+    
+    // Sizes pour produits simples (relation directe)
+    public function directSizes()
+    {
+        return $this->belongsToMany(ProductSize::class, 'product_product_size', 'product_id', 'product_size_id');
+    }
+
+    // Relations intelligentes qui gèrent les deux cas
+    public function colors()
+    {
+        // Si le produit a des variants, utiliser variantColors, sinon directColors
+        if ($this->variants()->exists()) {
+            return $this->variantColors();
+        }
+        return $this->directColors();
+    }
+
+    public function sizes()
+    {
+        // Si le produit a des variants, utiliser variantSizes, sinon directSizes  
+        if ($this->variants()->exists()) {
+            return $this->variantSizes();
+        }
+        return $this->directSizes();
     }
 
     // Accessor for image full URL (or default placeholder)
@@ -170,6 +201,74 @@ class Product extends Model
         ];
     }
 
+    // Calcul du prix final avec réduction
+    public function getFinalPriceAttribute(): float
+    {
+        $basePrice = (float) ($this->current_sale_price ?? 0);
+        
+        if ($this->discount > 0) {
+            if ($this->discount_type == 1) { // Pourcentage
+                $discountAmount = $basePrice * ($this->discount / 100);
+            } else { // Montant fixe
+                $discountAmount = $this->discount;
+            }
+            return max(0, $basePrice - $discountAmount);
+        }
+        
+        return $basePrice;
+    }
+
+    // Prix de départ (avant réduction)
+    public function getOriginalPriceAttribute(): float
+    {
+        return (float) ($this->current_sale_price ?? 0);
+    }
+
+    // Y a-t-il une réduction ?
+    public function getHasDiscountAttribute(): bool
+    {
+        return $this->discount > 0;
+    }
+
+    // Pourcentage de réduction
+    public function getDiscountPercentageAttribute(): float
+    {
+        if ($this->discount_type == 1) {
+            return (float) $this->discount;
+        }
+        
+        $originalPrice = $this->original_price;
+        if ($originalPrice > 0) {
+            return round(($this->discount / $originalPrice) * 100, 2);
+        }
+        
+        return 0;
+    }
+
+    // Calcul des prix min/max avec variants
+    public function getPriceRangeWithDiscountAttribute(): array
+    {
+        $prices = [];
+        
+        // Prix des variants
+        foreach ($this->variants as $variant) {
+            if ($variant->sale_price > 0) {
+                $prices[] = (float) $variant->sale_price;
+            }
+        }
+        
+        // Si pas de variants, utiliser le prix principal avec réduction
+        if (empty($prices)) {
+            $prices[] = $this->final_price;
+        }
+        
+        return [
+            'min' => empty($prices) ? 0 : min($prices),
+            'max' => empty($prices) ? 0 : max($prices),
+            'from_price' => empty($prices) ? 0 : min($prices),
+        ];
+    }
+
     // Appended attributes for frontend
     protected $appends = [
         'image',
@@ -178,6 +277,11 @@ class Product extends Model
         'price_range',
         'price_min',
         'price_max',
+        'final_price',
+        'original_price',
+        'has_discount',
+        'discount_percentage',
+        'price_range_with_discount',
     ];
 
     // price_min from price_range

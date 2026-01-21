@@ -204,13 +204,32 @@ class ShopController extends Controller
             'subcategory', 
             'brand', 
             'supplier',
-            'colors', 
-            'sizes',
             'variants.color',
-            'variants.size',
+            'variants.size', 
             'variants.images',
-            'images'
+            'images',
+            // Charger les relations directes pour produits simples
+            'directColors',
+            'directSizes',
+            // Charger les relations variants pour produits variables  
+            'variantColors',
+            'variantSizes'
         ])->findOrFail($productId);
+
+        // Déterminer les couleurs et tailles finales selon le type de produit
+        if ($product->variants()->exists()) {
+            // Produit variable : utiliser les couleurs/tailles des variants
+            $colors = $product->variantColors;
+            $sizes = $product->variantSizes;
+        } else {
+            // Produit simple : utiliser les relations directes
+            $colors = $product->directColors;
+            $sizes = $product->directSizes;
+        }
+        
+        // Ajouter les données dans l'objet product pour le frontend
+        $product->colors = $colors;
+        $product->sizes = $sizes;
 
         // Récupérer les avis du produit avec les utilisateurs
         $reviews = \App\Models\ProductReview::with(['user'])

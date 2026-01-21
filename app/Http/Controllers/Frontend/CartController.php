@@ -587,7 +587,7 @@ class CartController extends Controller
             'shipping_address_2' => null,
             'shipping_postal_code' => $shippingAddress->zip ?? '',
             'shipping_city' => $shippingAddress->city ?? '',
-            'shipping_country' => $shippingAddress->country ?? 'France',
+            'shipping_country' => $shippingAddress->country ?? 'Côte d\'ivoire',
             'shipping_phone' => $shippingAddress->phone ?? $sell->customer->phone_one ?? '',
 
             // Adresse de facturation depuis sell_order_addresses
@@ -596,7 +596,7 @@ class CartController extends Controller
             'billing_address' => $billingAddress->address ?? $shippingAddress->address ?? '',
             'billing_postal_code' => $billingAddress->zip ?? $shippingAddress->zip ?? '',
             'billing_city' => $billingAddress->city ?? $shippingAddress->city ?? '',
-            'billing_country' => $billingAddress->country ?? $shippingAddress->country ?? 'France',
+            'billing_country' => $billingAddress->country ?? $shippingAddress->country ?? 'Côte d\'ivoire',
             'billing_phone' => $billingAddress->phone ?? $shippingAddress->phone ?? '',
 
             // Méthodes

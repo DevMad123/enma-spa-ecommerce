@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import WishlistButton from '@/Components/Frontend/WishlistButton';
-import { formatVariablePrice } from '@/Utils/productPrice';
+import { formatVariablePrice, getDiscountPercentage } from '@/Utils/productPrice';
 import { formatCurrency } from '@/Utils/LocaleUtils';
 
 const buildImages = (product) => {
@@ -21,6 +21,7 @@ const ProductCardNew = memo(function ProductCardNew({
 }) {
   const images = useMemo(() => buildImages(product), [product]);
   const fp = useMemo(() => formatVariablePrice(product), [product]);
+  const discountPercent = useMemo(() => getDiscountPercentage(product), [product]);
   
   const isOut = (product?.available_quantity ?? product?.stock_quantity ?? product?.stock ?? 1) <= 0;
 
@@ -34,10 +35,19 @@ const ProductCardNew = memo(function ProductCardNew({
         {/* Image Container */}
         <div className="relative aspect-square bg-gray-50">
           {/* Badge Sale */}
-          {product?.discount_percentage > 0 && !isOut && (
+          {discountPercent > 0 && !isOut && (
             <div className="absolute top-3 left-3 z-10">
               <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                SALE
+                -{discountPercent}%
+              </span>
+            </div>
+          )}
+
+          {/* Badge Variable Price */}
+          {fp.isVariable && !isOut && (
+            <div className="absolute top-3 right-3 z-10">
+              <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
+                VARIABLE
               </span>
             </div>
           )}
@@ -84,7 +94,7 @@ const ProductCardNew = memo(function ProductCardNew({
                 </span>
               </div>
             ) : (
-              <div className="text-lg font-bold text-gray-900">
+              <div className={`text-lg font-bold ${fp.isVariable ? 'text-blue-600' : 'text-gray-900'}`}>
                 {fp.text}
               </div>
             )}
@@ -121,6 +131,7 @@ const ProductCardCompact = memo(function ProductCardCompact({
 }) {
   const images = useMemo(() => buildImages(product), [product]);
   const fp = useMemo(() => formatVariablePrice(product), [product]);
+  const discountPercent = useMemo(() => getDiscountPercentage(product), [product]);
   
   const isOut = (product?.available_quantity ?? product?.stock_quantity ?? product?.stock ?? 1) <= 0;
 
@@ -134,10 +145,10 @@ const ProductCardCompact = memo(function ProductCardCompact({
         {/* Image Container */}
         <div className="relative aspect-square bg-gray-50">
           {/* Badge Sale */}
-          {product?.discount_percentage > 0 && !isOut && (
+          {discountPercent > 0 && !isOut && (
             <div className="absolute top-2 left-2 z-10">
               <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                SALE
+                -{discountPercent}%
               </span>
             </div>
           )}

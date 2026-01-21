@@ -160,7 +160,7 @@ export default function CreateTaxRule({ title }) {
                                                     "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors",
                                                     errors.country_name ? "border-red-500" : "border-gray-300"
                                                 )}
-                                                placeholder="Ex: France, Belgique..."
+                                                placeholder="Ex: Côte d'Ivoire, France..."
                                                 required
                                             />
                                             {errors.country_name && (
@@ -287,7 +287,7 @@ export default function CreateTaxRule({ title }) {
                                                         value={zone}
                                                         onChange={(e) => updateDeliveryZone(index, e.target.value)}
                                                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                        placeholder="Ex: Île-de-France, Provence..."
+                                                        placeholder="Ex: Région des Lagunes, Provence..."
                                                     />
                                                     {deliveryZones.length > 1 && (
                                                         <button

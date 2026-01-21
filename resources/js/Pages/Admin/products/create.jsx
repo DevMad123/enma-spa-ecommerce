@@ -289,6 +289,23 @@ export default function CreateProduct() {
             formData.append('attributes', JSON.stringify(data.attributes));
         }
 
+        // Relations directes pour produits simples (nouveau système)
+        if (productType === 'simple') {
+            // Ajouter les couleurs sélectionnées
+            if (selectedColors.length > 0) {
+                selectedColors.forEach(colorId => {
+                    formData.append('simple_colors[]', colorId);
+                });
+            }
+            
+            // Ajouter les tailles sélectionnées
+            if (selectedSizes.length > 0) {
+                selectedSizes.forEach(sizeId => {
+                    formData.append('simple_sizes[]', sizeId);
+                });
+            }
+        }
+
         // Envoyer via Inertia
         router.post(route('admin.products.store'), formData, {
             onStart: () => {
@@ -576,6 +593,24 @@ export default function CreateProduct() {
                                 <SwatchIcon className="h-5 w-5 mr-2" />
                                 Couleurs et tailles
                             </h3>
+                            
+                            {productType === 'simple' && (
+                                <div className="mb-4 p-3 bg-blue-50 rounded-md">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Produit simple :</strong> Sélectionnez les couleurs et tailles disponibles. 
+                                        Le choix sera obligatoire pour les clients lors de l'achat.
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {productType === 'variable' && (
+                                <div className="mb-4 p-3 bg-yellow-50 rounded-md">
+                                    <p className="text-sm text-yellow-800">
+                                        <strong>Produit variable :</strong> Ces sélections serviront à créer les variantes 
+                                        avec prix et stocks spécifiques dans la section suivante.
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Couleurs */}
                             <div className="mb-6">

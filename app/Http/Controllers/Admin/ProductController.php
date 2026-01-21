@@ -210,6 +210,12 @@ class ProductController extends Controller
                 'wholesale_price' => 'nullable|numeric',
                 'available_quantity' => 'required_if:type,simple|nullable|integer',
 
+                // Relations directes pour produits simples
+                'simple_colors' => 'nullable|array',
+                'simple_colors.*' => 'exists:product_colors,id',
+                'simple_sizes' => 'nullable|array',
+                'simple_sizes.*' => 'exists:product_sizes,id',
+
                 'variants' => 'required_if:type,variable|nullable|array|min:1',
                 'variants.*.color_id' => 'nullable|exists:product_colors,id',
                 'variants.*.size_id' => 'nullable|exists:product_sizes,id',
@@ -325,6 +331,19 @@ class ProductController extends Controller
                 }
             }
 
+            // Gestion des relations directes pour produits simples
+            if ($request->type === 'simple') {
+                // Associer les couleurs directement (nouveau système)
+                if ($request->has('simple_colors') && !empty($request->simple_colors)) {
+                    $product->directColors()->attach($request->simple_colors);
+                }
+                
+                // Associer les tailles directement (nouveau système)  
+                if ($request->has('simple_sizes') && !empty($request->simple_sizes)) {
+                    $product->directSizes()->attach($request->simple_sizes);
+                }
+            }
+
             // Gestion des images additionnelles
             if ($request->hasFile('product_images')) {
                 foreach ($request->file('product_images') as $img) {
@@ -384,6 +403,13 @@ class ProductController extends Controller
                 'sale_price' => 'nullable|numeric',
                 'wholesale_price'=> 'nullable|numeric',
                 'available_quantity' => 'nullable|numeric',
+                
+                // Relations directes pour produits simples
+                'simple_colors' => 'nullable|array',
+                'simple_colors.*' => 'exists:product_colors,id',
+                'simple_sizes' => 'nullable|array',
+                'simple_sizes.*' => 'exists:product_sizes,id',
+                
                 'variants' => 'nullable|array',
                 'variants.*.color_id' => 'nullable|exists:product_colors,id',
                 'variants.*.size_id'  => 'nullable|exists:product_sizes,id',
@@ -492,6 +518,25 @@ class ProductController extends Controller
                 }
             } else {
                 Log::info('⚠️ Aucun attribut à traiter');
+            }
+
+            // Gestion des relations directes pour produits simples
+            if ($product->type === 'simple') {
+                // Synchroniser les couleurs directes (nouveau système)
+                if ($request->has('simple_colors')) {
+                    $colors = $request->simple_colors ?? [];
+                    $product->directColors()->sync($colors);
+                } else {
+                    $product->directColors()->detach();
+                }
+                
+                // Synchroniser les tailles directes (nouveau système)  
+                if ($request->has('simple_sizes')) {
+                    $sizes = $request->simple_sizes ?? [];
+                    $product->directSizes()->sync($sizes);
+                } else {
+                    $product->directSizes()->detach();
+                }
             }
 
             DB::commit();
@@ -610,7 +655,10 @@ class ProductController extends Controller
             'attributes.size',
             'variants.color',
             'variants.size',
-            'images'
+            'images',
+            // Charger les nouvelles relations directes
+            'directColors',
+            'directSizes'
         ]);
 
         $categories = ProductCategory::orderBy('name', 'asc')->get();

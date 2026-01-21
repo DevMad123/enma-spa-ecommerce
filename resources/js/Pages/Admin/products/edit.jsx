@@ -40,8 +40,25 @@ export default function EditProduct({ product, categories, subcategories: initia
     const parsedAttributes = parseAttributes(product.attributes);
     
     const [subcategories, setSubcategories] = useState(initialSubcategories || []);
-    const [selectedColors, setSelectedColors] = useState([...new Set(parsedAttributes.map(attr => attr.color_id).filter(Boolean))] || []);
-    const [selectedSizes, setSelectedSizes] = useState([...new Set(parsedAttributes.map(attr => attr.size_id).filter(Boolean))] || []);
+    
+    // Initialiser avec les relations directes (nouveau système) + fallback sur les attributs
+    const [selectedColors, setSelectedColors] = useState(() => {
+        // Priorité aux relations directes pour produits simples
+        if (product.type === 'simple' && product.direct_colors && product.direct_colors.length > 0) {
+            return product.direct_colors.map(color => color.id);
+        }
+        // Fallback sur les attributs (ancien système)
+        return [...new Set(parsedAttributes.map(attr => attr.color_id).filter(Boolean))] || [];
+    });
+    
+    const [selectedSizes, setSelectedSizes] = useState(() => {
+        // Priorité aux relations directes pour produits simples
+        if (product.type === 'simple' && product.direct_sizes && product.direct_sizes.length > 0) {
+            return product.direct_sizes.map(size => size.id);
+        }
+        // Fallback sur les attributs (ancien système)
+        return [...new Set(parsedAttributes.map(attr => attr.size_id).filter(Boolean))] || [];
+    });
     
     const [productType, setProductType] = useState(product.type || 'simple');
     const [variants, setVariants] = useState(product.variants || []);
@@ -143,6 +160,7 @@ export default function EditProduct({ product, categories, subcategories: initia
             size_id: '',
             purchase_cost: data.purchase_cost,
             sale_price: data.sale_price,
+            wholesale_price: data.wholesale_price || 0,
             available_quantity: 0,
             status: 1
         };
@@ -274,6 +292,23 @@ export default function EditProduct({ product, categories, subcategories: initia
                     formData.append(`variants[${index}][${key}]`, variant[key]);
                 });
             });
+        }
+
+        // Ajouter les relations directes pour produits simples (nouveau système)
+        if (productType === 'simple') {
+            // Ajouter les couleurs sélectionnées
+            if (selectedColors.length > 0) {
+                selectedColors.forEach(colorId => {
+                    formData.append('simple_colors[]', colorId);
+                });
+            }
+            
+            // Ajouter les tailles sélectionnées
+            if (selectedSizes.length > 0) {
+                selectedSizes.forEach(sizeId => {
+                    formData.append('simple_sizes[]', sizeId);
+                });
+            }
         }
 
         // Envoyer via Inertia
@@ -764,6 +799,20 @@ export default function EditProduct({ product, categories, subcategories: initia
                                                             type="number"
                                                             value={variant.sale_price}
                                                             onChange={(e) => updateVariant(index, 'sale_price', parseFloat(e.target.value) || 0)}
+                                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            step="0.01"
+                                                            min="0"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Prix de gros ({getCurrentCurrencySymbol()})
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={variant.wholesale_price || 0}
+                                                            onChange={(e) => updateVariant(index, 'wholesale_price', parseFloat(e.target.value) || 0)}
                                                             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                             step="0.01"
                                                             min="0"
