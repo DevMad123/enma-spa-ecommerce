@@ -24,6 +24,7 @@ import ProductSlider from '@/Components/Frontend/ProductSlider';
 // Hero Slider Section
 const HeroSlider = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [progressKey, setProgressKey] = useState(0); // Key pour réinitialiser l'animation CSS
 
     // Données des slides (vous pouvez les remplacer par des données dynamiques)
     const slides = [
@@ -59,7 +60,11 @@ const HeroSlider = () => {
     // Auto-play slider
     useEffect(() => {
         const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length);
+            setCurrentSlide((prev) => {
+                const nextIndex = (prev + 1) % slides.length;
+                setProgressKey(prevKey => prevKey + 1); // Réinitialise l'animation
+                return nextIndex;
+            });
         }, 5000);
 
         return () => clearInterval(timer);
@@ -67,14 +72,17 @@ const HeroSlider = () => {
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % slides.length);
+        setProgressKey(prevKey => prevKey + 1); // Réinitialise l'animation
     };
 
     const prevSlide = () => {
         setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+        setProgressKey(prevKey => prevKey + 1); // Réinitialise l'animation
     };
 
     const goToSlide = (index) => {
         setCurrentSlide(index);
+        setProgressKey(prevKey => prevKey + 1); // Réinitialise l'animation
     };
 
     return (
@@ -130,7 +138,7 @@ const HeroSlider = () => {
                                         {/* Bouton CTA */}
                                         <Link
                                             href={slide.ctaLink}
-                                            className="inline-flex items-center justify-center px-8 py-4 bg-black text-white font-semibold rounded-none hover:bg-gray-800 transition-all duration-300 transform hover:scale-105"
+                                            className="inline-flex items-center justify-center px-8 py-4 bg-black text-white font-bold rounded-none hover:bg-gray-800 transition-all duration-300 transform hover:scale-105"
                                             style={{
                                                 padding: '16px 32px',
                                                 fontSize: '14px',
@@ -164,19 +172,36 @@ const HeroSlider = () => {
                     <ChevronRightIcon className="w-5 h-5" />
                 </button>
 
-                {/* Indicateurs (dots) */}
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                {/* Barres de progression */}
+                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3 z-20">
                     {slides.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => goToSlide(index)}
-                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                currentSlide === index 
-                                    ? 'bg-white' 
-                                    : 'bg-white/50 hover:bg-white/70'
-                            }`}
+                            className="group relative h-1 bg-white/30 rounded-full overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/40"
+                            style={{ width: '60px' }}
                             aria-label={`Aller au slide ${index + 1}`}
-                        />
+                        >
+                            {/* Barre de fond */}
+                            <div className="absolute inset-0 bg-gray-600 rounded-full" />
+                            
+                            {/* Barre de progression */}
+                            <div 
+                                key={`progress-${index}-${progressKey}`}
+                                className={`absolute inset-0 bg-black rounded-full transform-gpu ${
+                                    currentSlide === index 
+                                        ? 'animate-progress-bar origin-left' 
+                                        : currentSlide > index || (currentSlide === 0 && index === slides.length - 1) 
+                                            ? 'w-full' 
+                                            : 'w-0'
+                                }`}
+                                style={{
+                                    animationDuration: currentSlide === index ? '5000ms' : '0ms',
+                                    animationFillMode: 'forwards',
+                                    animationTimingFunction: 'linear'
+                                }}
+                            />
+                        </button>
                     ))}
                 </div>
             </div>
@@ -243,7 +268,7 @@ const FeaturesSection = () => {
 
     return (
         <section className="py-20 bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {features.map((feature, index) => (
                         <div key={index} className="text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow">
@@ -328,7 +353,7 @@ const SneakerBrandsSlider = () => {
 
     return (
         <section className="py-[30px] md:py-[60px] bg-white" style={{ fontFamily: 'Barlow' }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Header avec titre et flèches */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2">
@@ -428,7 +453,7 @@ const ProductGrid = ({ products = [] }) => {
 
     return (
         <section className="py-16 md:py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold text-black font-['Barlow'] mb-4">
@@ -454,7 +479,7 @@ const ProductGrid = ({ products = [] }) => {
 const FeaturedProductsSection = ({ products = [] }) => {
     return (
         <section className="py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
                     <div>
@@ -491,7 +516,7 @@ const FeaturedProductsSection = ({ products = [] }) => {
 const CategoriesSection = ({ categories = [] }) => {
     return (
         <section className="py-20 bg-black text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16">
                     <h2 className="text-4xl md:text-5xl font-bold mb-4">

@@ -20,7 +20,7 @@ const WishlistButton = ({ product, className = "", size = "default" }) => {
     // Tailles des boutons
     const sizeClasses = {
         small: {
-            button: "p-2",
+            button: "p-3",
             icon: "h-4 w-4"
         },
         default: {
@@ -86,7 +86,7 @@ const WishlistButton = ({ product, className = "", size = "default" }) => {
             }
         >
             {isLoading ? (
-                <div className={`${currentSize.icon} animate-spin rounded-full border-2 border-current border-t-transparent text-gray-400`} />
+                <div className={`${currentSize.icon} animate-spin border-2 border-current border-t-transparent text-gray-400`} />
             ) : inWishlist ? (
                 <HeartIconSolid 
                     className={`

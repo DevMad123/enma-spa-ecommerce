@@ -21,35 +21,35 @@ const ModernProductCard = ({ product }) => {
                 <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
                     {/* Badge de réduction */}
                     {discountPercent > 0 && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                        <span className="bg-black text-white text-md px-2 py-1 rounded-sm font-bold tracking-wide">
                             -{discountPercent}%
                         </span>
                     )}
                     
                     {/* Badge Variable */}
-                    {priceInfo.isVariable && (
+                    {/* {priceInfo.isVariable && (
                         <span className="bg-gray-100 text-black text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
                             VARIABLE
                         </span>
-                    )}
+                    )} */}
 
                     {/* Badge rupture de stock */}
                     {(product?.available_quantity ?? 1) <= 0 && (
-                        <span className="bg-gray-700 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                        <span className="bg-gray-700 text-white text-md px-2 py-1 rounded-sm font-bold tracking-wide">
                             ÉPUISÉ
                         </span>
                     )}
 
                     {/* Badge sur commande */}
                     {product?.on_order && (
-                        <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-sm font-bold tracking-wide">
+                        <span className="bg-black text-white text-md px-2 py-1 rounded-sm font-bold tracking-wide">
                             SUR COMMANDE
                         </span>
                     )}
                     
                     {/* Badge 24H */}
                     {product?.fast_delivery && (
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide flex items-center gap-1">
+                        <span className="bg-black text-white text-md px-2 py-1 rounded-sm font-bold tracking-wide flex items-center gap-1">
                             <BoltIcon className="w-3 h-3" />
                             24H
                         </span>
@@ -57,7 +57,7 @@ const ModernProductCard = ({ product }) => {
 
                     {/* Badge NOUVEAU */}
                     {product?.is_new && (
-                        <span className="bg-black text-white text-xs px-2 py-1 rounded-sm font-medium tracking-wide">
+                        <span className="bg-black text-white text-md px-2 py-1 rounded-sm font-semibold tracking-wide">
                             NOUVEAU
                         </span>
                     )}
@@ -67,7 +67,7 @@ const ModernProductCard = ({ product }) => {
                 <div className="absolute top-2 right-2 z-20">
                     <WishlistButton 
                         product={product}
-                        className="bg-white/90 backdrop-blur-sm hover:bg-white p-2 rounded-full transition-all"
+                        className="bg-white/90 backdrop-blur-sm hover:bg-white p-3 transition-all"
                     />
                 </div>
 
@@ -88,7 +88,7 @@ const ModernProductCard = ({ product }) => {
             <Link href={productUrl}>
                 <div className="space-y-1">
                     {/* Nom produit */}
-                    <h3 className="text-lg font-medium text-gray-900 line-clamp-2 leading-tight">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 leading-tight">
                         {product?.name || 'Nom du produit'}
                     </h3>
                     
@@ -102,18 +102,33 @@ const ModernProductCard = ({ product }) => {
                     {/* Prix */}
                     <div className="flex items-center gap-2 pt-1">
                         {priceInfo.hasDiscount && priceInfo.compareAt ? (
-                            // Produit en solde
-                            <>
-                                <span className="text-lg font-semibold text-black">
-                                    {priceInfo.text}
-                                </span>
-                                <span className="text-sm text-gray-400 line-through">
-                                    {formatCurrency(priceInfo.compareAt)}
-                                </span>
-                            </>
+                            priceInfo.isVariable ? (
+                                // Produit variable avec réduction
+                                <div className="flex items-center gap-1 flex-wrap">
+                                    <span className="text-lg font-bold text-gray-900">
+                                        À partir de
+                                    </span>
+                                    <span className="text-sm text-gray-400 line-through">
+                                        {formatCurrency(priceInfo.compareAt)}
+                                    </span>
+                                    <span className="text-lg font-bold text-black">
+                                        {formatCurrency(priceInfo.price)}
+                                    </span>
+                                </div>
+                            ) : (
+                                // Produit simple ou variant unique avec réduction
+                                <>
+                                    <span className="text-lg font-bold text-black">
+                                        {priceInfo.text}
+                                    </span>
+                                    <span className="text-sm text-gray-400 line-through">
+                                        {formatCurrency(priceInfo.compareAt)}
+                                    </span>
+                                </>
+                            )
                         ) : (
-                            // Prix normal ou variable
-                            <span className={`text-lg font-semibold ${priceInfo.isVariable ? 'text-black' : 'text-gray-900'}`}>
+                            // Prix normal ou variable sans réduction
+                            <span className={`text-lg font-bold ${priceInfo.isVariable ? 'text-black' : 'text-gray-900'}`}>
                                 {priceInfo.text}
                             </span>
                         )}

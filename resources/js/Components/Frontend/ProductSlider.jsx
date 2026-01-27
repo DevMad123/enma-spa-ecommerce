@@ -76,7 +76,7 @@ const ProductSlider = ({
 
     return (
         <section className={`py-[30px] md:py-[60px] ${backgroundColor}`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Header avec titre et flèches */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2">
@@ -95,14 +95,14 @@ const ProductSlider = ({
                         <button
                             onClick={prevSlide}
                             disabled={currentIndex === 0}
-                            className="p-2 rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-4 border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeftIcon className="w-4 h-4" />
                         </button>
                         <button
                             onClick={nextSlide}
                             disabled={currentIndex >= maxIndex}
-                            className="p-2 rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-4 border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronRightIcon className="w-4 h-4" />
                         </button>

@@ -124,5 +124,24 @@
   transform: scale(1.02);
 }
 
+/* Animation pour la barre de progression du slider */
+@keyframes progress-bar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress-bar {
+  animation: progress-bar linear;
+}
 
 
+
+.EecDefaultWidth {
+  width: calc(100vw - 19px);
+  padding-left: 128px !important;
+  padding-right: 128px !important;
+}

@@ -30,33 +30,58 @@ export function formatVariablePrice(product) {
     const hasMultipleVariants = hasVariants && product.variants.length > 1;
 
     if (hasVariants) {
-        // Récupérer tous les prix des variants
-        const variantPrices = product.variants
-            .map(variant => parseFloat(variant.sale_price || variant.price || 0))
-            .filter(price => price > 0)
-            .sort((a, b) => a - b);
-
-        if (variantPrices.length > 0) {
-            const minPrice = variantPrices[0];
-            const maxPrice = variantPrices[variantPrices.length - 1];
-
-            if (hasMultipleVariants && minPrice !== maxPrice) {
-                // Affichage "À partir de X€"
+        // Récupérer les informations de réduction du produit principal
+        const basePrice = parseFloat(product.current_sale_price || 0);
+        const hasDiscount = product.has_discount || product.discount > 0;
+        const discountType = product.discount_type; // 0 = fixe, 1 = pourcentage
+        const discountValue = parseFloat(product.discount || 0);
+        
+        // Fonction pour appliquer la réduction à un prix
+        const applyDiscount = (price) => {
+            if (!hasDiscount || discountValue <= 0) return price;
+            
+            if (discountType === 1) { // Pourcentage
+                return price - (price * (discountValue / 100));
+            } else { // Montant fixe
+                return Math.max(0, price - discountValue);
+            }
+        };
+        
+        // Récupérer et traiter tous les prix des variants
+        const variantPricesData = product.variants
+            .map(variant => {
+                const originalPrice = parseFloat(variant.sale_price || variant.price || 0);
+                const finalPrice = applyDiscount(originalPrice);
                 return {
-                    price: minPrice,
-                    compareAt: null,
-                    text: `À partir de ${formatCurrency(minPrice)}`,
+                    originalPrice,
+                    finalPrice,
+                    hasValidPrice: originalPrice > 0
+                };
+            })
+            .filter(data => data.hasValidPrice)
+            .sort((a, b) => a.finalPrice - b.finalPrice);
+
+        if (variantPricesData.length > 0) {
+            const minPriceData = variantPricesData[0];
+            const maxPriceData = variantPricesData[variantPricesData.length - 1];
+            
+            if (hasMultipleVariants && minPriceData.finalPrice !== maxPriceData.finalPrice) {
+                // Affichage "À partir de X€" avec réduction
+                return {
+                    price: minPriceData.finalPrice,
+                    compareAt: hasDiscount ? minPriceData.originalPrice : null,
+                    text: `À partir de ${formatCurrency(minPriceData.finalPrice)}`,
                     isVariable: true,
-                    hasDiscount: false
+                    hasDiscount: hasDiscount
                 };
             } else {
                 // Un seul variant ou tous au même prix
                 return {
-                    price: minPrice,
-                    compareAt: null,
-                    text: formatCurrency(minPrice),
+                    price: minPriceData.finalPrice,
+                    compareAt: hasDiscount ? minPriceData.originalPrice : null,
+                    text: formatCurrency(minPriceData.finalPrice),
                     isVariable: false,
-                    hasDiscount: false
+                    hasDiscount: hasDiscount
                 };
             }
         }

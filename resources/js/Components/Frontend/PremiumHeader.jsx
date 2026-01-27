@@ -96,7 +96,7 @@ const PremiumHeader = ({
         <header className="bg-white sticky top-0 z-50 shadow-sm">
             {/* BLOC 1 - TOP HEADER */}
             <div className="bg-white h-[70px]">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 h-full">
                     <div className="flex items-center justify-between h-full">
                         {/* Logo */}
                         <Link href={route('home')} className="flex items-center">
@@ -254,7 +254,7 @@ const PremiumHeader = ({
                     borderTopWidth: '1px'
                 }}
             >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 h-full">
                     <nav className="flex items-center justify-center h-full">
                         <div className="flex items-center space-x-12">
                             {/* Sneakers avec MegaMenu */}
@@ -268,9 +268,9 @@ const PremiumHeader = ({
                                     className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
                                     style={{
                                         fontFamily: 'Barlow',
-                                        fontSize: '15px',
+                                        fontSize: '16px',
                                         fontWeight: 500,
-                                        letterSpacing: '0.025em'
+                                        letterSpacing: '0.075em'
                                     }}
                                 >
                                     Sneakers
@@ -298,9 +298,9 @@ const PremiumHeader = ({
                                     className="flex items-center text-black hover:text-gray-600 transition-colors duration-200"
                                     style={{
                                         fontFamily: 'Barlow',
-                                        fontSize: '15px',
+                                        fontSize: '16px',
                                         fontWeight: 500,
-                                        letterSpacing: '0.025em'
+                                        letterSpacing: '0.075em'
                                     }}
                                 >
                                     Streetwears
