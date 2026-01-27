@@ -100,7 +100,9 @@ Route::get('/a-propos', function () {
 })->name('a-propos-de-nous');
 
 Route::get('/contact', [FrontendContactController::class, 'index'])->name('contact');
-Route::post('/contact', [FrontendContactController::class, 'store'])->name('contact.store');
+Route::post('/contact', [FrontendContactController::class, 'store'])
+    ->name('contact.store')
+    ->middleware(['secureRate:contact']);
 
 // Pages légales et informatives
 Route::get('/aide-faq', function () {
@@ -115,11 +117,17 @@ Route::get('/conditions-generales', function () {
     return Inertia::render('Frontend/Terms');
 })->name('conditions-generales');
 
-// Routes Newsletter
+// Routes Newsletter - Sécurisées CSRF + Rate Limiting
 Route::prefix('newsletter')->name('newsletter.')->group(function () {
-    Route::post('/subscribe', [NewsletterController::class, 'subscribe'])->name('subscribe');
-    Route::post('/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe');
-    Route::post('/check', [NewsletterController::class, 'checkSubscription'])->name('check');
+    Route::post('/subscribe', [NewsletterController::class, 'subscribe'])
+        ->name('subscribe')
+        ->middleware(['secureRate:newsletter']);
+    Route::post('/unsubscribe', [NewsletterController::class, 'unsubscribe'])
+        ->name('unsubscribe')
+        ->middleware(['secureRate:newsletter']);
+    Route::post('/check', [NewsletterController::class, 'checkSubscription'])
+        ->name('check')
+        ->middleware(['secureRate:default']);
 });
 
 // -------------------
@@ -132,11 +140,13 @@ Route::prefix('shop')->name('frontend.shop.')->group(function () {
     Route::get('/product/{product}', [ShopController::class, 'show'])->name('show');
 });
 
-// Routes Panier et Commandes
+// Routes Panier et Commandes - Sécurisées
 Route::prefix('cart')->name('frontend.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
-    Route::post('/checkout', [CartController::class, 'processCheckout'])->name('process');
+    Route::post('/checkout', [CartController::class, 'processCheckout'])
+        ->name('process')
+        ->middleware(['secureRate:checkout', 'auth']);
     Route::get('/success/{sell}', [CartController::class, 'orderSuccess'])->name('success');
 });
 
@@ -145,16 +155,16 @@ Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('/product/{product}', [CartController::class, 'getProductForCart'])->name('product');
 });
 
-// Routes PayPal
-Route::prefix('paypal')->name('paypal.')->group(function () {
+// Routes PayPal - Sécurisées
+Route::prefix('paypal')->name('paypal.')->middleware(['secureRate:payment'])->group(function () {
     Route::post('/create-payment', [PayPalPaymentController::class, 'createPayment'])->name('create');
     Route::get('/callback/success/{order_id}', [PayPalPaymentController::class, 'handleSuccessCallback'])->name('callback.success');
     Route::get('/callback/cancel/{order_id}', [PayPalPaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
     Route::post('/check-status', [PayPalPaymentController::class, 'checkPaymentStatus'])->name('check-status');
 });
 
-// Routes Orange Money
-Route::prefix('orange-money')->name('orange-money.')->group(function () {
+// Routes Orange Money - Sécurisées
+Route::prefix('orange-money')->name('orange-money.')->middleware(['secureRate:payment'])->group(function () {
     Route::post('/create-payment', [OrangeMoneyPaymentController::class, 'createPayment'])->name('create');
     Route::get('/callback/success/{order_id}', [OrangeMoneyPaymentController::class, 'handleSuccessCallback'])->name('callback.success');
     Route::get('/callback/cancel/{order_id}', [OrangeMoneyPaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
@@ -162,8 +172,8 @@ Route::prefix('orange-money')->name('orange-money.')->group(function () {
     Route::post('/check-status', [OrangeMoneyPaymentController::class, 'checkPaymentStatus'])->name('check-status');
 });
 
-// Routes Wave
-Route::prefix('wave')->name('wave.')->group(function () {
+// Routes Wave - Sécurisées
+Route::prefix('wave')->name('wave.')->middleware(['secureRate:payment'])->group(function () {
     Route::post('/create-payment', [WavePaymentController::class, 'createPayment'])->name('create');
     Route::get('/callback/success/{order_id}', [WavePaymentController::class, 'handleSuccessCallback'])->name('callback.success');
     Route::get('/callback/cancel/{order_id}', [WavePaymentController::class, 'handleCancelCallback'])->name('callback.cancel');
@@ -518,10 +528,18 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
         Route::post('/bulk-deactivate', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkDeactivate'])->name('bulk-deactivate');
         Route::delete('/bulk-delete', [App\Http\Controllers\Admin\TaxRuleController::class, 'bulkDelete'])->name('bulk-delete');
     });
+
+    // Routes Audit de Sécurité - Accès restreint aux super-admins
+    Route::prefix('security')->name('security.')->middleware(['hasRole:super-admin'])->group(function () {
+        Route::get('/audit', [App\Http\Controllers\Admin\SecurityAuditController::class, 'index'])->name('audit');
+        Route::post('/audit/run', [App\Http\Controllers\Admin\SecurityAuditController::class, 'runAudit'])->name('audit.run');
+        Route::get('/audit/report', [App\Http\Controllers\Admin\SecurityAuditController::class, 'generateReport'])->name('audit.report');
+        Route::get('/audit/export', [App\Http\Controllers\Admin\SecurityAuditController::class, 'exportReport'])->name('audit.export');
+    });
 });
 
-// Routes API pour les règles de TVA (publiques)
-Route::prefix('api/tax')->name('api.tax.')->group(function () {
+// Routes API pour les règles de TVA (publiques sécurisées)
+Route::prefix('api/tax')->name('api.tax.')->middleware(['secureApi:standard'])->group(function () {
     Route::get('/info/{countryCode}', [App\Http\Controllers\Admin\TaxRuleController::class, 'getTaxInfo'])->name('info');
     Route::post('/calculate', [App\Http\Controllers\Admin\TaxRuleController::class, 'calculateTax'])->name('calculate');
 });

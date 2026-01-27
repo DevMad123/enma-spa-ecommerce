@@ -11,14 +11,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Inertia\Inertia;
-use Image;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\Log;
+use App\Traits\HandleImageUploads;
 
 class ProductSubcategoryController extends Controller
 {
+    use HandleImageUploads;
     /**
      * Display a list of product subcategories.
      *
@@ -32,15 +31,17 @@ class ProductSubcategoryController extends Controller
             ->withCount('products') // Count products for each subcategory
             ->whereNull('deleted_at');
 
-        // Global search filter
+        // Global search filter - Sécurisé
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('note', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%")
-                  ->orWhereHas('category', function($categoryQuery) use ($search) {
-                      $categoryQuery->where('name', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('note', 'like', $searchPattern)
+                  ->orWhere('slug', 'like', $searchPattern)
+                  ->orWhereHas('category', function($categoryQuery) use ($searchPattern) {
+                      $categoryQuery->where('name', 'like', $searchPattern);
                   });
             });
         }

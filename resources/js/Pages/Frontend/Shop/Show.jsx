@@ -697,19 +697,37 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
     };
   }, [product.id, selectedColor?.id, selectedSize?.id, isVariableProduct, hasColors, hasSizes]);
 
-  // Calculer le prix minimum des variants pour les produits variables
+  // Fonction pour calculer le prix avec réduction d'un variant
+  const calculateDiscountedPrice = useCallback((variantPrice) => {
+    const price = parseFloat(variantPrice || 0);
+    if (price <= 0) return 0;
+
+    const hasDiscount = product.has_discount || (product.discount && parseFloat(product.discount) > 0);
+    if (!hasDiscount) return price;
+
+    const discountValue = parseFloat(product.discount || 0);
+    const discountType = product.discount_type; // 0 = fixe, 1 = pourcentage
+
+    if (discountType === 1) { // Pourcentage
+      return price - (price * (discountValue / 100));
+    } else { // Montant fixe
+      return Math.max(0, price - discountValue);
+    }
+  }, [product.has_discount, product.discount, product.discount_type]);
+
+  // Calculer le prix minimum des variants pour les produits variables (avec réduction)
   const minVariantPrice = useMemo(() => {
     if (!isVariableProduct || !Array.isArray(product.variants) || product.variants.length === 0) {
       return null;
     }
     const prices = product.variants
-      .map(variant => variant.sale_price)
+      .map(variant => calculateDiscountedPrice(variant.sale_price))
       .filter(price => price != null && price > 0);
     
     return prices.length > 0 ? Math.min(...prices) : null;
-  }, [isVariableProduct, product.variants]);
+  }, [isVariableProduct, product.variants, calculateDiscountedPrice]);
 
-  // Calculer le prix minimum pour une couleur spécifique
+  // Calculer le prix minimum pour une couleur spécifique (avec réduction)
   const minPriceForColor = useMemo(() => {
     if (!isVariableProduct || !selectedColor || !Array.isArray(product.variants)) {
       return null;
@@ -717,13 +735,13 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
     
     const colorVariants = product.variants.filter(variant => variant.color_id === selectedColor.id);
     const prices = colorVariants
-      .map(variant => variant.sale_price)
+      .map(variant => calculateDiscountedPrice(variant.sale_price))
       .filter(price => price != null && price > 0);
     
     return prices.length > 0 ? Math.min(...prices) : null;
-  }, [isVariableProduct, selectedColor, product.variants]);
+  }, [isVariableProduct, selectedColor, product.variants, calculateDiscountedPrice]);
 
-  // Calculer le prix minimum pour une taille spécifique
+  // Calculer le prix minimum pour une taille spécifique (avec réduction)
   const minPriceForSize = useMemo(() => {
     if (!isVariableProduct || !selectedSize || !Array.isArray(product.variants)) {
       return null;
@@ -731,40 +749,86 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
     
     const sizeVariants = product.variants.filter(variant => variant.size_id === selectedSize.id);
     const prices = sizeVariants
-      .map(variant => variant.sale_price)
+      .map(variant => calculateDiscountedPrice(variant.sale_price))
       .filter(price => price != null && price > 0);
     return prices.length > 0 ? Math.min(...prices) : null;
-  }, [isVariableProduct, selectedSize, product.variants]);
+  }, [isVariableProduct, selectedSize, product.variants, calculateDiscountedPrice]);
 
-  // Pour les produits variables, utiliser une logique intelligente selon les sélections
+  // Calculer le prix original (avant réduction) pour un variant
+  const getOriginalPrice = useCallback((variantPrice) => {
+    const price = parseFloat(variantPrice || 0);
+    return price > 0 ? price : null;
+  }, []);
+
+  // Calculer le prix original minimum pour affichage barré
+  const originalPriceForDisplay = useMemo(() => {
+    if (isVariableProduct) {
+      // Si un variant exact est sélectionné, utiliser son prix original
+      if (selectedVariant?.sale_price && selectedColor && selectedSize) {
+        return getOriginalPrice(selectedVariant.sale_price);
+      }
+      
+      // Si seulement couleur sélectionnée, utiliser le prix original minimum pour cette couleur
+      if (selectedColor) {
+        const colorVariants = product.variants?.filter(v => v.color_id === selectedColor.id) || [];
+        const prices = colorVariants.map(v => parseFloat(v.sale_price || 0)).filter(p => p > 0);
+        return prices.length > 0 ? Math.min(...prices) : null;
+      }
+      
+      // Si seulement taille sélectionnée, utiliser le prix original minimum pour cette taille
+      if (selectedSize) {
+        const sizeVariants = product.variants?.filter(v => v.size_id === selectedSize.id) || [];
+        const prices = sizeVariants.map(v => parseFloat(v.sale_price || 0)).filter(p => p > 0);
+        return prices.length > 0 ? Math.min(...prices) : null;
+      }
+      
+      // Aucune sélection : prix original minimum global
+      const prices = product.variants?.map(v => parseFloat(v.sale_price || 0)).filter(p => p > 0) || [];
+      return prices.length > 0 ? Math.min(...prices) : (product.current_sale_price || product.price || 0);
+    }
+    
+    // Produit simple : prix original
+    return product.current_sale_price ?? product.price ?? 0;
+  }, [
+    isVariableProduct,
+    selectedVariant,
+    selectedColor,
+    selectedSize,
+    product.variants,
+    product.current_sale_price,
+    product.price,
+    getOriginalPrice
+  ]);
+
+  // Pour les produits variables, utiliser une logique intelligente selon les sélections (avec réduction)
   const effectivePrice = useMemo(() => {
     if (isVariableProduct) {
-      // Si un variant exact est sélectionné (couleur ET taille), utiliser son prix
+      // Si un variant exact est sélectionné (couleur ET taille), utiliser son prix avec réduction
       if (selectedVariant?.sale_price && selectedColor && selectedSize) {
-        return selectedVariant.sale_price;
+        return calculateDiscountedPrice(selectedVariant.sale_price);
       }
       
       // Si couleur ET taille sélectionnées mais pas de variant trouvé, utiliser le minimum des deux
       if (selectedColor && selectedSize) {
-        return Math.min(minPriceForColor || Infinity, minPriceForSize || Infinity) || minVariantPrice || product.current_sale_price || 0;
+        return Math.min(minPriceForColor || Infinity, minPriceForSize || Infinity) || minVariantPrice || calculateDiscountedPrice(product.current_sale_price) || 0;
       }
       
-      // Si seulement couleur sélectionnée, utiliser le prix minimum pour cette couleur
+      // Si seulement couleur sélectionnée, utiliser le prix minimum pour cette couleur (avec réduction)
       if (selectedColor && minPriceForColor) {
         return minPriceForColor;
       }
       
-      // Si seulement taille sélectionnée, utiliser le prix minimum pour cette taille
+      // Si seulement taille sélectionnée, utiliser le prix minimum pour cette taille (avec réduction)
       if (selectedSize && minPriceForSize) {
         return minPriceForSize;
       }
       
-      // Aucune sélection : utiliser le prix minimum global
-      return minVariantPrice ?? product.current_sale_price ?? 0;
+      // Aucune sélection : utiliser le prix minimum global (avec réduction)
+      return minVariantPrice ?? calculateDiscountedPrice(product.current_sale_price) ?? 0;
     }
     
-    // Produit simple : prix fixe
-    return product.current_sale_price ?? product.price ?? 0;
+    // Produit simple : prix avec réduction
+    return calculateDiscountedPrice(product.current_sale_price ?? product.price ?? 0);
   }, [
     isVariableProduct, 
     selectedVariant?.sale_price, 
@@ -774,10 +838,15 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
     minPriceForSize, 
     minVariantPrice, 
     product.current_sale_price, 
-    product.price
+    product.price,
+    calculateDiscountedPrice
   ]);
   
-  const compareAt = product.price && product.price > effectivePrice ? product.price : null;
+  // Vérifier s'il y a une réduction à afficher
+  const hasDiscount = product.has_discount || (product.discount && parseFloat(product.discount) > 0);
+  const compareAt = hasDiscount && originalPriceForDisplay && originalPriceForDisplay > effectivePrice 
+    ? originalPriceForDisplay 
+    : null;
   
   const effectiveStock = isVariableProduct 
     ? (selectedVariant?.stock ?? product.stock_quantity ?? product.available_quantity ?? 0)
@@ -888,12 +957,20 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
               {/* 3. PRIX */}
               <div className="space-y-1">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl font-semibold text-gray-900 font-barlow">
-                    {variantLoading ? '...' : formatCurrency(effectivePrice)}
-                  </span>
-                  {compareAt && (
-                    <span className="text-lg text-gray-500 line-through font-barlow">
-                      {formatCurrency(compareAt)}
+                  {compareAt ? (
+                    // Avec réduction : afficher prix original barré + prix en solde en rouge
+                    <>
+                      <span className="text-lg text-gray-500 line-through font-barlow">
+                        {formatCurrency(compareAt)}
+                      </span>
+                      <span className="text-2xl font-bold text-black font-barlow">
+                        {variantLoading ? '...' : formatCurrency(effectivePrice)}
+                      </span>
+                    </>
+                  ) : (
+                    // Sans réduction : afficher prix normal
+                    <span className="text-2xl font-semibold text-gray-900 font-barlow">
+                      {variantLoading ? '...' : formatCurrency(effectivePrice)}
                     </span>
                   )}
                 </div>

@@ -18,12 +18,14 @@ class TaxRuleController extends Controller
     {
         $query = TaxRule::query();
         
-        // Recherche par nom ou code pays
+        // Recherche par nom ou code pays - Sécurisée
         if (request('search')) {
             $search = request('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('country_name', 'like', "%{$search}%")
-                  ->orWhere('country_code', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function ($q) use ($searchPattern) {
+                $q->where('country_name', 'like', $searchPattern)
+                  ->orWhere('country_code', 'like', $searchPattern);
             });
         }
         

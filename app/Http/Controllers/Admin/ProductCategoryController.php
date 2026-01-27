@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\ValidationException;
@@ -11,14 +10,13 @@ use App\Models\ProductSubCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Image;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use App\Traits\HandleImageUploads;
 
 class ProductCategoryController extends Controller
 {
+    use HandleImageUploads;
      /**
      * Display a list of product categories.
      *
@@ -32,13 +30,15 @@ class ProductCategoryController extends Controller
             ->withCount('products') // Count products for each category
             ->whereNull('deleted_at');
 
-        // Global search filter
+        // Global search filter - Sécurisé
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('note', 'like', "%$search%")
-                  ->orWhere('slug', 'like', "%$search%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('note', 'like', $searchPattern)
+                  ->orWhere('slug', 'like', $searchPattern);
             });
         }
 
@@ -135,7 +135,7 @@ class ProductCategoryController extends Controller
 
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $this->categoryImageSave($request->file('image'));
+                $imagePath = $this->uploadCategoryImage($request->file('image'));
             }
 
             $category = new ProductCategory();
@@ -306,24 +306,11 @@ class ProductCategoryController extends Controller
             // Gestion de l'image
             if ($request->boolean('image_deleted')) {
                 // Supprimer l'image existante
-                if ($category->image) {
-                    $oldPath = str_replace('storage/', '', $category->image);
-                    if (Storage::disk('public')->exists($oldPath)) {
-                        Storage::disk('public')->delete($oldPath);
-                    }
-                }
+                $this->deleteImage($category->image);
                 $category->image = null;
             } elseif ($request->hasFile('image')) {
-                // Supprimer l'ancienne image si elle existe
-                if ($category->image) {
-                    $oldPath = str_replace('storage/', '', $category->image);
-                    if (Storage::disk('public')->exists($oldPath)) {
-                        Storage::disk('public')->delete($oldPath);
-                    }
-                }
-                
-                // Sauvegarder la nouvelle image
-                $category->image = $this->categoryImageSave($request->file('image'));
+                // Update image avec cleanup automatique
+                $category->image = $this->updateCategoryImage($request->file('image'), $category->image);
             }
 
             // Mise à jour des autres champs

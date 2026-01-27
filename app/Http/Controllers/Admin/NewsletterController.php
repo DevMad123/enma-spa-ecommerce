@@ -36,9 +36,12 @@ class NewsletterController extends Controller
             }
         }
 
-        // Recherche par email
+        // Recherche par email - Sécurisée
         if ($request->filled('search')) {
-            $query->where('email', 'like', "%{$request->search}%");
+            $search = $request->search;
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where('email', 'like', $searchPattern);
         }
 
         $newsletters = $query->orderBy('subscribed_at', 'desc')

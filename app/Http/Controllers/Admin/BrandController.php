@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use App\Traits\HandleImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class BrandController extends Controller
 {
+    use HandleImageUploads;
     /**
      * Display a listing of the brands.
      */
@@ -101,7 +101,7 @@ class BrandController extends Controller
 
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $this->brandImageSave($request->file('image'));
+                $imagePath = $this->uploadBrandImage($request->file('image'));
             }
 
             $brand = Brand::create([
@@ -172,14 +172,8 @@ class BrandController extends Controller
             // Gérer l'image
             $imagePath = $brand->image;
             if ($request->hasFile('image')) {
-                // Supprimer l'ancienne image si elle existe
-                if ($brand->image) {
-                    $oldImagePath = str_replace('storage/', '', $brand->image);
-                    if (Storage::disk('public')->exists($oldImagePath)) {
-                        Storage::disk('public')->delete($oldImagePath);
-                    }
-                }
-                $imagePath = $this->brandImageSave($request->file('image'));
+                // Update avec cleanup automatique de l'ancienne image
+                $imagePath = $this->updateBrandImage($request->file('image'), $brand->image);
             }
 
             $brand->update([

@@ -20,11 +20,13 @@ class ShippingController extends Controller
         $query = Shipping::with(['createdBy', 'updatedBy'])
                         ->withCount('sells');
 
-        // Recherche
+        // Recherche - Sécurisée
         if ($search = $request->get('search')) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('description', 'like', $searchPattern);
             });
         }
 

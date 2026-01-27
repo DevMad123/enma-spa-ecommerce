@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use App\Traits\HandleImageUploads;
 use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
+    use HandleImageUploads;
     /**
      * Display a listing of the customers.
      */
@@ -304,8 +304,9 @@ class CustomerController extends Controller
 
     /**
      * Handle image upload with optimization.
+     * @deprecated Utiliser $this->uploadCustomerImage() à la place
      */
-    private function handleImageUpload($file)
+    private function handleImageUploadLegacy($file)
     {
         try {
             $manager = new ImageManager(new GdDriver());

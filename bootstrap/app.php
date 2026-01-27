@@ -4,6 +4,7 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\HasRole;
 use App\Http\Middleware\HasAnyRole;
 use App\Http\Middleware\UpdateLastLogin;
+use App\Http\Middleware\SecureRateLimiter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -37,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'isAdmin' => IsAdmin::class,
             'hasRole' => HasRole::class,
             'hasAnyRole' => HasAnyRole::class,
+            'secureRate' => SecureRateLimiter::class,
+            'secureApi' => \App\Http\Middleware\SecurePublicApiMiddleware::class,
         ]);
 
         //

@@ -20,12 +20,14 @@ class ProductColorController extends Controller
     {
         $query = ProductColor::query()->withCount('products');
 
-        // Recherche globale
+        // Recherche globale - Sécurisée
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('color_code', 'like', '%' . $search . '%');
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('color_code', 'like', $searchPattern);
             });
         }
 

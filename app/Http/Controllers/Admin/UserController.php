@@ -17,14 +17,16 @@ class UserController extends Controller
     {
         $query = User::with('roles');
 
-        // Search functionality
+        // Search functionality - Sécurisée
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function ($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('email', 'like', $searchPattern)
+                  ->orWhere('first_name', 'like', $searchPattern)
+                  ->orWhere('last_name', 'like', $searchPattern);
             });
         }
 
@@ -184,14 +186,16 @@ class UserController extends Controller
     {
         $query = User::with('roles');
 
-        // Apply same filters as index
+        // Apply same filters as index - Sécurisées
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function ($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('email', 'like', $searchPattern)
+                  ->orWhere('first_name', 'like', $searchPattern)
+                  ->orWhere('last_name', 'like', $searchPattern);
             });
         }
 

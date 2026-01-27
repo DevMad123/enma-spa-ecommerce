@@ -12,17 +12,17 @@ use App\Models\ProductCategory;
 use App\Models\ProductColor;
 use App\Models\ProductSize;
 use App\Models\ProductSubCategory;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use PhpParser\Node\Expr\Array_;
 use PDF;
+use App\Traits\HandleImageUploads;
 
 class ProductController extends Controller
 {
+    use HandleImageUploads;
     public function index(Request $request)
     {
         $query = Product::query()
@@ -39,17 +39,19 @@ class ProductController extends Controller
             ])
             ->whereNull('deleted_at');
 
-        // Recherche globale
+        // Recherche globale - Sécurisée
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('code', 'like', "%$search%")
-                  ->orWhereHas('category', function($catQuery) use ($search) {
-                      $catQuery->where('name', 'like', "%$search%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('code', 'like', $searchPattern)
+                  ->orWhereHas('category', function($catQuery) use ($searchPattern) {
+                      $catQuery->where('name', 'like', $searchPattern);
                   })
-                  ->orWhereHas('brand', function($brandQuery) use ($search) {
-                      $brandQuery->where('brand_name', 'like', "%$search%");
+                  ->orWhereHas('brand', function($brandQuery) use ($searchPattern) {
+                      $brandQuery->where('brand_name', 'like', $searchPattern);
                   });
             });
         }
@@ -270,7 +272,7 @@ class ProductController extends Controller
             $product = new Product();
             $product->fill($productData);
             $product->type = $request->type;
-            $product->image_path = $this->productImageSave($request->file('main_image'));
+            $product->image_path = $this->uploadProductImage($request->file('main_image'));
             $product->save();
 
             // Générer le code uniquement si aucun code n’a été envoyé
@@ -348,7 +350,7 @@ class ProductController extends Controller
             if ($request->hasFile('product_images')) {
                 foreach ($request->file('product_images') as $img) {
                     $product->images()->create([
-                        'image' => $this->productImageSave($img),
+                        'image' => $this->uploadProductImage($img),
                     ]);
                 }
             }
@@ -446,14 +448,14 @@ class ProductController extends Controller
             if ($request->hasFile('product_images')) {
                 foreach ($request->file('product_images') as $img) {
                     $product->images()->create([
-                        'image' => $this->productImageSave($img),
+                        'image' => $this->uploadProductImage($img),
                     ]);
                 }
             }
             if ($request->boolean('main_image_deleted')) {
                 $product->image_path = null;
             } elseif ($request->hasFile('main_image')) {
-                $product->image_path = $this->productImageSave($request->file('main_image'));
+                $product->image_path = $this->updateProductImage($request->file('main_image'), $product->image_path);
             }
 
             // Préparer les données avec conversion des booléens
@@ -554,46 +556,6 @@ class ProductController extends Controller
             return back()->withErrors(['error' => 'Erreur lors de la mise à jour du produit.'])->withInput();
         }
     }
-    /**
-     * Sauvegarder une image produit
-     */
-    protected function productImageSave($image)
-    {
-        if ($image) {
-            // $ext = $image->getClientOriginalExtension();
-            $fileName = "product-" . time() . rand(1000, 9999) . '.webp';
-            $filePath = 'product_images/' . $fileName;
-
-            // ✅ Créez l'instance du gestionnaire d'image
-            $imageManager = new ImageManager(new GdDriver());
-            // ✅ Chargez l'image téléchargée pour la manipulation
-            try {
-                $img = $imageManager->read($image);
-            } catch (\Throwable $e) {
-                Log::warning('GD failed to read product image, trying Imagick: ' . $e->getMessage());
-                try {
-                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
-                    $img = $imageManager->read($image);
-                } catch (\Throwable $e2) {
-                    Log::error('Imagick failed to read product image: ' . $e2->getMessage());
-                    throw ValidationException::withMessages([
-                        'main_image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
-                    ]);
-                }
-            }
-            // ✅ Redimensionnez et encodez l'image
-            $img->resize(400, 400);
-
-            $encodedImageContent = $img->toWebp(70);
-
-            Storage::disk('public')->put($filePath, $encodedImageContent);
-
-            return 'storage/' . $filePath;
-        }
-
-        return null;
-    }
-
     public function createProduct()
     {
         $categories = ProductCategory::orderBy('name', 'asc')->get();

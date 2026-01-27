@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
@@ -34,7 +35,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
         $user = User::create([
             'name' => $data['name'],
@@ -61,10 +62,15 @@ class AuthController extends Controller
     {
         $request->validate([
             'currentPass' => 'required|string',
-            'newPass' => 'required|string|min:6',
+            'newPass' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
         $user = Auth::user();
         if (!Hash::check($request->currentPass, $user->password)) {
+            \Log::warning('Failed password change attempt', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
             return response()->json(['status' => 400, 'msg' => "The current password is incorrect"]);
         }
         $user->update(['password' => Hash::make($request->newPass)]);

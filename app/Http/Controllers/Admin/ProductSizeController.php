@@ -20,10 +20,12 @@ class ProductSizeController extends Controller
     {
         $query = ProductSize::query()->withCount('products');
 
-        // Recherche globale
+        // Recherche globale - Sécurisée
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('size', 'like', '%' . $search . '%');
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            $query->where('size', 'like', $searchPattern);
         }
 
         // Tri

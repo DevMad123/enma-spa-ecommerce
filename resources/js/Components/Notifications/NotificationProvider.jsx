@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { 
     CheckCircleIcon,
     ExclamationTriangleIcon,
@@ -58,47 +58,127 @@ const notificationConfig = {
     }
 };
 
-// Composant Notification individuel
+// Composant Notification individuel avec barre de progression
 const NotificationItem = ({ notification, onRemove }) => {
     const config = notificationConfig[notification.type];
     const IconComponent = config.icon;
+    const [progress, setProgress] = useState(100);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const timerRef = useRef(null);
+
+    useEffect(() => {
+        if (notification.duration > 0) {
+            // Animation de la barre de progression
+            const interval = 50; // Update every 50ms
+            const decrementValue = (100 / notification.duration) * interval;
+            
+            timerRef.current = setInterval(() => {
+                setProgress(prev => {
+                    const newProgress = prev - decrementValue;
+                    if (newProgress <= 0) {
+                        setIsLeaving(true);
+                        setTimeout(() => onRemove(notification.id), 300);
+                        clearInterval(timerRef.current);
+                        return 0;
+                    }
+                    return newProgress;
+                });
+            }, interval);
+        }
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [notification.duration, notification.id, onRemove]);
+
+    const handleClose = () => {
+        setIsLeaving(true);
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+        setTimeout(() => onRemove(notification.id), 300);
+    };
+
+    const handleMouseEnter = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (notification.duration > 0 && progress > 0) {
+            const interval = 50;
+            const decrementValue = (100 / notification.duration) * interval;
+            
+            timerRef.current = setInterval(() => {
+                setProgress(prev => {
+                    const newProgress = prev - decrementValue;
+                    if (newProgress <= 0) {
+                        setIsLeaving(true);
+                        setTimeout(() => onRemove(notification.id), 300);
+                        clearInterval(timerRef.current);
+                        return 0;
+                    }
+                    return newProgress;
+                });
+            }, interval);
+        }
+    };
 
     return (
         <div 
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             className={`
                 ${config.bg} ${config.border} ${config.text}
-                border rounded-lg p-4 shadow-lg backdrop-blur-sm
+                border rounded-lg shadow-lg backdrop-blur-sm
                 transform transition-all duration-300 ease-in-out
-                animate-slide-in-right hover:scale-102
-                max-w-md w-full
+                max-w-md w-full overflow-hidden relative
+                ${isLeaving ? 'animate-slide-out-right opacity-0' : 'animate-slide-in-right'}
+                hover:shadow-xl hover:scale-[1.02]
             `}
         >
-            <div className="flex items-start">
-                <div className="flex-shrink-0">
-                    <IconComponent className={`h-5 w-5 ${config.iconColor}`} />
+            {/* Barre de progression */}
+            {notification.duration > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 bg-opacity-30">
+                    <div 
+                        className={`h-full ${config.iconColor.replace('text-', 'bg-')} transition-all ease-linear`}
+                        style={{ width: `${progress}%` }}
+                    />
                 </div>
-                <div className="ml-3 flex-1">
-                    {notification.title && (
-                        <h3 className="text-sm font-semibold mb-1">
-                            {notification.title}
-                        </h3>
-                    )}
-                    <p className="text-sm">
-                        {notification.message}
-                    </p>
-                </div>
-                <div className="ml-4 flex-shrink-0">
-                    <button
-                        onClick={() => onRemove(notification.id)}
-                        className={`
-                            inline-flex rounded-md p-1.5 
-                            ${config.text} hover:bg-white/50
-                            focus:outline-none focus:ring-2 focus:ring-offset-2
-                            transition-colors duration-200
-                        `}
-                    >
-                        <XMarkIcon className="h-4 w-4" />
-                    </button>
+            )}
+
+            <div className="p-4">
+                <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                        <IconComponent className={`h-6 w-6 ${config.iconColor} animate-bounce-in`} />
+                    </div>
+                    <div className="ml-3 flex-1">
+                        {notification.title && (
+                            <h3 className="text-sm font-semibold mb-1">
+                                {notification.title}
+                            </h3>
+                        )}
+                        <p className="text-sm">
+                            {notification.message}
+                        </p>
+                    </div>
+                    <div className="ml-4 flex-shrink-0">
+                        <button
+                            onClick={handleClose}
+                            className={`
+                                inline-flex rounded-md p-1.5 
+                                ${config.text} hover:bg-white/50
+                                focus:outline-none focus:ring-2 focus:ring-offset-2
+                                transition-all duration-200 hover:rotate-90
+                            `}
+                            aria-label="Fermer la notification"
+                        >
+                            <XMarkIcon className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -132,8 +212,9 @@ const NotificationContainer = ({ notifications, onRemove }) => {
 // Provider des notifications
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
+    const notificationQueue = useRef([]);
 
-    // Fonction pour ajouter une notification
+    // Fonction pour ajouter une notification avec déduplication
     const addNotification = useCallback((notification) => {
         const id = Date.now() + Math.random();
         const newNotification = {
@@ -142,10 +223,25 @@ export const NotificationProvider = ({ children }) => {
             title: null,
             message: '',
             duration: 5000,
+            groupKey: null, // Pour déduplication
             ...notification
         };
 
-        setNotifications(prev => [...prev, newNotification]);
+        // Déduplication: si une notification avec la même groupKey existe déjà, on la met à jour
+        if (newNotification.groupKey) {
+            setNotifications(prev => {
+                const existingIndex = prev.findIndex(n => n.groupKey === newNotification.groupKey);
+                if (existingIndex !== -1) {
+                    // Remplace la notification existante
+                    const updated = [...prev];
+                    updated[existingIndex] = { ...newNotification, id: prev[existingIndex].id };
+                    return updated;
+                }
+                return [...prev, newNotification];
+            });
+        } else {
+            setNotifications(prev => [...prev, newNotification]);
+        }
 
         // Auto-suppression après la durée spécifiée
         if (newNotification.duration > 0) {

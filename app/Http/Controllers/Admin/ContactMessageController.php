@@ -21,14 +21,18 @@ class ContactMessageController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Recherche
+        // Recherche sécurisée
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%")
-                  ->orWhere('message', 'like', "%{$search}%");
+            // Échappement sécurisé des caractères spéciaux pour LIKE
+            $escapedSearch = addcslashes($search, '%_\\');
+            $searchPattern = "%{$escapedSearch}%";
+            
+            $query->where(function($q) use ($searchPattern) {
+                $q->where('name', 'like', $searchPattern)
+                  ->orWhere('email', 'like', $searchPattern)
+                  ->orWhere('subject', 'like', $searchPattern)
+                  ->orWhere('message', 'like', $searchPattern);
             });
         }
 

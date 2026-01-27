@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Traits\HandleImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SupplierController extends Controller
 {
+    use HandleImageUploads;
+
     /**
      * Display a listing of the suppliers.
      */
@@ -111,7 +112,7 @@ class SupplierController extends Controller
 
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $this->supplierImageSave($request->file('image'));
+                $imagePath = $this->uploadSupplierImage($request->file('image'));
             }
 
             $supplier = Supplier::create([
@@ -198,14 +199,7 @@ class SupplierController extends Controller
             // Gérer l'image
             $imagePath = $supplier->image;
             if ($request->hasFile('image')) {
-                // Supprimer l'ancienne image si elle existe
-                if ($supplier->image) {
-                    $oldImagePath = str_replace('storage/', '', $supplier->image);
-                    if (Storage::disk('public')->exists($oldImagePath)) {
-                        Storage::disk('public')->delete($oldImagePath);
-                    }
-                }
-                $imagePath = $this->supplierImageSave($request->file('image'));
+                $imagePath = $this->updateSupplierImage($request->file('image'), $supplier->image);
             }
 
             $supplier->update([
@@ -266,39 +260,5 @@ class SupplierController extends Controller
             Log::error('Erreur lors de la suppression du fournisseur: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Une erreur est survenue lors de la suppression du fournisseur']);
         }
-    }
-
-    /**
-     * Save and optimize the supplier image.
-     */
-    protected function supplierImageSave($image)
-    {
-        if ($image) {
-            $fileName = "supplier-" . time() . rand(1000, 9999) . '.webp';
-            $filePath = 'supplier_icons/' . $fileName;
-
-            $imageManager = new ImageManager(new GdDriver());
-            try {
-                $img = $imageManager->read($image);
-            } catch (\Throwable $e) {
-                \Log::warning('GD failed to read supplier image, trying Imagick: ' . $e->getMessage());
-                try {
-                    $imageManager = new ImageManager(new \Intervention\Image\Drivers\Imagick\Driver());
-                    $img = $imageManager->read($image);
-                } catch (\Throwable $e2) {
-                    \Log::error('Imagick failed to read supplier image: ' . $e2->getMessage());
-                    throw ValidationException::withMessages([
-                        'image' => "Format d'image non supporté (activez AVIF ou utilisez JPG/PNG/WEBP)."
-                    ]);
-                }
-            }
-            $img->resize(200, 200);
-            $encodedImageContent = $img->toWebp(70);
-
-            Storage::disk('public')->put($filePath, $encodedImageContent);
-
-            return 'storage/' . $filePath;
-        }
-        return null;
     }
 }
