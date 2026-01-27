@@ -345,6 +345,20 @@ const PremiumHeader = ({
                             >
                                 Le Outline
                             </Link>
+
+                            {/* Blog */}
+                            <Link
+                                href={route('blog.index')}
+                                className="text-black hover:text-gray-600 transition-colors duration-200"
+                                style={{
+                                    fontFamily: 'Barlow',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.025em'
+                                }}
+                            >
+                                Le Outline
+                            </Link>
                         </div>
                     </nav>
                 </div>
@@ -393,6 +407,13 @@ const PremiumHeader = ({
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Le Outline
+                                </Link>
+                                <Link
+                                    href={route('blog.index')}
+                                    className="block text-lg font-medium text-black hover:text-gray-600"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Blog
                                 </Link>
                             </div>
                         </div>

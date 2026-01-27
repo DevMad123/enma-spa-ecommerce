@@ -33,7 +33,8 @@
         },
         "files": [
             "app/Helpers/CurrencyHelper.php",
-            "app/Helpers/LocaleHelper.php"
+            "app/Helpers/LocaleHelper.php",
+            "app/Helpers/BlogHelper.php"
         ]
     },
     "autoload-dev": {

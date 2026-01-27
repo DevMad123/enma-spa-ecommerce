@@ -1,0 +1,226 @@
+/* 
+ * Blog Sneakers - Styles complémentaires
+ * Style 43einhalb : minimaliste, moderne, typographie forte
+ */
+
+/* Hide scrollbar for categories navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Prose custom styles for blog content */
+.prose {
+  @apply text-gray-700;
+}
+
+.prose h2 {
+  @apply font-barlow font-bold text-black text-3xl mt-12 mb-6 uppercase tracking-tight;
+}
+
+.prose h3 {
+  @apply font-barlow font-bold text-black text-2xl mt-8 mb-4 tracking-tight;
+}
+
+.prose p {
+  @apply text-gray-700 leading-relaxed mb-6 font-barlow;
+  font-size: 1.125rem;
+}
+
+.prose a {
+  @apply text-black font-semibold underline hover:no-underline transition-all;
+}
+
+.prose strong {
+  @apply text-black font-bold;
+}
+
+.prose ul {
+  @apply my-6 space-y-2;
+}
+
+.prose li {
+  @apply text-gray-700 leading-relaxed font-barlow;
+  font-size: 1.125rem;
+}
+
+.prose img {
+  @apply rounded-none w-full my-8 shadow-lg;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-black pl-6 italic text-gray-600 my-8;
+}
+
+/* Blog card hover effects */
+.blog-card-image {
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blog-card:hover .blog-card-image {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* Smooth transitions for arrows */
+.arrow-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.arrow-transition:hover {
+  transform: translateX(4px);
+}
+
+/* Line clamp utilities (si Tailwind ne les a pas) */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Animation fade in pour les images */
+@keyframes blog-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.blog-fade-in {
+  animation: blog-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Custom gradient overlay pour les hero images */
+.blog-hero-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* Sticky header pour la navigation catégories */
+.blog-categories-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus states accessibles */
+.blog-card:focus-visible,
+.blog-link:focus-visible {
+  @apply outline-none ring-2 ring-black ring-offset-2;
+}
+
+/* Print styles pour les articles */
+@media print {
+  .blog-categories-sticky,
+  .blog-share-button,
+  .blog-related {
+    display: none;
+  }
+
+  .prose {
+    @apply text-black;
+  }
+
+  .prose a {
+    @apply underline;
+    color: #000;
+  }
+}
+
+/* Dark mode support (optionnel) */
+@media (prefers-color-scheme: dark) {
+  /* À activer si vous implémentez un dark mode */
+  /*
+  .blog-card {
+    @apply bg-gray-900 border-gray-800;
+  }
+
+  .prose {
+    @apply text-gray-300;
+  }
+
+  .prose h2,
+  .prose h3 {
+    @apply text-white;
+  }
+  */
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  .prose p,
+  .prose li {
+    font-size: 1rem;
+  }
+
+  .prose h2 {
+    @apply text-2xl;
+  }
+
+  .prose h3 {
+    @apply text-xl;
+  }
+}
+
+/* Loading skeleton (pour future lazy loading) */
+@keyframes pulse-blog {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.blog-skeleton {
+  animation: pulse-blog 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e5e7eb 50%,
+    #f3f4f6 75%
+  );
+  background-size: 200% 100%;
+}

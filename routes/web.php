@@ -16,6 +16,7 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ProfileController as FrontendProfileController;
 use App\Http\Controllers\Frontend\ContactController as FrontendContactController;
 use App\Http\Controllers\Frontend\NewsletterController;
+use App\Http\Controllers\Frontend\BlogController;
 
 // Contrôleurs admin
 use App\Http\Controllers\Admin\DashboardController;
@@ -138,6 +139,15 @@ Route::prefix('shop')->name('frontend.shop.')->group(function () {
     Route::get('/category/{category}', [ShopController::class, 'category'])->name('category');
     Route::get('/subcategory/{subcategory}', [ShopController::class, 'subcategory'])->name('subcategory');
     Route::get('/product/{product}', [ShopController::class, 'show'])->name('show');
+});
+
+// -------------------
+// Routes Blog Sneakers
+// -------------------
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/category/{category:slug}', [BlogController::class, 'category'])->name('category');
+    Route::get('/{post:slug}', [BlogController::class, 'show'])->name('show');
 });
 
 // Routes Panier et Commandes - Sécurisées

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# 🚀 Script d'installation du système de blog
+# Exécute toutes les commandes nécessaires
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📰 INSTALLATION BLOG SNEAKERS - ENMA SPA"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# 1. Autoload Composer
+echo "1️⃣  Mise à jour de l'autoload Composer..."
+composer dump-autoload
+echo "✅ Autoload mis à jour"
+echo ""
+
+# 2. Migrations
+echo "2️⃣  Lancement des migrations..."
+php artisan migrate
+echo "✅ Migrations exécutées"
+echo ""
+
+# 3. Seeder
+echo "3️⃣  Création des données de test..."
+php artisan db:seed --class=BlogSeeder
+echo "✅ Données de test créées"
+echo ""
+
+# 4. Storage link
+echo "4️⃣  Création du lien symbolique storage..."
+php artisan storage:link
+echo "✅ Lien storage créé"
+echo ""
+
+# 5. Cache clear
+echo "5️⃣  Nettoyage du cache..."
+php artisan route:clear
+php artisan config:clear
+php artisan view:clear
+php artisan optimize:clear
+echo "✅ Cache nettoyé"
+echo ""
+
+# 6. Assets
+echo "6️⃣  Compilation des assets..."
+npm run build
+echo "✅ Assets compilés"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ INSTALLATION TERMINÉE !"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📍 Accédez au blog : http://localhost:8000/blog"
+echo "🏠 Section blog homepage : http://localhost:8000"
+echo ""
+echo "📊 Résumé de l'installation :"
+echo "   • 4 catégories créées"
+echo "   • 4 articles d'exemple créés"
+echo "   • Routes fonctionnelles"
+echo "   • Design style 43einhalb"
+echo ""
+echo "📚 Documentation :"
+echo "   • Quick Start : BLOG_QUICK_START.md"
+echo "   • Architecture : BLOG_ARCHITECTURE.md"
+echo ""
+echo "🎉 Bon développement !"

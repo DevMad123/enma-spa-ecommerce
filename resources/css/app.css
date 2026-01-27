@@ -3,6 +3,9 @@
 /* Import MegaMenu Fenomenal styles */
 @import 'megamenu-fenomenal.css';
 
+/* Import Blog styles */
+@import 'blog.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -8,6 +8,7 @@ use App\Models\FrontCustomization;
 use App\Models\FrontGalleryItem;
 use App\Models\Brand;
 use App\Models\Wishlist;
+use App\Models\BlogPost;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Schema;
@@ -107,6 +108,31 @@ class HomeController extends Controller
             }
         }
 
+        // Articles de blog récents (3 derniers)
+        $blogPosts = Schema::hasTable('blog_posts') 
+            ? BlogPost::with(['category', 'author'])
+                ->published()
+                ->orderBy('published_at', 'desc')
+                ->limit(3)
+                ->get()
+                ->map(function ($post) {
+                    return [
+                        'id' => $post->id,
+                        'title' => $post->title,
+                        'slug' => $post->slug,
+                        'excerpt' => $post->excerpt,
+                        'cover_image' => $post->cover_image_url,
+                        'category' => $post->category ? [
+                            'name' => $post->category->name,
+                            'slug' => $post->category->slug,
+                        ] : null,
+                        'read_time' => $post->read_time,
+                        'views' => $post->views,
+                        'published_at' => $post->published_at_formatted,
+                    ];
+                })
+            : collect();
+
         return Inertia::render('Frontend/Home', [
             'featuredProducts' => $featuredProducts,
             'newProducts' => $newProducts,
@@ -116,6 +142,7 @@ class HomeController extends Controller
             'galleryItems' => $galleryItems,
             'featuredCategory' => $featuredCategory,
             'featuredCategoryProducts' => $featuredCategoryProducts,
+            'blogPosts' => $blogPosts,
             'wishlist' => auth()->check() ? auth()->user()->wishlistItems()->pluck('product_id')->toArray() : [],
         ]);
     }

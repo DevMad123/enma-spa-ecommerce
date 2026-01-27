@@ -20,6 +20,7 @@ import WishlistButton from '@/Components/Frontend/WishlistButton';
 import CartButton from '@/Components/Frontend/CartButton';
 import ModernProductCard from '@/Components/Frontend/ModernProductCard';
 import ProductSlider from '@/Components/Frontend/ProductSlider';
+import BlogPreviewSection from '@/Components/Blog/BlogPreviewSection';
 
 // Hero Slider Section
 const HeroSlider = () => {
@@ -605,6 +606,7 @@ function HomeContent({
     featuredCategory = null,
     featuredCategoryProducts = [],
     galleryItems = [],
+    blogPosts = [],
 }) {
     // Fonction pour filtrer les produits en solde (basée sur la structure de la base de données)
     const filterSaleProducts = (products) => 
@@ -667,6 +669,11 @@ function HomeContent({
 
             {/* Categories */}
             <CategoriesSection categories={categories} />
+
+            {/* Blog Section */}
+            {blogPosts && blogPosts.length > 0 && (
+                <BlogPreviewSection posts={blogPosts} />
+            )}
 
             {/* Newsletter */}
             <NewsletterSection />
