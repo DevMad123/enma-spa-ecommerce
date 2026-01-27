@@ -138,7 +138,7 @@ export default function About() {
                 </div>
 
                 {/* Content */}
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+                <div className="relative z-10 EecDefaultWidth px-4 sm:px-6 lg:px-8 text-center text-white">
                     <div className="max-w-4xl mx-auto">
                         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                             À Propos de
@@ -181,7 +181,7 @@ export default function About() {
 
             {/* Mission Section */}
             <section className="py-20 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <div className="max-w-4xl mx-auto text-center">
                         <h2 className="text-4xl font-bold text-gray-900 mb-6">Notre Mission</h2>
                         <p className="text-xl text-gray-600 leading-relaxed mb-8">
@@ -200,7 +200,7 @@ export default function About() {
 
             {/* Values Section */}
             <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">
                             Nos Valeurs
@@ -226,7 +226,7 @@ export default function About() {
 
             {/* Team Section */}
             <section className="py-20 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">
                             Notre Équipe
@@ -252,7 +252,7 @@ export default function About() {
 
             {/* Advantages Section */}
             <section className="py-20 bg-gradient-to-r from-amber-600 to-orange-600">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold text-white mb-4">
                             Pourquoi Choisir ENMA SPA ?
@@ -278,7 +278,7 @@ export default function About() {
 
             {/* CTA Section */}
             <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-4xl font-bold text-gray-900 mb-6">
                         Prêt à Découvrir ENMA SPA ?
                     </h2>

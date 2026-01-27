@@ -10,10 +10,10 @@ export default function BlogCard({ post, featured = false }) {
     if (!post) return null;
 
     const cardClasses = featured
-        ? "group block bg-white rounded-none overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-        : "group block bg-white rounded-none overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500";
+        ? "group block bg-white rounded-none transition-all duration-500"
+        : "group block bg-white rounded-none transition-all duration-500";
 
-    const imageHeight = featured ? "h-[400px] md:h-[500px]" : "h-64";
+    const imageHeight = featured ? "h-[400px] md:h-[500px]" : "h-[700px]";
 
     return (
         <Link

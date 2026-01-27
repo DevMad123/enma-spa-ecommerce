@@ -13,7 +13,7 @@ export default function BlogPreviewSection({ posts = [] }) {
 
     return (
         <section className="py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Header avec titre et lien "Voir tout" */}
                 <div className="flex items-end justify-between mb-12 border-b border-gray-900 pb-6">
                     <div>

@@ -10,7 +10,7 @@ export default function BlogCategories({ categories = [], activeCategory = null 
 
     return (
         <section className="bg-white border-y border-gray-200 sticky top-0 z-30">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                 {/* Scroll horizontal sur mobile */}
                 <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-4">
                     {/* Lien "Tous" */}

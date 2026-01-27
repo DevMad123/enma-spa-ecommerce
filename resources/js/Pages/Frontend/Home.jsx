@@ -121,7 +121,7 @@ const HeroSlider = () => {
 
                             {/* Contenu du slide */}
                             <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
-                                <div className="max-w-7xl mx-auto">
+                                <div className="EecDefaultWidth">
                                     {/* Desktop: texte à gauche, Mobile: texte centré */}
                                     <div className="text-center md:text-left max-w-2xl md:max-w-none">
                                         {/* Titre */}

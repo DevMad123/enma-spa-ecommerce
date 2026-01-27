@@ -23,7 +23,7 @@ export default function BlogHero({ post }) {
             </div>
 
             {/* Contenu */}
-            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pb-16">
+            <div className="relative h-full EecDefaultWidth px-4 sm:px-6 lg:px-8 flex items-end pb-16">
                 <div className="max-w-3xl">
                     {/* Badge catégorie */}
                     {post.category && (

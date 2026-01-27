@@ -64,7 +64,7 @@ export default function Terms() {
         <FrontendLayout title={`Conditions Générales - ${appName}`}>
             {/* Hero Section */}
             <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-24">
                     <div className="text-center">
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-slate-600 to-blue-600 mb-8">
                             <DocumentTextIcon className="h-10 w-10 text-white" />
@@ -86,7 +86,7 @@ export default function Terms() {
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-16">
                 {/* Introduction */}
                 <SectionCard 
                     icon={InformationCircleIcon}

@@ -571,7 +571,7 @@ function Shop(props = {}) {
         <>
             {/* Breadcrumb */}
             <div className="bg-gray-50 py-4">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <nav className="flex" aria-label="Breadcrumb">
                         <ol className="flex items-center space-x-4">
                             <li>
@@ -592,7 +592,7 @@ function Shop(props = {}) {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-8">
                 {/* Catégories populaires */}
                 <div className="mb-8">
                     <CategoryCarousel categories={safeCategories || []} title="Catégories populaires" />

@@ -260,7 +260,7 @@ function Cart({ recommendedProducts = [] }) {
     if (cartItems.length === 0) {
         return (
             <FrontendLayout title="Panier">
-                <div className="max-w-7xl min-h-[calc(100vh_-_449px)] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="EecDefaultWidth min-h-[calc(100vh_-_449px)] px-4 sm:px-6 lg:px-8 py-12">
                     <div className="text-center">
                         <div className="w-24 h-24 mx-auto mb-6 text-gray-400">
                             <ShoppingBagIcon className="w-full h-full" />
@@ -287,7 +287,7 @@ function Cart({ recommendedProducts = [] }) {
 
     return (
         <FrontendLayout title={`Panier (${getTotalItems()})`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
                     <div>

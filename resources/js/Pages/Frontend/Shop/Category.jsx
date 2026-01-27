@@ -534,7 +534,7 @@ function CategoryShow({
                     <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/30" />
                 </div>
                 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="relative EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     {/* Breadcrumb */}
                     <nav className="flex mb-8" aria-label="Breadcrumb">
                         <ol className="flex items-center space-x-4 text-white">
@@ -571,7 +571,7 @@ function CategoryShow({
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Filters */}
                     <div className="lg:w-80 flex-shrink-0">

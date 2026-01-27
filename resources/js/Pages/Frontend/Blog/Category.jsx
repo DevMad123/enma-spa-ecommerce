@@ -27,7 +27,7 @@ export default function BlogCategory({ posts, category, categories = [] }) {
                         />
                     </div>
                 )}
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="relative EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     <h1 className="font-barlow text-5xl md:text-6xl font-bold uppercase mb-4">
                         {category.name}
                     </h1>
@@ -44,7 +44,7 @@ export default function BlogCategory({ posts, category, categories = [] }) {
 
             {/* Articles de la catégorie */}
             <section className="py-16 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
                     {posts.data.length > 0 ? (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
