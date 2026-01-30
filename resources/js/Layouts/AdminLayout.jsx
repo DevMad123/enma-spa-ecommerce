@@ -150,12 +150,12 @@ export default function AdminLayout({ title, children }) {
             <div className="max-w-7xl mx-auto">
               {flash?.success && (
                 <div className="mb-4 rounded border border-green-200 bg-green-50 text-green-800 px-4 py-3">
-                  {flash.success}
+                  {typeof flash.success === 'object' ? flash.success.message : flash.success}
                 </div>
               )}
               {flash?.error && (
                 <div className="mb-4 rounded border border-red-200 bg-red-50 text-red-800 px-4 py-3">
-                  {flash.error}
+                  {typeof flash.error === 'object' ? flash.error.message : flash.error}
                 </div>
               )}
               {children}

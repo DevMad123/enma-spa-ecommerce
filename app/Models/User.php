@@ -161,6 +161,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Relation avec les articles de blog
+     */
+    public function blogPosts()
+    {
+        return $this->hasMany(BlogPost::class, 'author_id');
+    }
+
+    /**
      * Vérifier si un produit est dans la wishlist
      */
     public function hasInWishlist($productId)

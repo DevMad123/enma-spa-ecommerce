@@ -71,6 +71,15 @@ const navigationLinks = [
       { route: "admin.newsletters.index", label: "Newsletter", icon: HiOutlineUsers },
     ]
   },
+  {
+    label: "Contenu",
+    icon: HiOutlineCollection,
+    color: "text-yellow-600",
+    submenu: [
+      { route: "admin.blog.index", label: "Articles de Blog", icon: HiOutlineClipboardList },
+      { route: "admin.blog.categories.index", label: "Catégories Blog", icon: HiOutlineCollection },
+    ]
+  },
   { 
     route: "admin.customers.index", 
     label: "Clients", 

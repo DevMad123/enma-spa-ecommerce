@@ -43,17 +43,17 @@ export default function BlogCard({ post, featured = false }) {
             {/* Contenu */}
             <div className={featured ? "p-8" : "p-6"}>
                 {/* Titre */}
-                <h3 className={`font-barlow font-bold text-black mb-3 group-hover:text-gray-700 transition-colors line-clamp-2 ${featured ? 'text-3xl md:text-4xl' : 'text-xl'}`}>
+                <h3 className={`font-barlow font-bold text-center text-black mb-3 group-hover:text-gray-700 transition-colors line-clamp-2 ${featured ? 'text-3xl md:text-4xl' : 'text-xl'}`}>
                     {post.title}
                 </h3>
                 
                 {/* Excerpt */}
-                <p className={`text-gray-600 font-barlow mb-4 line-clamp-${featured ? '4' : '3'}`}>
+                <p className={`text-gray-600 text-center font-barlow mb-4 line-clamp-${featured ? '4' : '3'}`}>
                     {post.excerpt}
                 </p>
 
                 {/* Meta informations */}
-                <div className="flex items-center justify-between text-sm text-gray-500 border-t border-gray-100 pt-4">
+                <div className="flex items-center justify-center text-sm text-gray-500 border-t border-gray-100 pt-4">
                     <div className="flex items-center gap-4">
                         {/* Date */}
                         <span className="font-barlow">{post.published_at}</span>
@@ -74,10 +74,10 @@ export default function BlogCard({ post, featured = false }) {
                     </div>
 
                     {/* Lire plus avec flèche */}
-                    <div className="flex items-center gap-2 text-black font-barlow font-semibold group-hover:gap-3 transition-all">
+                    {/* <div className="flex items-center gap-2 text-black font-barlow font-semibold group-hover:gap-3 transition-all">
                         <span className="text-xs uppercase tracking-wide">Lire</span>
                         <ArrowRightIcon className="h-4 w-4" />
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </Link>

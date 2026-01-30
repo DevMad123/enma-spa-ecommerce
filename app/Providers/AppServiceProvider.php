@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Route;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +46,14 @@ class AppServiceProvider extends ServiceProvider
                 ->letters()     // at least one letter
                 ->mixedCase()   // at least one uppercase and one lowercase letter
                 ->numbers();    // at least one digit
+        });
+
+        // Bind BlogPost by ID in admin routes
+        Route::bind('blogPost', function ($value) {
+            if (is_numeric($value)) {
+                return \App\Models\BlogPost::withTrashed()->findOrFail($value);
+            }
+            return \App\Models\BlogPost::withTrashed()->where('slug', $value)->firstOrFail();
         });
     }
 }

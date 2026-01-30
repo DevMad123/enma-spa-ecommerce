@@ -280,6 +280,29 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
         Route::get('/subcategories/{category_id}', [ProductController::class, 'getSubcategoriesByCategory'])->name('subcategories.byCategory');
     });
 
+    // CRUD Articles de Blog
+    Route::prefix('blog')->name('blog.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\BlogPostController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\BlogPostController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\BlogPostController::class, 'store'])->name('store');
+        
+        // CRUD Catégories de Blog (AVANT les routes dynamiques)
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'store'])->name('store');
+            Route::get('/{category}/edit', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'edit'])->name('edit');
+            Route::put('/{category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'destroy'])->name('destroy');
+        });
+        
+        // Routes dynamiques pour les articles (APRÈS les routes spécifiques)
+        Route::get('/{blogPost}', [\App\Http\Controllers\Admin\BlogPostController::class, 'show'])->name('show')->whereNumber('blogPost');
+        Route::get('/{blogPost}/edit', [\App\Http\Controllers\Admin\BlogPostController::class, 'edit'])->name('edit')->whereNumber('blogPost');
+        Route::put('/{blogPost}', [\App\Http\Controllers\Admin\BlogPostController::class, 'update'])->name('update')->whereNumber('blogPost');
+        Route::delete('/{blogPost}', [\App\Http\Controllers\Admin\BlogPostController::class, 'destroy'])->name('destroy')->whereNumber('blogPost');
+    });
+
     Route::prefix('categories')->name('categories.')->group(function () {
         Route::get('/', [ProductCategoryController::class, 'index'])->name('index');
         Route::get('/create', [ProductCategoryController::class, 'create'])->name('create');
