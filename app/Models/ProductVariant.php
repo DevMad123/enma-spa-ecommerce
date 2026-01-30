@@ -21,10 +21,10 @@ class ProductVariant extends Model
     ];
 
     protected $casts = [
-        'purchase_cost' => 'float',
-        'sale_price' => 'float',
-        'wholesale_price' => 'float',
-        'available_quantity' => 'float',
+        'purchase_cost' => 'decimal:2',
+        'sale_price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
+        'available_quantity' => 'integer', // Toujours un entier (pas de demi-produit)
     ];
 
     // Les relations du modèle

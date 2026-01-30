@@ -33,6 +33,19 @@ class Product extends Model
         'status',
     ];
 
+    // Casts pour forcer les types corrects
+    protected $casts = [
+        'current_purchase_cost' => 'decimal:2',
+        'current_sale_price' => 'decimal:2',
+        'current_wholesale_price' => 'decimal:2',
+        'available_quantity' => 'integer', // Toujours un entier
+        'discount' => 'decimal:2',
+        'discount_type' => 'integer',
+        'is_popular' => 'boolean',
+        'is_trending' => 'boolean',
+        'status' => 'integer',
+    ];
+
     // Relations
     public function category()
     {

@@ -141,8 +141,6 @@
   animation: progress-bar linear;
 }
 
-
-
 .EecDefaultWidth {
   width: calc(100vw - 19px);
   padding-left: 128px !important;

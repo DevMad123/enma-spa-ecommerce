@@ -848,9 +848,10 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
     ? originalPriceForDisplay 
     : null;
   
-  const effectiveStock = isVariableProduct 
+  // Forcer le stock à être un entier (pas de demi-produit)
+  const effectiveStock = Math.floor(isVariableProduct 
     ? (selectedVariant?.stock ?? product.stock_quantity ?? product.available_quantity ?? 0)
-    : (product.stock_quantity ?? product.available_quantity ?? 0);
+    : (product.stock_quantity ?? product.available_quantity ?? 0));
 
   // Validation : pour produits simples ET variables, sélection obligatoire si attributs présents
   const canAddToCart = (
@@ -1014,11 +1015,11 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                   </button>
                   
                   <span className="text-lg font-medium text-gray-900 font-barlow min-w-[3rem] text-center">
-                    {quantity}
+                    {Math.floor(quantity)}
                   </span>
                   
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => setQuantity(Math.floor(quantity + 1))}
                     disabled={effectiveStock > 0 && quantity >= effectiveStock}
                     className="flex items-center justify-center w-10 h-10 border border-gray-300 text-gray-600 hover:text-black hover:border-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -1027,7 +1028,7 @@ function ProductShow({ product, relatedProducts = [], reviews = [], userCanRevie
                   
                   {effectiveStock > 0 && (
                     <span className="text-sm text-gray-500 font-barlow ml-4">
-                      {effectiveStock} en stock
+                      {Math.floor(effectiveStock)} en stock
                     </span>
                   )}
                 </div>
