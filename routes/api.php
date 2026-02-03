@@ -185,6 +185,7 @@ Route::get('/customizations', [CustomizationController::class, 'show'])->name('a
 Route::get('/front/settings', [CustomizationController::class, 'theme'])->name('api.front.settings');
 // Public API: menu categories
 Route::get('/menu/categories', [MenuController::class, 'categories'])->name('api.menu.categories');
+Route::get('/menu/categories/{type}', [MenuController::class, 'categoriesByType'])->name('api.menu.categories.by-type');
 
 // Public API: products helpers
 Route::get('/products/{product}/min-price', [ApiProductController::class, 'minPrice'])->name('api.products.min-price');

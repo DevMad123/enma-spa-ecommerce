@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ClockIcon, EyeIcon, CalendarIcon, UserIcon, TagIcon, ArrowLeftIcon, ShareIcon } from '@heroicons/react/24/outline';
 import RelatedArticles from '@/Components/Blog/RelatedArticles';
 
@@ -9,18 +9,49 @@ import RelatedArticles from '@/Components/Blog/RelatedArticles';
  * Style 43einhalb avec design premium
  */
 export default function BlogShow({ post, relatedPosts = [] }) {
+    // Vérification de sécurité pour éviter les erreurs
+    if (!post) {
+        return (
+            <FrontendLayout title="Article">
+                <Head>
+                    <title>Article | ENMA SPA</title>
+                </Head>
+                <div className="min-h-screen flex items-center justify-center">
+                    <p className="text-gray-500">Article non trouvé</p>
+                </div>
+            </FrontendLayout>
+        );
+    }
+
+    // Préparer les valeurs sûres
+    const safePost = {
+        title: post.title || 'Article',
+        excerpt: post.excerpt || '',
+        content: post.content || '',
+        cover_image: post.cover_image || '',
+        seo_title: post.seo_title || post.title || 'Article',
+        seo_description: post.seo_description || post.excerpt || '',
+        slug: post.slug || '',
+        published_at: post.published_at || '',
+        read_time: post.read_time || 5,
+        views: post.views || 0,
+        category: post.category || null,
+        author: post.author || null,
+        tags: Array.isArray(post.tags) ? post.tags : []
+    };
+
     // Scroll to top au montage
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [post.slug]);
+    }, [safePost.slug]);
 
     // Fonction de partage (Web Share API)
     const handleShare = async () => {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: post.title,
-                    text: post.excerpt,
+                    title: safePost.title,
+                    text: safePost.excerpt,
                     url: window.location.href,
                 });
             } catch (err) {
@@ -34,26 +65,10 @@ export default function BlogShow({ post, relatedPosts = [] }) {
     };
 
     return (
-        <FrontendLayout title={post.title}>
-            <Head>
-                <title>{post.seo_title} | ENMA SPA</title>
-                <meta name="description" content={post.seo_description} />
-                <meta property="og:title" content={post.title} />
-                <meta property="og:description" content={post.excerpt} />
-                <meta property="og:image" content={post.cover_image} />
-                <meta property="og:type" content="article" />
-                <meta property="article:published_time" content={post.published_at_iso} />
-                {post.category && (
-                    <meta property="article:section" content={post.category.name} />
-                )}
-                {post.tags && post.tags.map((tag) => (
-                    <meta key={tag} property="article:tag" content={tag} />
-                ))}
-            </Head>
-
+        <FrontendLayout title={safePost.title}>
             {/* Breadcrumb */}
             <div className="bg-gray-50 border-b border-gray-200">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex items-center gap-2 text-sm font-barlow text-gray-600">
                         <Link href={route('home')} className="hover:text-black transition-colors">
                             Accueil
@@ -62,14 +77,14 @@ export default function BlogShow({ post, relatedPosts = [] }) {
                         <Link href={route('blog.index')} className="hover:text-black transition-colors">
                             Blog
                         </Link>
-                        {post.category && (
+                        {safePost.category && (
                             <>
                                 <span>/</span>
                                 <Link 
-                                    href={route('blog.category', post.category.slug)} 
+                                    href={route('blog.category', safePost.category.slug)} 
                                     className="hover:text-black transition-colors"
                                 >
-                                    {post.category.name}
+                                    {safePost.category.name}
                                 </Link>
                             </>
                         )}
@@ -80,8 +95,8 @@ export default function BlogShow({ post, relatedPosts = [] }) {
             {/* Hero image pleine largeur */}
             <div className="relative w-full h-[60vh] md:h-[70vh] bg-gray-900">
                 <img 
-                    src={post.cover_image}
-                    alt={post.title}
+                    src={safePost.cover_image}
+                    alt={safePost.title}
                     className="w-full h-full object-cover"
                 />
                 {/* Overlay gradient */}
@@ -89,7 +104,7 @@ export default function BlogShow({ post, relatedPosts = [] }) {
             </div>
 
             {/* Contenu de l'article */}
-            <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <article className="EecDefaultWidth px-4 sm:px-6 lg:px-8 py-12">
                 {/* Bouton retour */}
                 <Link
                     href={route('blog.index')}
@@ -102,48 +117,50 @@ export default function BlogShow({ post, relatedPosts = [] }) {
                 {/* Meta informations */}
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-200">
                     {/* Catégorie */}
-                    {post.category && (
+                    {safePost.category && (
                         <Link
-                            href={route('blog.category', post.category.slug)}
+                            href={route('blog.category', safePost.category.slug)}
                             className="inline-block bg-black text-white px-4 py-1.5 font-barlow font-bold uppercase text-xs tracking-wider hover:bg-gray-800 transition-colors"
                         >
-                            {post.category.name}
+                            {safePost.category.name}
                         </Link>
                     )}
 
                     {/* Date */}
                     <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4" />
-                        <span className="font-barlow">{post.published_at}</span>
+                        <span className="font-barlow">{safePost.published_at}</span>
                     </div>
 
                     {/* Temps de lecture */}
                     <div className="flex items-center gap-2">
                         <ClockIcon className="h-4 w-4" />
-                        <span className="font-barlow">{post.read_time} min</span>
+                        <span className="font-barlow">{safePost.read_time} min</span>
                     </div>
 
                     {/* Vues */}
                     <div className="flex items-center gap-2">
                         <EyeIcon className="h-4 w-4" />
-                        <span className="font-barlow">{post.views}</span>
+                        <span className="font-barlow">{safePost.views}</span>
                     </div>
 
                     {/* Auteur */}
-                    <div className="flex items-center gap-2 ml-auto">
-                        <UserIcon className="h-4 w-4" />
-                        <span className="font-barlow font-semibold text-black">{post.author.name}</span>
-                    </div>
+                    {safePost.author && (
+                        <div className="flex items-center gap-2 ml-auto">
+                            <UserIcon className="h-4 w-4" />
+                            <span className="font-barlow font-semibold text-black">{safePost.author.name}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Titre principal */}
                 <h1 className="font-barlow text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-8 leading-tight">
-                    {post.title}
+                    {safePost.title}
                 </h1>
 
                 {/* Excerpt (chapô) */}
                 <p className="text-xl md:text-2xl text-gray-700 font-barlow mb-12 leading-relaxed border-l-4 border-black pl-6">
-                    {post.excerpt}
+                    {safePost.excerpt}
                 </p>
 
                 {/* Bouton partage */}
@@ -168,15 +185,15 @@ export default function BlogShow({ post, relatedPosts = [] }) {
                         prose-strong:text-black prose-strong:font-bold
                         prose-ul:my-6 prose-li:my-2
                         prose-img:rounded-none prose-img:w-full prose-img:my-8"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    dangerouslySetInnerHTML={{ __html: safePost.content }}
                 />
 
                 {/* Tags */}
-                {post.tags && post.tags.length > 0 && (
+                {safePost.tags.length > 0 && (
                     <div className="mt-12 pt-8 border-t border-gray-200">
                         <div className="flex flex-wrap items-center gap-3">
                             <TagIcon className="h-5 w-5 text-gray-500" />
-                            {post.tags.map((tag) => (
+                            {safePost.tags.map((tag) => (
                                 <Link
                                     key={tag}
                                     href={route('blog.index', { tag })}
@@ -191,7 +208,7 @@ export default function BlogShow({ post, relatedPosts = [] }) {
             </article>
 
             {/* Articles liés */}
-            {relatedPosts.length > 0 && (
+            {relatedPosts && relatedPosts.length > 0 && (
                 <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 pb-20">
                     <RelatedArticles posts={relatedPosts} />
                 </div>

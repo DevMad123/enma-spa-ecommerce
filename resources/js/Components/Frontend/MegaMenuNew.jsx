@@ -105,90 +105,49 @@ const MegaMenu_old = ({ isOpen, type, categories = [] }) => {
     );
 };
 
-// NOUVEAU MEGAMENU PHENOMENAL - Inspiré de Fenom.com
+// NOUVEAU MEGAMENU PHENOMENAL - Inspiré de Fenom.com - AVEC DONNÉES DYNAMIQUES
 const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
-    const [activeCategory, setActiveCategory] = useState('sneakers-homme');
-    
-    // Structure des données selon le design Fenom
-    const navigationItems = [
-        {
-            id: 'sneakers-homme',
-            name: 'SNEAKERS HOMME',
-            collections: [
-                'Asics Gel-Kayano 14',
-                'Nike Air Max',
-                'Salomon XT-6',
-                'Adidas Spezial',
-                'New Balance 2010',
-                'Nike Air Force 1',
-                'Adidas Samba'
-            ],
-            brands: [
-                'Sneakers Adidas Homme',
-                'Sneakers Asics Homme',
-                'Sneakers Converse Homme',
-                'Sneakers Jordan Homme',
-                'Sneakers New Balance Homme',
-                'Sneakers Nike Homme',
-                'Sneakers Puma Homme',
-                'Sneakers Reebok Homme',
-                'Sneakers Salomon Homme'
-            ]
-        },
-        {
-            id: 'vetements-homme',
-            name: 'VÊTEMENTS HOMME',
-            collections: [
-                'Stone Island',
-                'CP Company',
-                'Palace',
-                'Supreme',
-                'Stussy',
-                'Carhartt WIP',
-                'Brain Dead'
-            ],
-            brands: [
-                'T-Shirts Homme',
-                'Hoodies Homme',
-                'Sweatshirts Homme',
-                'Pantalons Homme',
-                'Shorts Homme',
-                'Vestes Homme',
-                'Manteaux Homme',
-                'Accessoires Homme'
-            ]
-        },
-        {
-            id: 'accessoires-homme',
-            name: 'ACCESSOIRES HOMME',
-            collections: [
-                'Casquettes',
-                'Bonnets',
-                'Sacs à dos',
-                'Portefeuilles',
-                'Ceintures',
-                'Lunettes',
-                'Montres'
-            ],
-            brands: [
-                'Nike Accessoires',
-                'Adidas Accessoires',
-                'New Era',
-                'Carhartt WIP',
-                'Supreme Accessoires',
-                'Palace Accessoires',
-                'Stone Island Accessoires'
-            ]
-        }
-    ];
+    const [activeCategory, setActiveCategory] = useState(null);
+    const [menuData, setMenuData] = useState([]);
 
-    const currentItem = navigationItems.find(item => item.id === activeCategory) || navigationItems[0];
+    // Filtrer et structurer les catégories en fonction du type
+    useEffect(() => {
+        if (!categories || categories.length === 0) return;
+
+        // Trouver la catégorie racine correspondant au type
+        const rootCategory = categories.find(cat => 
+            cat.type === type && cat.children && cat.children.length > 0
+        );
+
+        if (rootCategory && rootCategory.children) {
+            // Transformer les données pour le menu
+            const structured = rootCategory.children.map(brand => ({
+                id: brand.slug,
+                name: brand.name.toUpperCase(),
+                slug: brand.slug,
+                // Les enfants de la marque (modèles, collections)
+                collections: brand.children ? brand.children.map(item => ({
+                    name: item.name,
+                    slug: item.slug
+                })) : [],
+                // Sous-catégories ou types de produits
+                subcategories: brand.children || []
+            }));
+
+            setMenuData(structured);
+            if (structured.length > 0 && !activeCategory) {
+                setActiveCategory(structured[0].id);
+            }
+        }
+    }, [categories, type, isOpen]);
+
+    const currentItem = menuData.find(item => item.id === activeCategory) || menuData[0];
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
     };
 
-    if (!isOpen) return null;
+    if (!isOpen || !currentItem) return null;
 
     return (
         <div 
@@ -210,7 +169,7 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
                     style={{ width: '260px' }}
                 >
                     <div className="py-4">
-                        {navigationItems.map((item) => (
+                        {menuData.map((item) => (
                             <button
                                 key={item.id}
                                 onClick={() => handleCategoryChange(item.id)}
@@ -261,10 +220,9 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
                     <div className="space-y-3">
                         {currentItem.collections.map((collection, index) => (
                             <Link
-                                key={index}
+                                key={collection.slug || index}
                                 href={route('frontend.shop.index', { 
-                                    search: collection,
-                                    category: type 
+                                    category: collection.slug
                                 })}
                                 className="block text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
                                 style={{
@@ -273,13 +231,13 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
                                     lineHeight: '2'
                                 }}
                             >
-                                {collection}
+                                {collection.name}
                             </Link>
                         ))}
                     </div>
                 </div>
 
-                {/* COLONNE DROITE - Marques/Catégories */}
+                {/* COLONNE DROITE - Sous-catégories */}
                 <div className="bg-white flex-1 px-8 py-8">
                     <h3 
                         className="text-gray-900 font-bold mb-6"
@@ -290,16 +248,15 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
                             textTransform: 'uppercase'
                         }}
                     >
-                        {currentItem.name}
+                        TOUS LES {currentItem.name}
                     </h3>
                     
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                        {currentItem.brands.map((brand, index) => (
+                        {currentItem.subcategories.map((subcat, index) => (
                             <Link
-                                key={index}
+                                key={subcat.slug || index}
                                 href={route('frontend.shop.index', { 
-                                    search: brand,
-                                    category: type 
+                                    category: subcat.slug
                                 })}
                                 className="text-gray-800 hover:text-black hover:underline transition-colors duration-200 megamenu-link"
                                 style={{
@@ -308,7 +265,7 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
                                     lineHeight: '2'
                                 }}
                             >
-                                {brand}
+                                {subcat.name}
                             </Link>
                         ))}
                     </div>

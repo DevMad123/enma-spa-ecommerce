@@ -117,7 +117,10 @@ class BlogPost extends Model
      */
     public function getSeoTitleAttribute()
     {
-        return $this->seo_meta['title'] ?? $this->title;
+        if (is_array($this->seo_meta) && isset($this->seo_meta['title'])) {
+            return $this->seo_meta['title'];
+        }
+        return $this->title;
     }
 
     /**
@@ -125,7 +128,10 @@ class BlogPost extends Model
      */
     public function getSeoDescriptionAttribute()
     {
-        return $this->seo_meta['description'] ?? $this->excerpt;
+        if (is_array($this->seo_meta) && isset($this->seo_meta['description'])) {
+            return $this->seo_meta['description'];
+        }
+        return $this->excerpt;
     }
 
     /**

@@ -18,6 +18,9 @@ class ProductCategory extends Model
         'image',
         'is_popular',
         'status',
+        'parent_id',
+        'depth',
+        'type',
         'created_by'
     ];
     protected $appends = ['category_icon', 'image'];
@@ -32,8 +35,39 @@ class ProductCategory extends Model
 
     }
 
-    public function subcategory(){
-        return $this->hasMany(ProductSubCategory::class,'category_id','id');
+    /**
+     * Relation: Catégories enfants (système hiérarchique)
+     */
+    public function children(){
+        return $this->hasMany(ProductCategory::class, 'parent_id', 'id')->where('status', true);
+    }
+
+    /**
+     * Relation: Catégories enfants récursives (tous les niveaux)
+     */
+    public function childrenRecursive(){
+        return $this->children()->with('childrenRecursive');
+    }
+
+    /**
+     * Relation: Catégorie parente
+     */
+    public function parent(){
+        return $this->belongsTo(ProductCategory::class, 'parent_id');
+    }
+
+    /**
+     * Scope: Récupérer seulement les catégories racines (sans parent)
+     */
+    public function scopeRoots($query){
+        return $query->whereNull('parent_id')->where('status', true);
+    }
+
+    /**
+     * Scope: Récupérer les catégories par type
+     */
+    public function scopeOfType($query, $type){
+        return $query->where('type', $type)->where('status', true);
     }
 
     public function products(){

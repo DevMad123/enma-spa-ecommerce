@@ -212,7 +212,7 @@ const FrontendLayout = ({ children, title }) => {
 
     return (
         <>
-            <Head title={`${title} - ${appName}`} />
+            <Head title={title ? `${title} - ${appName}` : appName} />
             <div className="min-h-screen bg-white">
                 {/* Nouveau Header Premium */}
                 <PremiumHeader 

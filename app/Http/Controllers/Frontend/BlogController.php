@@ -107,27 +107,27 @@ class BlogController extends Controller
         return Inertia::render('Frontend/Blog/Show', [
             'post' => [
                 'id' => $post->id,
-                'title' => $post->title,
-                'slug' => $post->slug,
-                'excerpt' => $post->excerpt,
-                'content' => $post->content,
-                'cover_image' => $post->cover_image_url,
+                'title' => $post->title ?? '',
+                'slug' => $post->slug ?? '',
+                'excerpt' => $post->excerpt ?? '',
+                'content' => $post->content ?? '',
+                'cover_image' => $post->cover_image_url ?? '',
                 'category' => $post->category ? [
                     'id' => $post->category->id,
-                    'name' => $post->category->name,
-                    'slug' => $post->category->slug,
+                    'name' => $post->category->name ?? '',
+                    'slug' => $post->category->slug ?? '',
                 ] : null,
-                'author' => [
+                'author' => $post->author ? [
                     'id' => $post->author->id,
-                    'name' => $post->author->name,
-                ],
+                    'name' => $post->author->name ?? '',
+                ] : null,
                 'tags' => $post->tags ?? [],
-                'views' => $post->views,
-                'read_time' => $post->read_time,
-                'published_at' => $post->published_at_formatted,
-                'published_at_iso' => $post->published_at?->toIso8601String(),
-                'seo_title' => $post->seo_title,
-                'seo_description' => $post->seo_description,
+                'views' => $post->views ?? 0,
+                'read_time' => $post->read_time ?? 5,
+                'published_at' => $post->published_at_formatted ?? '',
+                'published_at_iso' => $post->published_at?->toIso8601String() ?? null,
+                'seo_title' => $post->seo_title ?? $post->title ?? '',
+                'seo_description' => $post->seo_description ?? $post->excerpt ?? '',
             ],
             'relatedPosts' => $relatedPosts->map(function ($p) {
                 return [
