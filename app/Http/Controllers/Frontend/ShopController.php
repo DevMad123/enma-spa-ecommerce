@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\ProductSubCategory;
 use App\Models\Brand;
 use App\Models\ProductColor;
 use App\Models\ProductSize;
@@ -18,7 +17,7 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
+        $query = Product::with(['category', 'brand', 'colors', 'sizes'])
             ->where('status', 1);
 
         // Recherche
@@ -42,17 +41,6 @@ class ShopController extends Controller
         if ($request->filled('categories')) {
             $categories = is_array($request->categories) ? $request->categories : [$request->categories];
             $query->whereIn('category_id', $categories);
-        }
-
-        // Filtre par sous-catégorie
-        if ($request->filled('subcategory')) {
-            $query->where('subcategory_id', $request->subcategory);
-        }
-
-        // Filtre par sous-catégories multiples
-        if ($request->filled('subcategories')) {
-            $subcategories = is_array($request->subcategories) ? $request->subcategories : [$request->subcategories];
-            $query->whereIn('subcategory_id', $subcategories);
         }
 
         // Filtre par marque
@@ -114,7 +102,6 @@ class ShopController extends Controller
 
         // Données pour les filtres
         $categories = ProductCategory::where('status', 1)->get();
-        $subcategories = ProductSubCategory::where('status', 1)->get();
         $brands = Brand::where('status', 1)->get();
         $colors = ProductColor::all();
         $sizes = ProductSize::all();
@@ -126,7 +113,7 @@ class ShopController extends Controller
 
         // Nettoyage des filtres pour éviter les valeurs null
         $filters = collect($request->only([
-            'search', 'category', 'categories', 'subcategory', 'subcategories', 
+            'search', 'category', 'categories', 
             'brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort'
         ]))
             ->filter(function ($value) {
@@ -137,7 +124,6 @@ class ShopController extends Controller
         return Inertia::render('Frontend/Shop/Index', [
             'products' => $products,
             'categories' => $categories,
-            'subcategories' => $subcategories,
             'brands' => $brands,
             'colors' => $colors,
             'sizes' => $sizes,
@@ -150,7 +136,7 @@ class ShopController extends Controller
     {
         $category = ProductCategory::where('id', $categoryId)->firstOrFail();
         
-        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
+        $query = Product::with(['category', 'brand', 'colors', 'sizes'])
             ->where('category_id', $category->id)
             ->where('status', 1);
 
@@ -159,8 +145,6 @@ class ShopController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
         
-        $subcategories = ProductSubCategory::where('category_id', $category->id)
-            ->where('status', 1)->get();
         $brands = Brand::where('status', 1)->get();
         $colors = ProductColor::all();
         $sizes = ProductSize::all();
@@ -168,31 +152,9 @@ class ShopController extends Controller
         return Inertia::render('Frontend/Shop/Category', [
             'category' => $category,
             'products' => $products,
-            'subcategories' => $subcategories,
             'brands' => $brands,
             'colors' => $colors,
             'sizes' => $sizes,
-            'filters' => $request->only(['subcategory', 'subcategories', 'brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort']),
-        ]);
-    }
-
-    public function subcategory($subcategorySlug, Request $request)
-    {
-        $subcategory = ProductSubCategory::with('category')->where('slug', $subcategorySlug)->firstOrFail();
-        
-        $query = Product::with(['category', 'subcategory', 'brand', 'colors', 'sizes'])
-            ->where('subcategory_id', $subcategory->id)
-            ->where('status', 1);
-
-        $this->applyFilters($query, $request);
-
-        $products = $query->paginate(12)->withQueryString();
-        $brands = Brand::where('status', 1)->get();
-
-        return Inertia::render('Frontend/Shop/Subcategory', [
-            'subcategory' => $subcategory,
-            'products' => $products,
-            'brands' => $brands,
             'filters' => $request->only(['brand', 'brands', 'colors', 'sizes', 'min_price', 'max_price', 'sort']),
         ]);
     }
@@ -201,7 +163,7 @@ class ShopController extends Controller
     {
         $product = Product::with([
             'category', 
-            'subcategory', 
+            // 'subcategory', // Table product_sub_categories n'existe pas
             'brand', 
             'supplier',
             'variants.color',
@@ -285,17 +247,6 @@ class ShopController extends Controller
 
     private function applyFilters($query, $request)
     {
-        // Filtre par sous-catégorie
-        if ($request->filled('subcategory')) {
-            $query->where('subcategory_id', $request->subcategory);
-        }
-
-        // Filtre par sous-catégories multiples
-        if ($request->filled('subcategories')) {
-            $subcategories = is_array($request->subcategories) ? $request->subcategories : [$request->subcategories];
-            $query->whereIn('subcategory_id', $subcategories);
-        }
-
         // Filtre par marque
         if ($request->filled('brand')) {
             $query->where('brand_id', $request->brand);

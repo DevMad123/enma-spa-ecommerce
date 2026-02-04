@@ -52,6 +52,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 return $response;
             }
 
+            // En développement, laisser Laravel afficher les erreurs détaillées
+            // pour faciliter le débogage
+            if (config('app.env') === 'local' && !config('app.custom_error_pages', false)) {
+                return $response;
+            }
+
             // Pour les requêtes web, retourner le composant Inertia Error
             $status = $response->getStatusCode();
             

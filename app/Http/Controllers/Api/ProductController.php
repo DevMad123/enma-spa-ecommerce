@@ -41,63 +41,68 @@ class ProductController extends Controller
         return ProductResource::collection(Product::where('is_trending', 1)->paginate(8));
     }
 
-    public function sectionProductList(Request $request)
+    public function sectionProductList(Request $request): AnonymousResourceCollection|LengthAwarePaginator
     {
-        $subcategory_id = $request->subcategory_id;
+        // Note: subcategory_id n'existe plus, utiliser category_id avec le système hiérarchique
+        $category_id = $request->category_id;
 
         if ($request->type == 'trending') {
-            return ProductResource::collection(Product::when($request->subcategory_id != 'All', function ($q) use ($subcategory_id) {
-                return $q->where('subcategory_id', $subcategory_id);
+            return ProductResource::collection(Product::when($category_id && $category_id != 'All', function ($q) use ($category_id) {
+                return $q->where('category_id', $category_id);
             })->where('deleted', 0)->where('status', 1)->where('is_trending', 1)->paginate(12));
         }
         if ($request->type == 'popular') {
-            return ProductResource::collection(Product::when($request->subcategory_id != 'All', function ($q) use ($subcategory_id) {
-                return $q->where('subcategory_id', $subcategory_id);
+            return ProductResource::collection(Product::when($category_id && $category_id != 'All', function ($q) use ($category_id) {
+                return $q->where('category_id', $category_id);
             })->where('deleted', 0)->where('status', 1)->where('is_popular', 1)->paginate(12));
         }
         if ($request->type == 'newArrival') {
-            return ProductResource::collection(Product::when($request->subcategory_id != 'All', function ($q) use ($subcategory_id) {
-                return $q->where('subcategory_id', $subcategory_id);
+            return ProductResource::collection(Product::when($category_id && $category_id != 'All', function ($q) use ($category_id) {
+                return $q->where('category_id', $category_id);
             })->where('deleted', 0)->where('status', 1)->orderBy('id', 'DESC')->paginate(12));
         }
         if ($request->type == 'bestSell') {
-            if ($subcategory_id == 'All') {
-                return DB::table("sell_details")->join('products', 'sell_details.product_id', '=', 'products.id')
-                    ->select('products.*', DB::raw("SUM(sell_details.sale_quantity) as total_sell"))
-                    ->groupBy('sell_details.product_id')
-                    ->orderBy('total_sell', 'DESC')
-                    ->paginate(12);
-            } else {
-                return DB::table("sell_details")->join('products', 'sell_details.product_id', '=', 'products.id')
-                    ->select('products.*', DB::raw("SUM(sell_details.sale_quantity) as total_sell"))
-                    ->groupBy('sell_details.product_id')
-                    ->where('products.subcategory_id', $subcategory_id)
-                    ->orderBy('total_sell', 'DESC')
-                    ->paginate(12);
+            $query = DB::table("sell_details")->join('products', 'sell_details.product_id', '=', 'products.id')
+                ->select('products.*', DB::raw("SUM(sell_details.sale_quantity) as total_sell"))
+                ->groupBy('sell_details.product_id');
+            
+            if ($category_id && $category_id != 'All') {
+                $query->where('products.category_id', $category_id);
             }
+            
+            return $query->orderBy('total_sell', 'DESC')->paginate(12);
         }
     }
 
     public function relatedProductGet(Request $request){
         $plist= explode(",",$request->productlist);
 
-        $subcategorylist=[];
+        // Utiliser category_id au lieu de subcategory_id
+        $categorylist=[];
         $productlist=[$request->productlist];
 
-
         foreach ($plist as $key=>$productid){
-            $subcategory= Product::where('id',$productid)->first();
-            $sub=$subcategory->subcategory_id;
-            $subcategorylist[]=$sub;
+            $product= Product::where('id',$productid)->first();
+            if ($product && $product->category_id) {
+                $categorylist[]=$product->category_id;
+            }
         }
-//        return response($subcategorylist,200);
-//        return $productlist;
 
+        if (empty($categorylist)) {
+            return response(ProductResource::collection([]), 200);
+        }
 
-       $productlist= ProductResource::collection(Product::whereNotIn('id',$plist)->whereIn('subcategory_id',$subcategorylist)->where('deleted', 0)->where('status', 1)->inRandomOrder()->limit(10)->get());
+        $productlist= ProductResource::collection(
+            Product::whereNotIn('id',$plist)
+                ->whereIn('category_id', array_unique($categorylist))
+                ->where('deleted', 0)
+                ->where('status', 1)
+                ->inRandomOrder()
+                ->limit(10)
+                ->get()
+        );
 
         return response($productlist, 200);
-
     }
 
     public function minMaxPrice(){
@@ -119,7 +124,7 @@ class ProductController extends Controller
         $size = $request->size;
         $type=$request->type;
         $category = $request->category_id;
-        $sub_category = $request->sub_category_id;
+        // Note: sub_category_id supprimé - utiliser category_id avec système hiérarchique
         $brand_id = $request->brand_id;
         $srcorderType = $request->srcorderType; /* price_asc price_dsc name_asc name_dsc */
 
@@ -127,9 +132,6 @@ class ProductController extends Controller
         $product = Product::where('status', 1)->where('deleted', 0)
             ->when(($category > 0), function ($q) use ($category) {
                 return $q->where('category_id', '=', $category);
-            })
-            ->when($sub_category > 0, function ($q) use ($sub_category) {
-                return  $q->where('subcategory_id', '=', $sub_category);
             })
             ->when($brand_id > 0, function ($q) use ($brand_id) {
                 return  $q->where('brand_id', '=', $brand_id);
@@ -191,11 +193,24 @@ class ProductController extends Controller
         return ProductResource::collection($category_product);
     }
 
+    /**
+     * @deprecated La méthode subCategoryProduct n'est plus disponible.
+     * Les sous-catégories sont maintenant gérées via le système parent/enfant dans categories.
+     * Utiliser categoryProduct() à la place avec un category_id enfant.
+     */
     public function subCategoryProduct(Request $request)
     {
-        $subCategory_id = $request->subCategory_id;
-//        $subCategory_product = Product::where('subcategory_id', $subCategory_id)->where('deleted', 0)->where('status', 1)->get();
-        return ProductResource::collection(Product::where('subcategory_id', $subCategory_id)->where('deleted', 0)->where('status', 1)->paginate(4));
+        // Rediriger vers categoryProduct pour compatibilité
+        $category_id = $request->subCategory_id ?? $request->category_id;
+        if ($category_id) {
+            return ProductResource::collection(
+                Product::where('category_id', $category_id)
+                    ->where('deleted', 0)
+                    ->where('status', 1)
+                    ->paginate(4)
+            );
+        }
+        return ProductResource::collection(Product::where('deleted', 0)->where('status', 1)->paginate(4));
     }
 
     public function bestSellProduct()

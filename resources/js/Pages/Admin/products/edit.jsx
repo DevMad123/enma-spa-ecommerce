@@ -78,7 +78,6 @@ export default function EditProduct({ product, categories, subcategories: initia
         type: product.type || 'simple',
         name: product.name || '',
         category_id: product.category_id || '',
-        subcategory_id: product.subcategory_id || '',
         supplier_id: product.supplier_id || '',
         brand_id: product.brand_id || '',
         code: product.code || '',
@@ -109,35 +108,8 @@ export default function EditProduct({ product, categories, subcategories: initia
         }
     }, [localeConfig]);
 
-    // Charger sous-catégories quand category change
-    useEffect(() => {
-        if (data.category_id) {
-            fetch(route("admin.products.subcategories.byCategory", data.category_id), {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
-                .then((res) => {
-                    // Vérifier que la réponse est bien du JSON
-                    const contentType = res.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error('La réponse n\'est pas du JSON valide');
-                    }
-                    return res.json();
-                })
-                .then((subs) => setSubcategories(subs || []))
-                .catch(error => {
-                    console.error('Erreur lors du chargement des sous-catégories:', error);
-                    setSubcategories([]);
-                });
-        } else {
-            setSubcategories([]);
-            setData("subcategory_id", "");
-        }
-    }, [data.category_id]);
+    // Note: La gestion des sous-catégories a été supprimée
+    // Le système utilise maintenant un système parent/enfant dans categories
 
     // Gérer le changement de type de produit
     const handleTypeChange = (newType) => {
@@ -478,25 +450,6 @@ export default function EditProduct({ product, categories, subcategories: initia
                                         {categories?.map((category) => (
                                             <option key={category.id} value={category.id}>
                                                 {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Sous-catégorie
-                                    </label>
-                                    <select
-                                        value={data.subcategory_id}
-                                        onChange={(e) => setData('subcategory_id', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        disabled={!data.category_id}
-                                    >
-                                        <option value="">Sélectionner une sous-catégorie</option>
-                                        {subcategories?.map((subcategory) => (
-                                            <option key={subcategory.id} value={subcategory.id}>
-                                                {subcategory.name}
                                             </option>
                                         ))}
                                     </select>

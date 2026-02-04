@@ -48,7 +48,6 @@ const navigationLinks = [
     submenu: [
       { route: "admin.products.index", label: "Produits", icon: HiOutlineCube },
       { route: "admin.categories.index", label: "Catégories", icon: HiOutlineCollection },
-      { route: "admin.subcategories.index", label: "Sous-catégories", icon: HiOutlineCollection },
       { route: "admin.colors.index", label: "Couleurs", icon: HiOutlineColorSwatch },
       { route: "admin.sizes.index", label: "Tailles", icon: HiOutlineChartBar },
     ]

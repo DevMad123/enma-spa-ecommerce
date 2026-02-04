@@ -24,7 +24,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCategoryController;
 use App\Http\Controllers\Admin\ProductColorController;
 use App\Http\Controllers\Admin\ProductSizeController;
-use App\Http\Controllers\Admin\ProductSubcategoryController;
+
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -137,7 +137,6 @@ Route::prefix('newsletter')->name('newsletter.')->group(function () {
 Route::prefix('shop')->name('frontend.shop.')->group(function () {
     Route::get('/', [ShopController::class, 'index'])->name('index');
     Route::get('/category/{category}', [ShopController::class, 'category'])->name('category');
-    Route::get('/subcategory/{subcategory}', [ShopController::class, 'subcategory'])->name('subcategory');
     Route::get('/product/{product}', [ShopController::class, 'show'])->name('show');
 });
 
@@ -275,9 +274,6 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
         Route::put('/{product}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         Route::get('/edit', [ProductController::class, 'productEditDetails'])->name('editDetails');
-
-        // Route pour obtenir les sous-catégories par catégorie (AJAX)
-        Route::get('/subcategories/{category_id}', [ProductController::class, 'getSubcategoriesByCategory'])->name('subcategories.byCategory');
     });
 
     // CRUD Articles de Blog
@@ -311,21 +307,6 @@ Route::middleware(['auth', 'verified', 'isAdmin'])->prefix('admin')->name('admin
         Route::get('/{category}/edit', [ProductCategoryController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [ProductCategoryController::class, 'update'])->name('update');
         Route::delete('/delete/{id}', [ProductCategoryController::class, 'delete'])->name('delete');
-    });
-
-    Route::prefix('subcategories')->name('subcategories.')->group(function () {
-        Route::get('/', [ProductSubcategoryController::class, 'index'])->name('index');
-        Route::get('/create', [ProductSubcategoryController::class, 'create'])->name('create');
-        Route::post('/', [ProductSubcategoryController::class, 'store'])->name('store');
-        Route::get('/{subcategory}', [ProductSubcategoryController::class, 'show'])->name('show');
-        Route::get('/{subcategory}/edit', [ProductSubcategoryController::class, 'edit'])->name('edit');
-        Route::put('/{subcategory}', [ProductSubcategoryController::class, 'update'])->name('update');
-        Route::delete('/{subcategory}', [ProductSubcategoryController::class, 'delete'])->name('destroy');
-
-        // Legacy routes for backward compatibility
-        Route::post('/store', [ProductSubcategoryController::class, 'storeSubcategory'])->name('store.legacy');
-        Route::put('/update/{id}', [ProductSubcategoryController::class, 'updateSubcategory'])->name('update.legacy');
-        Route::delete('/delete/{id}', [ProductSubcategoryController::class, 'deleteSubcategory'])->name('delete.legacy');
     });
 
     Route::prefix('brands')->name('brands.')->group(function () {

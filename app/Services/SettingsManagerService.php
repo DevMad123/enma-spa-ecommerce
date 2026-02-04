@@ -130,9 +130,12 @@ class SettingsManagerService
      */
     public function getAllGrouped(): array
     {
-        return Cache::remember(self::CACHE_KEY . '_grouped', self::CACHE_TTL, function () {
+        $result = Cache::remember(self::CACHE_KEY . '_grouped', self::CACHE_TTL, function () {
             return Setting::getAllGrouped();
         });
+        
+        // S'assurer que le résultat est bien un array
+        return is_array($result) ? $result : $result->toArray();
     }
 
     /**

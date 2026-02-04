@@ -18,7 +18,6 @@ class ProductCategoryResource extends JsonResource
             'id'=>$this->id,
             'name'=>$this->name,
             'image'=>$this->category_icon,
-            'subcategory'=>$this->subcategory,
         ];
     }
 }

@@ -106,7 +106,7 @@ class Setting extends Model
         $cacheKey = "settings.all.grouped";
         
         return Cache::remember($cacheKey, 3600, function () {
-            return self::all()->groupBy('group');
+            return self::all()->groupBy('group')->toArray();
         });
     }
 

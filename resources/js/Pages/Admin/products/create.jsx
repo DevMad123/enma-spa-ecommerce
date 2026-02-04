@@ -33,7 +33,6 @@ export default function CreateProduct() {
         type: 'simple',
         name: '',
         category_id: '',
-        subcategory_id: '',
         supplier_id: '',
         brand_id: '',
         code: '',
@@ -62,48 +61,8 @@ export default function CreateProduct() {
         }
     }, [localeConfig]);
 
-    // Charger sous-catégories quand category change
-    useEffect(() => {
-        if (data.category_id) {
-            // Utiliser la nouvelle route dans le contrôleur ProductController
-            const url = route("admin.products.subcategories.byCategory", data.category_id);
-
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            })
-                .then((res) => {
-                    if (!res.ok) {
-                        throw new Error(`HTTP error! status: ${res.status}`);
-                    }
-                    const contentType = res.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error(`Expected JSON, got ${contentType}`);
-                    }
-
-                    return res.json();
-                })
-                .then((subs) => {
-                    setSubcategories(subs || []);
-                })
-                .catch(error => {
-                    // Fallback: essayer de récupérer toutes les sous-catégories depuis les props initiales
-                    const filteredSubs = initialSubcategories.filter(sub =>
-                        sub.category_id === parseInt(data.category_id)
-                    );
-                    setSubcategories(filteredSubs);
-                });
-        } else {
-            setSubcategories([]);
-            setData("subcategory_id", "");
-        }
-    }, [data.category_id]);
+    // Note: La gestion des sous-catégories a été supprimée
+    // Le système utilise maintenant un système parent/enfant dans categories
 
     // Gérer le changement de type de produit
     const handleTypeChange = (newType) => {
@@ -246,7 +205,7 @@ export default function CreateProduct() {
 
         // Champs de base
         const simpleFields = [
-            'type', 'name', 'category_id', 'subcategory_id', 'supplier_id', 'brand_id',
+            'type', 'name', 'category_id', 'supplier_id', 'brand_id',
             'code', 'unit_type', 'description', 'purchase_cost', 'sale_price',
             'wholesale_price', 'wholesale_minimum_qty', 'available_quantity',
             'discount_type', 'discount'
@@ -914,26 +873,6 @@ export default function CreateProduct() {
                                         ))}
                                     </select>
                                 </div>
-
-                                {subcategories.length > 0 && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Sous-catégorie
-                                        </label>
-                                        <select
-                                            value={data.subcategory_id}
-                                            onChange={(e) => setData('subcategory_id', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Sélectionner une sous-catégorie</option>
-                                            {subcategories.map((subcategory) => (
-                                                <option key={subcategory.id} value={subcategory.id}>
-                                                    {subcategory.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">

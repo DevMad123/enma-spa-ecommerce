@@ -11,7 +11,6 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductColor;
 use App\Models\ProductSize;
-use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use App\Models\Supplier;
@@ -34,7 +33,6 @@ class ProductController extends Controller
                 'brand',
                 'supplier',
                 'category',
-                'subcategory',
                 'images',
             ])
             ->whereNull('deleted_at');
@@ -202,7 +200,6 @@ class ProductController extends Controller
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:product_categories,id',
-                'subcategory_id' => 'nullable|exists:product_sub_categories,id',
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
                 'main_image' => 'required|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
@@ -246,7 +243,7 @@ class ProductController extends Controller
             ]);
 
             $productData = $request->only([
-                'name', 'category_id', 'subcategory_id', 'brand_id',
+                'name', 'category_id', 'brand_id',
                 'supplier_id', 'description', 'unit_type',
                 'discount', 'discount_type',
                 'purchase_cost', 'sale_price', 'wholesale_price', 'available_quantity'
@@ -398,7 +395,6 @@ class ProductController extends Controller
                 'type' => 'required|in:simple,variable',
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:product_categories,id',
-                'subcategory_id' => 'nullable|exists:product_sub_categories,id',
                 'brand_id' => 'nullable|exists:brands,id',
                 'supplier_id' => 'nullable|exists:suppliers,id',
                 'purchase_cost' => 'nullable|numeric',
@@ -460,7 +456,7 @@ class ProductController extends Controller
 
             // Préparer les données avec conversion des booléens
             $productData = $request->only([
-                'name', 'category_id', 'subcategory_id', 'brand_id', 'supplier_id',
+                'name', 'category_id', 'brand_id', 'supplier_id',
                 'description', 'unit_type', 'discount', 'discount_type'
             ]);
 
@@ -559,7 +555,6 @@ class ProductController extends Controller
     public function createProduct()
     {
         $categories = ProductCategory::orderBy('name', 'asc')->get();
-        $subcategories = ProductSubCategory::orderBy('name', 'asc')->get();
         $brands = Brand::orderBy('name', 'asc')->get();
         $suppliers = Supplier::orderBy('supplier_name', 'asc')->get();
         $colors = ProductColor::orderBy('name', 'asc')->get();
@@ -567,7 +562,6 @@ class ProductController extends Controller
 
         return Inertia::render('Admin/Products/create', [
             'categories' => $categories,
-            'subcategories' => $subcategories,
             'brands' => $brands,
             'suppliers' => $suppliers,
             'colors' => $colors,
@@ -583,7 +577,6 @@ class ProductController extends Controller
     {
         $product->load([
             'category',
-            'subcategory',
             'brand',
             'supplier',
             'attributes.color',
@@ -610,7 +603,6 @@ class ProductController extends Controller
     {
         $product->load([
             'category',
-            'subcategory',
             'brand',
             'supplier',
             'attributes.color',
@@ -624,7 +616,6 @@ class ProductController extends Controller
         ]);
 
         $categories = ProductCategory::orderBy('name', 'asc')->get();
-        $subcategories = ProductSubCategory::orderBy('name', 'asc')->get();
         $brands = Brand::orderBy('name', 'asc')->get();
         $suppliers = Supplier::orderBy('supplier_name', 'asc')->get();
         $colors = ProductColor::orderBy('name', 'asc')->get();
@@ -633,7 +624,6 @@ class ProductController extends Controller
         return Inertia::render('Admin/Products/edit', [
             'product' => $product,
             'categories' => $categories,
-            'subcategories' => $subcategories,
             'brands' => $brands,
             'suppliers' => $suppliers,
             'colors' => $colors,
@@ -676,24 +666,5 @@ class ProductController extends Controller
 //      return view('adminPanel.pos.sell_invoice');
 //      return $pdf->download('buy_invoice.pdf');
         return $pdf->stream('buy_invoice.pdf');
-    }
-
-    /**
-     * Obtenir les sous-catégories par ID de catégorie (pour AJAX)
-     */
-    public function getSubcategoriesByCategory($category_id)
-    {
-        try {
-            $subcategories = ProductSubCategory::where('category_id', $category_id)
-                ->where('status', 1)
-                ->whereNull('deleted_at')
-                ->select('id', 'name', 'category_id')
-                ->get();
-
-            return response()->json($subcategories);
-        } catch (\Exception $e) {
-            Log::error('Erreur lors du chargement des sous-catégories: ' . $e->getMessage());
-            return response()->json(['error' => 'Erreur lors du chargement des sous-catégories'], 500);
-        }
     }
 }
