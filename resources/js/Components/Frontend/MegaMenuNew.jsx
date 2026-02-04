@@ -106,9 +106,10 @@ const MegaMenu_old = ({ isOpen, type, categories = [] }) => {
 };
 
 // NOUVEAU MEGAMENU PHENOMENAL - Inspiré de Fenom.com - AVEC DONNÉES DYNAMIQUES
-const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
+const MegaMenuFenomenal = ({ isOpen, type, categories = [] }) => {
     const [activeCategory, setActiveCategory] = useState(null);
     const [menuData, setMenuData] = useState([]);
+    const menuRef = React.useRef(null);
 
     // Filtrer et structurer les catégories en fonction du type
     useEffect(() => {
@@ -141,6 +142,38 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
         }
     }, [categories, type, isOpen]);
 
+    // Ajuster la position du menu pour éviter le débordement
+    useEffect(() => {
+        if (!isOpen || !menuRef.current) return;
+
+        const adjustPosition = () => {
+            const menu = menuRef.current;
+            const menuRect = menu.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            
+            // Calculer le débordement à droite
+            const overflowRight = menuRect.right - viewportWidth;
+            // Calculer le débordement à gauche
+            const overflowLeft = menuRect.left < 0 ? Math.abs(menuRect.left) : 0;
+            
+            if (overflowRight > 0) {
+                // Le menu dépasse à droite, le décaler vers la gauche
+                const currentLeft = parseFloat(getComputedStyle(menu).left) || 0;
+                menu.style.left = `${currentLeft - overflowRight - 20}px`; // 20px de marge
+            } else if (overflowLeft > 0) {
+                // Le menu dépasse à gauche, le décaler vers la droite
+                const currentLeft = parseFloat(getComputedStyle(menu).left) || 0;
+                menu.style.left = `${currentLeft + overflowLeft + 20}px`; // 20px de marge
+            }
+        };
+
+        // Ajuster après le rendu
+        setTimeout(adjustPosition, 0);
+        
+        window.addEventListener('resize', adjustPosition);
+        return () => window.removeEventListener('resize', adjustPosition);
+    }, [isOpen]);
+
     const currentItem = menuData.find(item => item.id === activeCategory) || menuData[0];
 
     const handleCategoryChange = (categoryId) => {
@@ -151,16 +184,15 @@ const MegaMenuFenomenal = ({ isOpen, type, categories = [], translateX }) => {
 
     return (
         <div 
-            className="flex absolute top-full left-1/2 -translate-x-[30%] bg-white z-50"
-  style={{
-    '--tw-translate-x': translateX,
-    width: '90vw',
-    maxWidth: '1200px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    left: 0,
-    right: 0,
-  }}
+            ref={menuRef}
+            className="flex absolute top-full bg-white z-50 shadow-2xl"
+            style={{
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '90vw',
+                maxWidth: '1200px',
+                minWidth: '800px'
+            }}
         >
             <div className="flex h-full flex-1">
                 {/* COLONNE GAUCHE - Navigation principale */}

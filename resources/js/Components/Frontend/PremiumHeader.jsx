@@ -97,7 +97,7 @@ const PremiumHeader = ({
             {/* BLOC 1 - TOP HEADER */}
             <div className="bg-white h-[70px]">
                 <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8 h-full">
-                    <div className="flex items-center justify-between h-full">
+                    <div className="flex items-center justify-center md:justify-between sm:justify-center h-full">
                         {/* Logo */}
                         <Link href={route('home')} className="flex items-center">
                             {customizations?.logo_image ? (
@@ -118,8 +118,8 @@ const PremiumHeader = ({
                             )}
                         </Link>
 
-                        {/* Icônes e-commerce */}
-                        <div className="flex items-center space-x-4">
+                        {/* Icônes e-commerce (masquées sur mobile) */}
+                        <div className="hidden md:flex items-center space-x-4">
                             {/* Search */}
                             <div className="relative flex items-center">
                                 {searchOpen ? (
@@ -284,7 +284,6 @@ const PremiumHeader = ({
                                         cat.name.toLowerCase().includes('basket') ||
                                         cat.name.toLowerCase().includes('chaussure')
                                     )}
-                                    translateX="-24%"
                                 />
                             </div>
 
@@ -314,7 +313,6 @@ const PremiumHeader = ({
                                         cat.name.toLowerCase().includes('vêtement') ||
                                         cat.name.toLowerCase().includes('mode')
                                     )}
-                                    translateX="-35%"
                                 />
                             </div>
 
@@ -343,7 +341,7 @@ const PremiumHeader = ({
                                     letterSpacing: '0.025em'
                                 }}
                             >
-                                Le Outline
+                                Blackoutfit
                             </Link>
 
                             {/* Blog */}

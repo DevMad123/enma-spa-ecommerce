@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const CategoryCard = ({ category }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
     const getImage = (c) => {
         return (
             c.image || c.photo || c.icon || c.banner || '/images/category-placeholder.jpg'
@@ -10,105 +11,201 @@ const CategoryCard = ({ category }) => {
     };
 
     return (
-        <Link
-            href={route('frontend.shop.category', category.id)}
-            className="group block min-w-[160px] sm:min-w-[200px] mr-4 last:mr-0"
-        >
-            <div className="border border-gray-200 rounded-xl overflow-hidden bg-white transition-all duration-200 group-hover:shadow-md">
-                <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-50">
+        <div className="group cursor-pointer" style={{ fontFamily: 'Barlow, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+            <Link href={route('frontend.shop.category', category.id)}>
+                {/* Image avec ratio plus grand que les produits */}
+                <div className="relative bg-gray-50 overflow-hidden mb-3" style={{ aspectRatio: '1 / 1.2' }}>
                     <img
                         src={getImage(category)}
                         alt={category.name || 'Catégorie'}
-                        loading="lazy"
-                        className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${
+                            isLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        onLoad={() => setIsLoaded(true)}
                     />
                 </div>
-                <div className="p-3 text-center">
-                    <span className="text-sm sm:text-base font-medium text-gray-900 line-clamp-1">
-                        {category.name}
-                    </span>
+
+                {/* Category Info */}
+                <div className="space-y-1">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 leading-tight">
+                        {category.name || 'Catégorie'}
+                    </h3>
                 </div>
-            </div>
-        </Link>
+            </Link>
+        </div>
     );
 };
 
-export default function CategoryCarousel({ categories = [], title = 'Catégories' }) {
-    const scrollerRef = useRef(null);
+// Category Carousel Component - Structure identique à ProductSlider
+const CategoryCarousel = ({ 
+    title = "CATÉGORIES", 
+    icon = null,
+    categories = [], 
+    backgroundColor = "bg-white"
+}) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const sliderRef = useRef(null);
+    const [itemWidth, setItemWidth] = useState(0);
+    const touchStartX = useRef(0);
+    const touchEndX = useRef(0);
+    
+    // Utiliser directement les catégories sans filtre
+    const displayedCategories = categories;
+    
+    // Calcul dynamique de la largeur d'un item
+    useEffect(() => {
+        const calculateItemWidth = () => {
+            if (sliderRef.current && sliderRef.current.children.length > 0) {
+                const firstItem = sliderRef.current.children[0];
+                const rect = firstItem.getBoundingClientRect();
+                const gap = parseFloat(getComputedStyle(sliderRef.current).gap) || 24;
+                setItemWidth(rect.width + gap);
+            }
+        };
 
-    const scrollBy = (delta) => {
-        if (scrollerRef.current) {
-            const amount = Math.round(scrollerRef.current.clientWidth * (Math.abs(delta) > 1 ? 1 : 0.9));
-            scrollerRef.current.scrollBy({ left: Math.sign(delta) * amount, behavior: 'smooth' });
-        }
+        calculateItemWidth();
+        window.addEventListener('resize', calculateItemWidth);
+        
+        return () => window.removeEventListener('resize', calculateItemWidth);
+    }, [displayedCategories]);
+    
+    // Nombre de catégories visibles par breakpoint
+    const getItemsPerView = () => {
+        if (typeof window === 'undefined') return 4;
+        const width = window.innerWidth;
+        if (width < 768) return 1.5; // Mobile : 1.5 catégories
+        if (width < 1024) return 2.5; // Tablette : 2.5 catégories
+        return 4; // Desktop : 4 catégories
+    };
+    
+    const [itemsPerView, setItemsPerView] = useState(getItemsPerView());
+    
+    useEffect(() => {
+        const handleResize = () => {
+            setItemsPerView(getItemsPerView());
+            setCurrentIndex(0); // Reset à la position initiale lors du resize
+        };
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
+    const maxIndex = Math.max(0, displayedCategories.length - Math.floor(itemsPerView));
+
+    const nextSlide = () => {
+        setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
     };
 
-    if (!Array.isArray(categories) || categories.length === 0) return null;
+    const prevSlide = () => {
+        setCurrentIndex(prev => Math.max(prev - 1, 0));
+    };
+    
+    // Support tactile (swipe)
+    const handleTouchStart = (e) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+    
+    const handleTouchMove = (e) => {
+        touchEndX.current = e.touches[0].clientX;
+    };
+    
+    const handleTouchEnd = () => {
+        const swipeDistance = touchStartX.current - touchEndX.current;
+        const minSwipeDistance = 50; // Seuil minimum pour déclencher le swipe
+        
+        if (Math.abs(swipeDistance) > minSwipeDistance) {
+            if (swipeDistance > 0) {
+                // Swipe vers la gauche - slide suivant
+                nextSlide();
+            } else {
+                // Swipe vers la droite - slide précédent
+                prevSlide();
+            }
+        }
+        
+        // Reset
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+    };
+
+    if (!displayedCategories.length) return null;
 
     return (
-        <section className="py-10 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
-                    {/* Boutons desktop au niveau du titre */}
-                    <div className="hidden sm:flex items-center space-x-2">
+        <section className={`py-[30px] md:py-[60px] ${backgroundColor}`}>
+            <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
+                {/* Header avec titre et flèches */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-4xl md:text-5xl font-bold text-black font-['Barlow']">
+                            {title}
+                        </h2>
+                        {icon && (
+                            <span className="w-8 h-8 md:w-8 md:h-8 text-gray-600">
+                                {icon}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Navigation Arrows */}
+                    <div className="flex items-center space-x-2">
                         <button
-                            type="button"
-                            onClick={() => scrollBy(-1)}
-                            className="h-9 w-9 rounded-full border border-gray-200 text-gray-700 bg-white hover:shadow transition-all"
-                            aria-label="Catégories précédentes"
+                            onClick={prevSlide}
+                            disabled={currentIndex === 0}
+                            className="p-4 border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronLeftIcon className="h-5 w-5 mx-auto" />
+                            <ChevronLeftIcon className="w-4 h-4" />
                         </button>
                         <button
-                            type="button"
-                            onClick={() => scrollBy(1)}
-                            className="h-9 w-9 rounded-full border border-gray-200 text-gray-700 bg-white hover:shadow transition-all"
-                            aria-label="Catégories suivantes"
+                            onClick={nextSlide}
+                            disabled={currentIndex >= maxIndex}
+                            className="p-4 border border-gray-200 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <ChevronRightIcon className="h-5 w-5 mx-auto" />
+                            <ChevronRightIcon className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
 
-                <div className="relative">
-                    {/* Boutons overlay mobiles/desktop */}
-                    <button
-                        type="button"
-                        onClick={() => scrollBy(-1)}
-                        className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-white items-center justify-center shadow-lg z-10"
-                        style={{ background: 'linear-gradient(135deg, var(--theme-primary, #f59e0b), var(--theme-primary-hover, #ea580c))' }}
-                        aria-label="Défiler vers la gauche"
+                {/* Slider Container */}
+                <div 
+                    className="relative overflow-hidden"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    <div 
+                        ref={sliderRef}
+                        className="flex transition-transform duration-500 ease-out gap-6"
+                        style={{ 
+                            transform: itemWidth > 0 ? `translateX(-${currentIndex * itemWidth}px)` : 'translateX(0)'
+                        }}
                     >
-                        <ChevronLeftIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => scrollBy(1)}
-                        className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full text-white items-center justify-center shadow-lg z-10"
-                        style={{ background: 'linear-gradient(135deg, var(--theme-primary, #f59e0b), var(--theme-primary-hover, #ea580c))' }}
-                        aria-label="Défiler vers la droite"
-                    >
-                        <ChevronRightIcon className="h-5 w-5" />
-                    </button>
-
-                    {/* Scroller */}
-                    <div
-                        ref={scrollerRef}
-                        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory space-x-4 pr-2"
-                        style={{ scrollbarWidth: 'none' }}
-                    >
-                        {categories.map((cat) => (
-                            <div key={cat.id} className="snap-start">
-                                <CategoryCard category={cat} />
+                        {displayedCategories.map((category) => (
+                            <div
+                                key={category?.id || Math.random()}
+                                className="flex-none w-[calc(66.67%-16px)] md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]"
+                            >
+                                <CategoryCard category={category} />
                             </div>
                         ))}
                     </div>
-                    {/* Fades d’edges */}
-                    <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />
-                    <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
+                </div>
+
+                {/* Mobile Navigation Dots */}
+                <div className="flex md:hidden items-center justify-center mt-8 space-x-1">
+                    {Array.from({ length: Math.ceil(displayedCategories.length / 1.5) }).map((_, index) => (
+                        <div
+                            key={index}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                index === currentIndex
+                                    ? 'bg-black w-6'
+                                    : 'bg-gray-300'
+                            }`}
+                        />
+                    ))}
                 </div>
             </div>
         </section>
     );
-}
+};
+
+export default CategoryCarousel;

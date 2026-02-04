@@ -10,7 +10,7 @@ import {
     BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 
-export default function EditCategory({ category }) {
+export default function EditCategory({ category, categories = [] }) {
     // Normaliser l'URL de l'image existante
     const normalizeImageUrl = (imagePath) => {
         if (!imagePath) return null;
@@ -24,6 +24,7 @@ export default function EditCategory({ category }) {
     const { data, setData, processing, errors } = useForm({
         name: category.name || '',
         note: category.note || '',
+        parent_id: category.parent_id || '',
         is_popular: category.is_popular === 1 || category.is_popular === true || category.is_popular === '1',
         status: category.status === 1 || category.status === true || category.status === '1',
         image: null,
@@ -173,6 +174,34 @@ export default function EditCategory({ category }) {
                                         {errors.note && (
                                             <p className="mt-1 text-sm text-red-600">{errors.note}</p>
                                         )}
+                                    </div>
+
+                                    {/* Catégorie parente */}
+                                    <div>
+                                        <label htmlFor="parent_id" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Catégorie parente (optionnel)
+                                        </label>
+                                        <select
+                                            id="parent_id"
+                                            value={data.parent_id}
+                                            onChange={(e) => setData('parent_id', e.target.value)}
+                                            className={`block w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                                                errors.parent_id ? 'border-red-300' : 'border-gray-300'
+                                            }`}
+                                        >
+                                            <option value="">Aucune (catégorie racine)</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.id} value={cat.id}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.parent_id && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.parent_id}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Sélectionnez une catégorie parente pour créer une sous-catégorie
+                                        </p>
                                     </div>
                                 </div>
                             </div>

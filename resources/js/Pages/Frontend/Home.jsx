@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FrontendLayout from '@/Layouts/FrontendLayout';
 import { Link, usePage, router } from '@inertiajs/react';
 import {
@@ -270,7 +270,7 @@ const FeaturesSection = () => {
     return (
         <section className="py-20 bg-gray-50">
             <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {features.map((feature, index) => (
                         <div key={index} className="text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow">
                             <div className="inline-flex items-center justify-center w-16 h-16 bg-black text-white rounded-full mb-6">
@@ -289,6 +289,10 @@ const FeaturesSection = () => {
 // Sneaker Brands Slider Section
 const SneakerBrandsSlider = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const sliderRef = useRef(null);
+    const [itemWidth, setItemWidth] = useState(0);
+    const touchStartX = useRef(0);
+    const touchEndX = useRef(0);
     
     const brands = [
         {
@@ -341,8 +345,45 @@ const SneakerBrandsSlider = () => {
         }
     ];
 
-    const itemsPerView = { desktop: 4, tablet: 2, mobile: 1 };
-    const maxIndex = Math.max(0, brands.length - itemsPerView.desktop);
+    // Calcul dynamique de la largeur d'un item
+    useEffect(() => {
+        const calculateItemWidth = () => {
+            if (sliderRef.current && sliderRef.current.children.length > 0) {
+                const firstItem = sliderRef.current.children[0];
+                const rect = firstItem.getBoundingClientRect();
+                const gap = parseFloat(getComputedStyle(sliderRef.current).gap) || 24;
+                setItemWidth(rect.width + gap);
+            }
+        };
+
+        calculateItemWidth();
+        window.addEventListener('resize', calculateItemWidth);
+        
+        return () => window.removeEventListener('resize', calculateItemWidth);
+    }, [brands]);
+
+    // Nombre de brands visibles par breakpoint
+    const getItemsPerView = () => {
+        if (typeof window === 'undefined') return 4;
+        const width = window.innerWidth;
+        if (width < 768) return 1.5; // Mobile : 1.5 brands
+        if (width < 1024) return 2.5; // Tablette : 2.5 brands
+        return 4; // Desktop : 4 brands
+    };
+
+    const [itemsPerView, setItemsPerView] = useState(getItemsPerView());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setItemsPerView(getItemsPerView());
+            setCurrentIndex(0); // Reset à la position initiale lors du resize
+        };
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const maxIndex = Math.max(0, brands.length - Math.floor(itemsPerView));
 
     const nextSlide = () => {
         setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
@@ -350,6 +391,34 @@ const SneakerBrandsSlider = () => {
 
     const prevSlide = () => {
         setCurrentIndex(prev => Math.max(prev - 1, 0));
+    };
+
+    // Support tactile (swipe)
+    const handleTouchStart = (e) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchMove = (e) => {
+        touchEndX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = () => {
+        const swipeDistance = touchStartX.current - touchEndX.current;
+        const minSwipeDistance = 50; // Seuil minimum pour déclencher le swipe
+        
+        if (Math.abs(swipeDistance) > minSwipeDistance) {
+            if (swipeDistance > 0) {
+                // Swipe vers la gauche - slide suivant
+                nextSlide();
+            } else {
+                // Swipe vers la droite - slide précédent
+                prevSlide();
+            }
+        }
+        
+        // Reset
+        touchStartX.current = 0;
+        touchEndX.current = 0;
     };
 
     return (
@@ -383,17 +452,23 @@ const SneakerBrandsSlider = () => {
                 </div>
 
                 {/* Slider Container */}
-                <div className="relative overflow-hidden">
+                <div 
+                    className="relative overflow-hidden"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
                     <div 
-                        className="flex transition-transform duration-300 ease-in-out space-x-6"
+                        ref={sliderRef}
+                        className="flex transition-transform duration-500 ease-out gap-6"
                         style={{ 
-                            transform: `translateX(-${currentIndex * (100 / itemsPerView.desktop)}%)`
+                            transform: itemWidth > 0 ? `translateX(-${currentIndex * itemWidth}px)` : 'translateX(0)'
                         }}
                     >
                         {brands.map((brand) => (
                             <div
                                 key={brand.id}
-                                className="flex-none w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
+                                className="flex-none w-[calc(66.67%-16px)] md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]"
                             >
                                 <Link
                                     href={`/brand/${brand.slug}`}
@@ -432,11 +507,11 @@ const SneakerBrandsSlider = () => {
 
                 {/* Mobile Navigation Dots */}
                 <div className="flex md:hidden items-center justify-center mt-8 space-x-1">
-                    {Array.from({ length: Math.ceil(brands.length / itemsPerView.mobile) }).map((_, index) => (
+                    {Array.from({ length: Math.ceil(brands.length / 1.5) }).map((_, index) => (
                         <div
                             key={index}
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                                index === Math.floor(currentIndex / itemsPerView.mobile)
+                                index === currentIndex
                                     ? 'bg-black w-6'
                                     : 'bg-gray-300'
                             }`}
@@ -503,7 +578,7 @@ const FeaturedProductsSection = ({ products = [] }) => {
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                     {products.slice(0, 8).map((product) => (
                         <ModernProductCard key={product?.id || Math.random()} product={product} />
                     ))}
@@ -530,7 +605,7 @@ const CategoriesSection = ({ categories = [] }) => {
                 </div>
 
                 {/* Categories Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {categories.slice(0, 4).map((category, index) => (
                         <Link
                             key={category.id}
@@ -648,7 +723,7 @@ function HomeContent({
             />
 
             {/* Featured Products */}
-            <FeaturedProductsSection products={featuredProducts} />
+            {/* <FeaturedProductsSection products={featuredProducts} /> */}
 
             {/* Sneaker Brands Slider */}
             <SneakerBrandsSlider />
@@ -665,7 +740,7 @@ function HomeContent({
             />
 
             {/* Product Grid */}
-            <ProductGrid products={newProducts} />
+            {/* <ProductGrid products={newProducts} /> */}
 
             {/* Categories */}
             <CategoriesSection categories={categories} />

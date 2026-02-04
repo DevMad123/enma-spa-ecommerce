@@ -16,6 +16,9 @@ import { WishlistProvider, useWishlist } from '@/Contexts/WishlistContext';
 import useCustomizations from '@/Hooks/useCustomizations';
 import PremiumHeader from '@/Components/Frontend/PremiumHeader';
 import Footer from '@/Components/Footer';
+import MobileMenuOverlay from '@/Components/Frontend/MobileMenuOverlay';
+import MobileBottomMenu from '@/Components/Frontend/MobileBottomMenu';
+import MobileSearchOverlay from '@/Components/Frontend/MobileSearchOverlay';
 
 // Contexte du panier
 const CartContext = createContext();
@@ -227,54 +230,29 @@ const FrontendLayout = ({ children, title }) => {
                     navigation={navigation}
                 />
 
-                    {/* Mobile Drawer Menu */}
-                    {mobileMenuOpen && (
-                        <div className="fixed inset-0 z-50">
-                            <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-                            <div className="absolute inset-y-0 right-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto transform transition-all duration-300">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">Menu</h3>
-                                    <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer">
-                                        <XMarkIcon className="h-6 w-6" />
-                                    </button>
-                                </div>
+                {/* Menu Mobile Premium Overlay */}
+                <MobileMenuOverlay
+                    isOpen={mobileMenuOpen}
+                    onClose={() => setMobileMenuOpen(false)}
+                    categories={categories}
+                    appName={appName}
+                    appSettings={appSettings}
+                />
 
-                                {/* Navigation principale (mobile) */}
-                                <nav className="mt-2 mb-4">
-                                    <ul className="space-y-1">
-                                        {[{ name: 'Accueil', href: route('home') }, ...navigation].map((item) => (
-                                            <li key={item.name}>
-                                                <Link
-                                                    href={item.href}
-                                                    onClick={() => setMobileMenuOpen(false)}
-                                                    className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50"
-                                                >
-                                                    {item.name}
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </nav>
+                {/* Mobile Search Overlay */}
+                <MobileSearchOverlay
+                    isOpen={mobileSearchOpen}
+                    onClose={() => setMobileSearchOpen(false)}
+                />
 
-                                {/* Compte */}
-                                <div className="mt-4">
-                                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Compte</h4>
-                                    {auth.user ? (
-                                        <div className="space-y-2">
-                                            <Link href={route('frontend.profile.index')} onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Mon Profil</Link>
-                                            <Link href={route('frontend.profile.orders')} onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Mes Commandes</Link>
-                                            <Link href={route('logout')} method="post" as="button" onClick={() => setMobileMenuOpen(false)} className="block w-full text-left px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50">Déconnexion</Link>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Link href={route('login')} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg border text-center text-gray-800 hover:bg-gray-50">Connexion</Link>
-                                            <Link href={route('register')} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-lg bg-amber-500 text-white text-center hover:bg-amber-600">Inscription</Link>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                {/* Bottom Menu Mobile */}
+                <MobileBottomMenu
+                    onMenuClick={() => setMobileMenuOpen(true)}
+                    onSearchClick={() => setMobileSearchOpen(true)}
+                    cartItemsCount={getTotalItems()}
+                    wishlistItemsCount={getWishlistTotalItems()}
+                    auth={auth}
+                />
 
                     {/* Drawer Catégories (desktop et tablettes uniquement) */}
                     {categoriesOpen && (
@@ -305,119 +283,9 @@ const FrontendLayout = ({ children, title }) => {
                             </div>
                         </div>
                     )}
-                    {/* Mobile Search Overlay */}
-                    {mobileSearchOpen && (
-                        <div className="fixed inset-0 z-50">
-                            <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSearchOpen(false)} />
-                            <div className="absolute top-0 left-0 right-0 bg-white p-4 shadow-lg">
-                                <form onSubmit={handleSearch}>
-                                    <div className="relative">
-                                        <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Rechercher des produits..."
-                                            autoFocus
-                                            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setMobileSearchOpen(false)}
-                                            className="absolute right-2 top-1.5 p-1 text-gray-500 hover:text-gray-700"
-                                            aria-label="Fermer la recherche"
-                                        >
-                                            <XMarkIcon className="h-5 w-5" />
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
 
-                {/* Mobile Drawer Menu */}
-                {mobileMenuOpen && (
-                    <div className="fixed inset-0 z-50">
-                        <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-                        <div className="absolute inset-y-0 right-0 w-80 max-w-[85%] bg-white shadow-xl p-4 overflow-y-auto transform transition-all duration-300">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">Menu</h3>
-                                <button onClick={() => setMobileMenuOpen(false)} aria-label="Fermer">
-                                    <XMarkIcon className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            {/* Navigation principale (mobile) */}
-                            <nav className="mt-2 mb-4">
-                                <ul className="space-y-1">
-                                    {[{ name: 'Accueil', href: route('home') }, ...navigation].map((item) => (
-                                        <li key={item.name}>
-                                            <Link
-                                                href={item.href}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className="block px-3 py-2 rounded-lg text-gray-800 hover:bg-gray-50"
-                                            >
-                                                {item.name}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </nav>
-
-                            {/* Compte */}
-                            <div className="mt-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Compte</h4>
-                                {auth.user ? (
-                                    <div className="space-y-2">
-                                        <Link
-                                            href={route('frontend.profile.index')}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                                        >
-                                            Mon Profil
-                                        </Link>
-                                        <Link
-                                            href={route('frontend.profile.orders')}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                                        >
-                                            Mes Commandes
-                                        </Link>
-                                        <Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                                        >
-                                            Déconnexion
-                                        </Link>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        <Link
-                                            href={route('login')}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                                        >
-                                            Connexion
-                                        </Link>
-                                        <Link
-                                            href={route('register')}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                                        >
-                                            Inscription
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Main Content */}
-                <main className="flex-1">
+                {/* Main Content avec padding bottom pour mobile menu et padding top pour header mobile */}
+                <main className="flex-1 pb-20 md:pb-0">
                     {children}
                 </main>
 

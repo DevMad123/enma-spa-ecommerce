@@ -20,6 +20,7 @@ export default function BlogCard({ post, featured = false }) {
             href={route('blog.show', post.slug)}
             className={cardClasses}
         >
+            {console.log(post.cover_image)}
             {/* Image avec overlay subtil */}
             <div className={`relative ${imageHeight} overflow-hidden bg-gray-900`}>
                 <img 

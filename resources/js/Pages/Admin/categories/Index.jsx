@@ -153,6 +153,22 @@ export default function CategoriesList() {
             )
         },
         {
+            key: 'parent',
+            label: 'Catégorie parente',
+            render: (category) => (
+                category.parent ? (
+                    <Link 
+                        href={route('admin.categories.show', category.parent.id)} 
+                        className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+                    >
+                        {category.parent.name}
+                    </Link>
+                ) : (
+                    <span className="text-sm text-gray-400 italic">Racine</span>
+                )
+            )
+        },
+        {
             key: 'description',
             label: 'Description',
             render: (category) => (

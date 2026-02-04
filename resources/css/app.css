@@ -146,3 +146,17 @@
   padding-left: 128px !important;
   padding-right: 128px !important;
 }
+
+@media screen and (max-width: 1324px) {
+  .EecDefaultWidth {
+    padding-left: 64px !important;
+    padding-right: 64px !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .EecDefaultWidth {
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+}

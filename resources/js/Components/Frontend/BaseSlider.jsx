@@ -1,78 +1,45 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import ModernProductCard from '@/Components/Frontend/ModernProductCard';
 
-// Product Slider Component - Réutilisable
-const ProductSlider = ({ 
-    title = "PRODUITS", 
+/**
+ * BaseSlider - Composant réutilisable pour tous les sliders (produits, catégories, marques, etc.)
+ * 
+ * @param {Object} props
+ * @param {Array} props.items - Liste des éléments à afficher
+ * @param {Function} props.renderItem - Fonction pour rendre chaque élément
+ * @param {string} props.title - Titre du slider
+ * @param {ReactNode} props.icon - Icône optionnelle à côté du titre
+ * @param {string} props.backgroundColor - Couleur de fond (défaut: bg-white)
+ * @param {number} props.gap - Espacement entre les items en px (défaut: 24 pour produits, 16 pour catégories)
+ * @param {Object} props.breakpoints - Configuration responsive { mobile, tablet, desktop }
+ */
+export default function BaseSlider({
+    items = [],
+    renderItem,
+    title = '',
     icon = null,
-    products = [], 
-    backgroundColor = "bg-white",
-    filterProducts = null, // fonction pour filtrer les produits si nécessaire
-    filterType = null // type de filtre : 'sale', 'new', 'popular', 'trending'
-}) => {
+    backgroundColor = 'bg-white',
+    gap = 24,
+    breakpoints = {
+        mobile: 1.5,    // < 768px
+        tablet: 2.5,    // 768-1023px
+        desktop: 4      // >= 1024px
+    }
+}) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const sliderRef = useRef(null);
     const [itemWidth, setItemWidth] = useState(0);
     const touchStartX = useRef(0);
     const touchEndX = useRef(0);
-    
-    // Fonction de filtrage interne basée sur la structure de la base de données
-    const filterProductsByType = (productsArray, type) => {
-        if (!productsArray || !Array.isArray(productsArray)) return [];
-        
-        switch (type) {
-            case 'sale':
-                return productsArray.filter(product => {
-                    const currentPrice = parseFloat(product?.current_sale_price || 0);
-                    const previousPrice = parseFloat(product?.previous_sale_price || 0);
-                    const hasDiscount = product?.discount && parseFloat(product.discount) > 0;
-                    
-                    // Produit en solde si :
-                    // - previous_sale_price existe et est supérieur au current_sale_price
-                    // - OU il y a une remise appliquée
-                    return (previousPrice > 0 && currentPrice > 0 && previousPrice > currentPrice) || hasDiscount;
-                });
-            
-            case 'new':
-                // Récupérer les 10 derniers produits ajoutés (triés par created_at desc)
-                return productsArray
-                    .sort((a, b) => {
-                        const dateA = new Date(a?.created_at || 0);
-                        const dateB = new Date(b?.created_at || 0);
-                        return dateB - dateA; // Tri décroissant (plus récent en premier)
-                    })
-                    .slice(0, 10);
-            
-            case 'popular':
-                return productsArray.filter(product => product?.is_popular === 1);
-                
-            case 'trending':
-                return productsArray.filter(product => product?.is_trending === 1);
-            
-            default:
-                return productsArray;
-        }
-    };
-    
-    // Appliquer le filtre
-    let displayedProducts = products;
-    
-    // Priorité au filtre personnalisé
-    if (filterProducts) {
-        displayedProducts = filterProducts(products);
-    } else if (filterType) {
-        displayedProducts = filterProductsByType(products, filterType);
-    }
-    
+
     // Calcul dynamique de la largeur d'un item
     useEffect(() => {
         const calculateItemWidth = () => {
             if (sliderRef.current && sliderRef.current.children.length > 0) {
                 const firstItem = sliderRef.current.children[0];
                 const rect = firstItem.getBoundingClientRect();
-                const gap = parseFloat(getComputedStyle(sliderRef.current).gap) || 24;
-                setItemWidth(rect.width + gap);
+                const computedGap = parseFloat(getComputedStyle(sliderRef.current).gap) || gap;
+                setItemWidth(rect.width + computedGap);
             }
         };
 
@@ -80,30 +47,30 @@ const ProductSlider = ({
         window.addEventListener('resize', calculateItemWidth);
         
         return () => window.removeEventListener('resize', calculateItemWidth);
-    }, [displayedProducts]);
-    
-    // Nombre de produits visibles par breakpoint
+    }, [items, gap]);
+
+    // Nombre d'items visibles par breakpoint
     const getItemsPerView = () => {
-        if (typeof window === 'undefined') return 4;
+        if (typeof window === 'undefined') return breakpoints.desktop;
         const width = window.innerWidth;
-        if (width < 768) return 1.5; // Mobile : 1.5 produits
-        if (width < 1024) return 2.5; // Tablette : 2.5 produits
-        return 4; // Desktop : 4 produits
+        if (width < 768) return breakpoints.mobile;
+        if (width < 1024) return breakpoints.tablet;
+        return breakpoints.desktop;
     };
-    
+
     const [itemsPerView, setItemsPerView] = useState(getItemsPerView());
-    
+
     useEffect(() => {
         const handleResize = () => {
             setItemsPerView(getItemsPerView());
-            setCurrentIndex(0); // Reset à la position initiale lors du resize
+            setCurrentIndex(0);
         };
         
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-    
-    const maxIndex = Math.max(0, displayedProducts.length - Math.floor(itemsPerView));
+
+    const maxIndex = Math.max(0, items.length - Math.floor(itemsPerView));
 
     const nextSlide = () => {
         setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
@@ -112,41 +79,53 @@ const ProductSlider = ({
     const prevSlide = () => {
         setCurrentIndex(prev => Math.max(prev - 1, 0));
     };
-    
+
     // Support tactile (swipe)
     const handleTouchStart = (e) => {
         touchStartX.current = e.touches[0].clientX;
     };
-    
+
     const handleTouchMove = (e) => {
         touchEndX.current = e.touches[0].clientX;
     };
-    
+
     const handleTouchEnd = () => {
         const swipeDistance = touchStartX.current - touchEndX.current;
-        const minSwipeDistance = 50; // Seuil minimum pour déclencher le swipe
+        const minSwipeDistance = 50;
         
         if (Math.abs(swipeDistance) > minSwipeDistance) {
             if (swipeDistance > 0) {
-                // Swipe vers la gauche - slide suivant
                 nextSlide();
             } else {
-                // Swipe vers la droite - slide précédent
                 prevSlide();
             }
         }
         
-        // Reset
         touchStartX.current = 0;
         touchEndX.current = 0;
     };
 
-    if (!displayedProducts.length) return null;
+    // Calcul des largeurs CSS selon les breakpoints
+    const getItemWidthClasses = () => {
+        const mobilePercent = 100 / breakpoints.mobile;
+        const tabletPercent = 100 / breakpoints.tablet;
+        const desktopPercent = 100 / breakpoints.desktop;
+        
+        const gapAdjustment = {
+            mobile: gap * (breakpoints.mobile - 1) / breakpoints.mobile,
+            tablet: gap * (breakpoints.tablet - 1) / breakpoints.tablet,
+            desktop: gap * (breakpoints.desktop - 1) / breakpoints.desktop
+        };
+        
+        return `flex-none w-[calc(${mobilePercent}%-${gapAdjustment.mobile}px)] md:w-[calc(${tabletPercent}%-${gapAdjustment.tablet}px)] lg:w-[calc(${desktopPercent}%-${gapAdjustment.desktop}px)]`;
+    };
+
+    if (!items.length) return null;
 
     return (
         <section className={`py-[30px] md:py-[60px] ${backgroundColor}`}>
             <div className="EecDefaultWidth px-4 sm:px-6 lg:px-8">
-                {/* Header avec titre et flèches */}
+                {/* Header avec titre et navigation */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2">
                         <h2 className="text-4xl md:text-5xl font-bold text-black font-['Barlow']">
@@ -187,17 +166,17 @@ const ProductSlider = ({
                 >
                     <div 
                         ref={sliderRef}
-                        className="flex transition-transform duration-500 ease-out gap-6"
+                        className={`flex transition-transform duration-500 ease-out gap-${gap === 24 ? '6' : '4'}`}
                         style={{ 
                             transform: itemWidth > 0 ? `translateX(-${currentIndex * itemWidth}px)` : 'translateX(0)'
                         }}
                     >
-                        {displayedProducts.map((product) => (
+                        {items.map((item, index) => (
                             <div
-                                key={product?.id || Math.random()}
-                                className="flex-none w-[calc(66.67%-16px)] md:w-[calc(40%-12px)] lg:w-[calc(25%-18px)]"
+                                key={item.id || index}
+                                className={getItemWidthClasses()}
                             >
-                                <ModernProductCard product={product} />
+                                {renderItem(item)}
                             </div>
                         ))}
                     </div>
@@ -205,7 +184,7 @@ const ProductSlider = ({
 
                 {/* Mobile Navigation Dots */}
                 <div className="flex md:hidden items-center justify-center mt-8 space-x-1">
-                    {Array.from({ length: Math.ceil(displayedProducts.length / 1.5) }).map((_, index) => (
+                    {Array.from({ length: Math.ceil(items.length / breakpoints.mobile) }).map((_, index) => (
                         <div
                             key={index}
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -219,6 +198,4 @@ const ProductSlider = ({
             </div>
         </section>
     );
-};
-
-export default ProductSlider;
+}

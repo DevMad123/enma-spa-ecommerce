@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\ValidationException;
 use App\Models\ProductCategory;
-use App\Models\ProductSubCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,7 +25,7 @@ class ProductCategoryController extends Controller
     {
         // Start a new query for the ProductCategory model, excluding deleted records.
         $query = ProductCategory::query()
-            ->with(['subcategory', 'products']) // Eager load subcategories and products
+            ->with(['parent', 'children', 'products']) // Eager load parent, children categories and products
             ->withCount('products') // Count products for each category
             ->whereNull('deleted_at');
 
@@ -129,6 +128,7 @@ class ProductCategoryController extends Controller
                 'name' => 'required|string|max:255|unique:product_categories,name',
                 'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:2048',
                 'note' => 'nullable|string',
+                'parent_id' => 'nullable|exists:product_categories,id',
                 'is_popular' => 'nullable',
                 'status' => 'nullable'
             ]);
@@ -141,6 +141,7 @@ class ProductCategoryController extends Controller
             $category = new ProductCategory();
             $category->name = $validated['name'];
             $category->note = $validated['note'] ?? '';
+            $category->parent_id = $validated['parent_id'] ?? null;
             // Convertir les booléens explicitement
             $category->is_popular = $request->boolean('is_popular');
             $category->status = $request->boolean('status');
@@ -295,6 +296,7 @@ class ProductCategoryController extends Controller
                 'image' => 'nullable|file|mimetypes:image/jpeg,image/png,image/webp,image/jpg,image/pjpeg,image/x-png,image/avif,application/octet-stream|mimes:jpg,jpeg,png,webp,avif|max:4096',
                 'image_deleted' => 'nullable',
                 'note' => 'nullable|string',
+                'parent_id' => 'nullable|exists:product_categories,id|not_in:' . $id,
                 'is_popular' => 'nullable',
                 'status' => 'nullable'
             ]);
@@ -316,6 +318,7 @@ class ProductCategoryController extends Controller
             // Mise à jour des autres champs
             $category->name = $validated['name'];
             $category->note = $validated['note'] ?? '';
+            $category->parent_id = $validated['parent_id'] ?? null;
             $category->updated_by = auth()->id();
             $category->save();
 
@@ -353,7 +356,7 @@ class ProductCategoryController extends Controller
      */
     public function show(ProductCategory $category)
     {
-        $category->load(['subcategory', 'products']);
+        $category->load(['children', 'products']);
         $category->loadCount('products');
         
         return Inertia::render('Admin/Categories/show', [
@@ -366,8 +369,15 @@ class ProductCategoryController extends Controller
      */
     public function edit(ProductCategory $category)
     {
+        $categories = ProductCategory::whereNull('deleted_at')
+            ->where('status', true)
+            ->where('id', '!=', $category->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'parent_id']);
+
         return Inertia::render('Admin/Categories/edit', [
-            'category' => $category
+            'category' => $category,
+            'categories' => $categories
         ]);
     }
 
@@ -376,7 +386,14 @@ class ProductCategoryController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Admin/Categories/create');
+        $categories = ProductCategory::whereNull('deleted_at')
+            ->where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'parent_id']);
+
+        return Inertia::render('Admin/Categories/create', [
+            'categories' => $categories
+        ]);
     }
 
     /**
@@ -386,6 +403,11 @@ class ProductCategoryController extends Controller
     {
         try {
             $category = ProductCategory::findOrFail($id);
+            
+            // Check if category has children
+            if ($category->children()->exists()) {
+                return back()->withErrors(['error' => 'Impossible de supprimer une catégorie qui a des sous-catégories']);
+            }
             
             // Check if category has products
             if ($category->products()->exists()) {

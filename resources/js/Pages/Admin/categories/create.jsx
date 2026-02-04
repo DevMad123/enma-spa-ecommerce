@@ -7,12 +7,13 @@ import {
     XMarkIcon
 } from '@heroicons/react/24/outline';
 
-export default function CreateCategory() {
+export default function CreateCategory({ categories = [] }) {
     const [imagePreview, setImagePreview] = useState(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         note: '',
+        parent_id: '',
         is_popular: false,
         status: true,
         image: null,
@@ -113,6 +114,34 @@ export default function CreateCategory() {
                                 {errors.note && (
                                     <p className="mt-1 text-sm text-red-600">{errors.note}</p>
                                 )}
+                            </div>
+
+                            {/* Catégorie parente */}
+                            <div className="lg:col-span-2">
+                                <label htmlFor="parent_id" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Catégorie parente (optionnel)
+                                </label>
+                                <select
+                                    id="parent_id"
+                                    value={data.parent_id}
+                                    onChange={(e) => setData('parent_id', e.target.value)}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                        errors.parent_id ? 'border-red-300' : 'border-gray-300'
+                                    }`}
+                                >
+                                    <option value="">Aucune (catégorie racine)</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.parent_id && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.parent_id}</p>
+                                )}
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Sélectionnez une catégorie parente pour créer une sous-catégorie
+                                </p>
                             </div>
 
                             {/* Options */}
